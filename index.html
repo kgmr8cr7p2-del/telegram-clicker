@@ -3,885 +3,547 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Clicker</title>
+    <title>Telegram Clicker Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; padding: 20px; }
-        .container { max-width: 400px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { font-size: 24px; margin-bottom: 15px; }
-        .stats { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
-        .stats div { margin: 5px 0; font-size: 16px; }
-        .game-area { text-align: center; margin: 20px 0; }
-        .click-button { background: linear-gradient(45deg, #FF6B6B, #FFE66D); border: none; border-radius: 50%; width: 150px; height: 150px; font-size: 18px; font-weight: bold; color: #333; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4); display: block; margin: 0 auto; touch-action: manipulation; user-select: none; }
-        .click-button:active { transform: scale(0.95); }
-        .click-button:disabled { background: #cccccc; cursor: not-allowed; }
-        .energy-bar { width: 100%; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 10px 0; overflow: hidden; }
-        .energy-fill { height: 100%; background: linear-gradient(90deg, #00ff88, #00ccff); transition: width 0.3s; }
-        .upgrades { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
-        .upgrades h3 { margin-bottom: 10px; text-align: center; }
-        .upgrade-btn { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; font-size: 12px; transition: background 0.3s; }
-        .upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .upgrade-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.3); }
-        .leaderboard { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
-        .leaderboard h3 { margin-bottom: 10px; text-align: center; }
-        .leaderboard-item { padding: 10px 12px; margin: 5px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
-        .cooldown { pointer-events: none; opacity: 0.7; }
-        .tab-buttons { display: flex; margin-bottom: 10px; gap: 5px; }
-        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; }
-        .tab-btn.active { background: rgba(255, 255, 255, 0.4); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .autoclicker-info { font-size: 12px; opacity: 0.8; margin-top: 5px; }
-        .leaderboard-stats { text-align: center; margin-top: 10px; font-size: 12px; opacity: 0.8; }
-        .server-status { text-align: center; font-size: 12px; margin-top: 5px; padding: 5px; border-radius: 5px; }
-        .status-online { background: rgba(76, 175, 80, 0.3); color: #90EE90; }
-        .status-offline { background: rgba(244, 67, 54, 0.3); color: #FF6B6B; }
-        .loading { text-align: center; padding: 20px; font-size: 16px; }
-        .refresh-btn { background: rgba(255, 255, 255, 0.2); border: none; border-radius: 8px; color: white; padding: 8px 15px; margin-top: 10px; cursor: pointer; font-size: 12px; }
-        .reset-btn { background: rgba(255, 100, 100, 0.3); border: none; border-radius: 8px; color: white; padding: 8px 15px; margin: 5px; cursor: pointer; font-size: 12px; }
-        
-        /* Стили для офлайн режима */
-        .offline-mode { 
-            background: rgba(255, 255, 255, 0.1); 
-            padding: 20px; 
-            border-radius: 15px; 
-            backdrop-filter: blur(10px); 
-            margin: 20px 0; 
-            text-align: center;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .offline-warning { 
-            color: #FF6B6B; 
-            font-size: 14px; 
-            margin: 10px 0;
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .click-area {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            user-select: none;
+        }
+        
+        .click-area:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .click-area:active {
+            transform: scale(0.95);
+            border-color: #667eea;
+        }
+        
+        .click-count {
+            font-size: 48px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .click-text {
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stats-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .top-list {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .top-list h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .top-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .top-item:last-child {
+            border-bottom: none;
+        }
+        
+        .rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-        }
-        .retry-button { 
-            background: linear-gradient(45deg, #FF6B6B, #FF8E53); 
-            border: none; 
-            border-radius: 8px; 
-            color: white; 
-            padding: 10px 20px; 
-            margin: 10px 0; 
-            cursor: pointer; 
+            font-weight: bold;
             font-size: 14px;
-            transition: all 0.3s;
+            margin-right: 12px;
         }
-        .retry-button:hover { 
-            transform: scale(1.05); 
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        
+        .rank-1 { background: #ffd700; }
+        .rank-2 { background: #c0c0c0; }
+        .rank-3 { background: #cd7f32; }
+        
+        .player-info {
+            flex: 1;
         }
-        .energy-info { 
-            font-size: 11px; 
-            opacity: 0.7; 
-            margin-top: 3px;
+        
+        .player-name {
+            font-weight: 500;
+            margin-bottom: 2px;
         }
-        .last-sync { 
-            font-size: 10px; 
-            opacity: 0.5; 
-            margin-top: 5px;
+        
+        .player-clicks {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .clicks-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+        
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .pulse {
+            animation: pulse 0.5s ease;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .user-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div id="app">
-        <div class="loading">Загрузка вашего прогресса... ⏳</div>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Telegram Clicker</h1>
+            <p>Кликай и становись лучшим!</p>
+        </div>
+        
+        <div id="loading" class="loading">
+            ⏳ Загрузка данных...
+        </div>
+        
+        <div id="app" style="display: none;">
+            <div class="user-badge" id="userBadge">
+                Добро пожаловать!
+            </div>
+            
+            <div class="click-area" id="clickButton">
+                <div class="click-count" id="clickCount">0</div>
+                <div class="click-text">Нажми меня!</div>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('stats')">📊 Статистика</button>
+                <button class="tab" onclick="switchTab('top')">🏆 Топ-10</button>
+            </div>
+            
+            <div id="stats" class="content active">
+                <div class="stats-card">
+                    <h3>Ваша статистика</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Игрок:</span>
+                        <span class="stat-value" id="userName">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Ваши клики:</span>
+                        <span class="stat-value" id="userClicks">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Место в рейтинге:</span>
+                        <span class="stat-value" id="userRank">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Всего игроков:</span>
+                        <span class="stat-value" id="totalPlayers">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="top" class="content">
+                <div class="top-list">
+                    <h3>🏆 Топ-10 игроков</h3>
+                    <div id="topList">
+                        <div class="loading">Загрузка рейтинга...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzGhuJLb5BlJwNxDTQw4dtQ17bCnYe-tWM_MUQn5oChUVEqGgUupv1CMnrUBAm8w93l/exec';
-
-        let gameState;
-        let autoclickerInterval;
-        let energyInterval;
-        let syncInterval;
-        let lastEnergyUpdate = 0;
-        let lastServerSync = 0;
-
-        function initTelegramApp() {
-            console.log('🚀 Инициализация Telegram Web App...');
-            if (window.Telegram && Telegram.WebApp) {
-                console.log('✅ В Telegram Web App');
-                Telegram.WebApp.expand();
-            }
-            initGame();
-        }
-
-        function initGame() {
-            console.log('🎮 Запуск игры...');
-            createGameInterface();
+        // КОНФИГУРАЦИЯ - ЗАМЕНИТЕ НА ВАШ URL!
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxtLY4Hww5cB5WPedekWriCYmkiIRonIYU1ojM6HyDyokUiFgsG1RM0agOSM4wW6B1r/exec';
+        
+        const tg = window.Telegram.WebApp;
+        let userData = null;
+        let topPlayers = [];
+        
+        // Инициализация приложения
+        function initApp() {
+            tg.expand();
+            tg.ready();
+            tg.enableClosingConfirmation();
             
-            // Базовое состояние игры
-            gameState = {
-                coins: 0,
-                level: 1,
-                energy: 650,
-                maxEnergy: 650,
-                energyPerClick: 5,
-                energyRegen: 1,
-                lastEnergyUpdate: Date.now(),
-                
-                upgrades: {
-                    clickPower: { level: 1, cost: 50 },
-                    energyRegen: { level: 1, cost: 100 },
-                    autoclicker: { level: 0, cost: 200 }
-                },
-                
-                lastClickTime: 0,
-                clickCooldown: 100,
-                leaderboard: [],
-                totalPlayers: 0,
-                serverOnline: false,
-                offlineMode: false
-            };
-
-            autoclickerInterval = null;
-            energyInterval = null;
-            syncInterval = null;
-
-            function getUserId() {
-                if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
-                    return 'tg_' + Telegram.WebApp.initDataUnsafe.user.id;
-                }
-                return 'user_' + Math.random().toString(36).substr(2, 9);
-            }
-
-            function getPlayerName() {
-                return window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
-            }
-
-            // 🕒 ВЫЧИСЛЕНИЕ ЭНЕРГИИ С УЧЕТОМ ВРЕМЕНИ
-            function calculateCurrentEnergy(savedEnergy, lastUpdateTime, energyRegen, maxEnergy) {
-                const now = Date.now();
-                const timeDiff = Math.floor((now - lastUpdateTime) / 1000); // разница в секундах
-                const regeneratedEnergy = timeDiff * energyRegen;
-                const newEnergy = Math.min(maxEnergy, savedEnergy + regeneratedEnergy);
-                
-                console.log(`⚡ Расчет энергии: ${savedEnergy} + (${timeDiff}сек * ${energyRegen}/сек) = ${newEnergy}`);
-                return {
-                    energy: newEnergy,
-                    lastUpdateTime: now
-                };
-            }
-
-            // 📥 ЗАГРУЗКА ПОЛНОГО ПРОГРЕССА С СЕРВЕРА
-            // 📥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ПРОГРЕССА
-// 📥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ПРОГРЕССА
-async function loadGameProgress() {
-    try {
-        console.log('📥 Автозагрузка прогресса...');
-        showLoadingMessage('Подключение к серверу... 🌐');
-        
-        const userId = getUserId();
-        
-        // 🔄 Способ 1: Пробуем напрямую (может работать в некоторых окружениях)
-        try {
-            const response = await fetch(`${API_URL}?action=getPlayerData&userId=${userId}&t=${Date.now()}`);
-            if (response.ok) {
-                const data = await response.json();
-                return processServerData(data);
-            }
-        } catch (directError) {
-            console.log('📡 Прямое соединение не удалось, пробуем альтернативы...');
+            loadUserData();
+            setupEventListeners();
         }
         
-        // 🔄 Способ 2: Используем JSONP для обхода CORS
-        await loadViaJSONP(userId);
-        
-    } catch (error) {
-        console.error('❌ Все методы загрузки провалились:', error);
-        handleServerError();
-    }
-    
-    updateUI();
-    startGameFeatures();
-}
-
-// 🎯 Обработка данных с сервера
-function processServerData(data) {
-    if (data && data.success) {
-        gameState.leaderboard = data.leaders || [];
-        gameState.totalPlayers = data.totalPlayers || 0;
-        gameState.serverOnline = true;
-        gameState.offlineMode = false;
-        
-        // Восстанавливаем прогресс игрока
-        if (data.playerData) {
-            const serverData = data.playerData;
-            const energyCalc = calculateCurrentEnergy(
-                serverData.energy || 650,
-                serverData.lastEnergyUpdate || Date.now(),
-                serverData.energyRegen || 1,
-                serverData.maxEnergy || 650
-            );
-            
-            gameState.coins = serverData.coins || 0;
-            gameState.level = serverData.level || 1;
-            gameState.energy = energyCalc.energy;
-            gameState.maxEnergy = serverData.maxEnergy || 650;
-            gameState.energyPerClick = serverData.energyPerClick || 5;
-            gameState.energyRegen = serverData.energyRegen || 1;
-            gameState.lastEnergyUpdate = energyCalc.lastUpdateTime;
-            
-            if (serverData.upgrades) {
-                gameState.upgrades = serverData.upgrades;
-            }
-            
-            console.log('✅ Прогресс загружен с сервера');
+        // Настройка обработчиков событий
+        function setupEventListeners() {
+            document.getElementById('clickButton').addEventListener('click', handleClick);
         }
         
-        lastServerSync = Date.now();
-        showNotification('Прогресс синхронизирован! ✅');
-    } else {
-        throw new Error(data ? data.error : 'No data');
-    }
-}
-
-// 🔄 JSONP метод для обхода CORS
-function loadViaJSONP(userId) {
-    return new Promise((resolve, reject) => {
-        const callbackName = 'jsonp_callback_' + Date.now();
-        const script = document.createElement('script');
+        // Обработка клика
+        function handleClick() {
+            addClick();
+            
+            // Анимация клика
+            const clickButton = document.getElementById('clickButton');
+            clickButton.classList.add('pulse');
+            setTimeout(() => {
+                clickButton.classList.remove('pulse');
+            }, 500);
+        }
         
-        window[callbackName] = function(data) {
-            delete window[callbackName];
-            document.body.removeChild(script);
-            processServerData(data);
-            resolve(data);
-        };
-        
-        script.src = `${API_URL}?action=getPlayerData&userId=${userId}&t=${Date.now()}&callback=${callbackName}`;
-        script.onerror = reject;
-        
-        document.body.appendChild(script);
-        
-        // Таймаут
-        setTimeout(() => {
-            if (window[callbackName]) {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                reject(new Error('JSONP timeout'));
-            }
-        }, 10000);
-    });
-}
-
-            function handleServerError() {
-                gameState.serverOnline = false;
-                gameState.offlineMode = true;
-                
-                // Пытаемся загрузить из localStorage
-                const localData = localStorage.getItem('telegram_clicker_backup');
-                if (localData) {
-                    try {
-                        const savedState = JSON.parse(localData);
-                        const energyCalc = calculateCurrentEnergy(
-                            savedState.energy || 650,
-                            savedState.lastEnergyUpdate || Date.now(),
-                            savedState.energyRegen || 1,
-                            savedState.maxEnergy || 650
-                        );
-                        
-                        gameState.coins = savedState.coins || 0;
-                        gameState.level = savedState.level || 1;
-                        gameState.energy = energyCalc.energy;
-                        gameState.maxEnergy = savedState.maxEnergy || 650;
-                        gameState.energyPerClick = savedState.energyPerClick || 5;
-                        gameState.energyRegen = savedState.energyRegen || 1;
-                        gameState.lastEnergyUpdate = energyCalc.lastUpdateTime;
-                        
-                        if (savedState.upgrades) {
-                            gameState.upgrades = savedState.upgrades;
-                        }
-                        
-                        console.log('📱 Прогресс восстановлен из локального хранилища');
-                        showNotification('Локальный режим: прогресс загружен 📱');
-                    } catch (e) {
-                        console.error('Ошибка восстановления из localStorage:', e);
-                    }
-                }
-            }
-
-            // 💾 СОХРАНЕНИЕ ПОЛНОГО ПРОГРЕССА НА СЕРВЕР
-            async function saveFullProgress() {
-                if (!gameState.serverOnline) return false;
-                
-                try {
-                    const playerData = {
-                        coins: gameState.coins,
-                        level: gameState.level,
-                        energy: gameState.energy,
-                        maxEnergy: gameState.maxEnergy,
-                        energyPerClick: gameState.energyPerClick,
-                        energyRegen: gameState.energyRegen,
-                        lastEnergyUpdate: gameState.lastEnergyUpdate,
-                        upgrades: gameState.upgrades,
-                        lastSave: Date.now()
-                    };
-                    
-                    const formData = new URLSearchParams();
-                    formData.append('action', 'savePlayerData');
-                    formData.append('userId', getUserId());
-                    formData.append('playerName', getPlayerName());
-                    formData.append('playerData', JSON.stringify(playerData));
-                    formData.append('score', gameState.coins); // Для таблицы лидеров
-                    
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: formData
-                    });
-                    
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    
-                    const data = await response.json();
-                    
-                    if (data && data.success) {
-                        lastServerSync = Date.now();
-                        console.log('💾 Полный прогресс сохранен на сервер');
-                        return true;
-                    } else {
-                        throw new Error(data ? data.error : 'Save failed');
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Ошибка сохранения прогресса:', error);
-                    gameState.serverOnline = false;
-                    
-                    // Сохраняем локально как резервную копию
-                    localStorage.setItem('telegram_clicker_backup', JSON.stringify({
-                        coins: gameState.coins,
-                        level: gameState.level,
-                        energy: gameState.energy,
-                        maxEnergy: gameState.maxEnergy,
-                        energyPerClick: gameState.energyPerClick,
-                        energyRegen: gameState.energyRegen,
-                        lastEnergyUpdate: gameState.lastEnergyUpdate,
-                        upgrades: gameState.upgrades,
-                        lastSave: Date.now()
-                    }));
-                    
-                    return false;
-                }
-            }
-
-            // ⚡ СИСТЕМА ЭНЕРГИИ С СИНХРОНИЗАЦИЕЙ
-            function startEnergySystem() {
-                if (energyInterval) clearInterval(energyInterval);
-                
-                energyInterval = setInterval(() => {
-                    const now = Date.now();
-                    const timeDiff = Math.floor((now - gameState.lastEnergyUpdate) / 1000);
-                    
-                    if (timeDiff > 0 && gameState.energy < gameState.maxEnergy) {
-                        const regeneratedEnergy = timeDiff * gameState.energyRegen;
-                        gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + regeneratedEnergy);
-                        gameState.lastEnergyUpdate = now;
-                        
-                        updateEnergyBar();
-                        updateUI();
-                        
-                        // Синхронизируем с сервером каждые 30 секунд
-                        if (now - lastServerSync > 30000) {
-                            saveFullProgress();
-                        }
-                    }
-                }, 1000);
-            }
-
-            function updateEnergyBar() {
-                const energyFill = document.getElementById('energy-fill');
-                if (energyFill) {
-                    const percentage = (gameState.energy / gameState.maxEnergy) * 100;
-                    energyFill.style.width = percentage + '%';
-                }
-            }
-
-            function canClick() {
-                return gameState.energy >= gameState.energyPerClick;
-            }
-
-            function showNotification(message) {
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: rgba(0,0,0,0.8);
-                    color: white;
-                    padding: 10px 20px;
-                    border-radius: 10px;
-                    z-index: 1000;
-                    font-size: 14px;
-                `;
-                notification.textContent = message;
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 3000);
-            }
-
-            function showLoadingMessage(message) {
-                const loadingElement = document.querySelector('.loading');
-                if (loadingElement) {
-                    loadingElement.innerHTML = message;
-                }
-            }
-
-            function handleClick(event) {
-                if (!canClick()) return;
-                
-                const now = Date.now();
-                const timeSinceLastClick = now - gameState.lastClickTime;
-                if (timeSinceLastClick < gameState.clickCooldown) return;
-                
-                gameState.lastClickTime = now;
-                
-                // Тратим энергию
-                gameState.energy -= gameState.energyPerClick;
-                gameState.lastEnergyUpdate = now;
-                
-                // Получаем монеты
-                const coinsEarned = gameState.upgrades.clickPower.level;
-                gameState.coins += coinsEarned;
-                
-                if (gameState.coins >= gameState.level * 100) {
-                    gameState.level++;
-                    if (window.Telegram && Telegram.WebApp) {
-                        Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
-                    }
+        // Загрузка данных пользователя
+        async function loadUserData() {
+            try {
+                if (!tg.initDataUnsafe?.user) {
+                    showError('Ошибка авторизации в Telegram');
+                    return;
                 }
                 
-                // Сохраняем прогресс
-                saveFullProgress();
-                updateUI();
+                const user = tg.initDataUnsafe.user;
+                const response = await fetchJSONP(`${BACKEND_URL}?action=getUser&userId=${user.id}`);
                 
-                const clickButton = document.getElementById('click-btn');
-                if (clickButton) {
-                    clickButton.style.transform = 'scale(0.95)';
-                    setTimeout(() => clickButton.style.transform = 'scale(1)', 100);
-                    clickButton.classList.add('cooldown');
-                    setTimeout(() => clickButton.classList.remove('cooldown'), gameState.clickCooldown);
-                }
-            }
-
-            function startAutoclicker() {
-                if (autoclickerInterval) clearInterval(autoclickerInterval);
-                
-                if (gameState.upgrades.autoclicker.level > 0) {
-                    autoclickerInterval = setInterval(() => {
-                        if (canClick()) {
-                            const now = Date.now();
-                            
-                            // Тратим энергию
-                            gameState.energy -= gameState.energyPerClick;
-                            gameState.lastEnergyUpdate = now;
-                            
-                            // Получаем монеты
-                            const autoCoins = gameState.upgrades.autoclicker.level * gameState.upgrades.clickPower.level;
-                            gameState.coins += autoCoins;
-                            
-                            // Сохраняем каждые 10 секунд в авто-режиме
-                            if (now - lastServerSync > 10000) {
-                                saveFullProgress();
-                            }
-                            
-                            updateUI();
-                        }
-                    }, 1000);
-                }
-            }
-
-            function updateUpgradeButtons() {
-                const clickBtn = document.getElementById('upgrade-click-power');
-                if (clickBtn) {
-                    const cost = gameState.upgrades.clickPower.cost;
-                    clickBtn.disabled = gameState.coins < cost;
-                    clickBtn.innerHTML = `💪 +1 монета за клик<br><small>Уровень: ${gameState.upgrades.clickPower.level} | Стоимость: ${cost}</small>`;
-                }
-                
-                const energyBtn = document.getElementById('upgrade-energy-regen');
-                if (energyBtn) {
-                    const cost = gameState.upgrades.energyRegen.cost;
-                    energyBtn.disabled = gameState.coins < cost;
-                    energyBtn.innerHTML = `⚡ +1 энергия/сек<br><small>Уровень: ${gameState.upgrades.energyRegen.level} | Стоимость: ${cost}</small>`;
-                }
-                
-                const autoBtn = document.getElementById('upgrade-autoclicker');
-                if (autoBtn) {
-                    const cost = gameState.upgrades.autoclicker.cost;
-                    autoBtn.disabled = gameState.coins < cost;
-                    autoBtn.innerHTML = `🤖 +1 авто-клик/сек<br><small>Уровень: ${gameState.upgrades.autoclicker.level} | Стоимость: ${cost}</small>`;
-                }
-            }
-
-            function setupUpgrades() {
-                document.getElementById('upgrade-click-power')?.addEventListener('click', function() {
-                    const upgrade = gameState.upgrades.clickPower;
-                    if (gameState.coins >= upgrade.cost) {
-                        gameState.coins -= upgrade.cost;
-                        upgrade.level += 1;
-                        upgrade.cost *= 2;
-                        
-                        saveFullProgress();
-                        if (window.Telegram && Telegram.WebApp) {
-                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-                        }
-                        updateUI();
-                        showNotification(`💪 Улучшено! Теперь +${upgrade.level} монет за клик`);
-                    }
-                });
-
-                document.getElementById('upgrade-energy-regen')?.addEventListener('click', function() {
-                    const upgrade = gameState.upgrades.energyRegen;
-                    if (gameState.coins >= upgrade.cost) {
-                        gameState.coins -= upgrade.cost;
-                        upgrade.level += 1;
-                        gameState.energyRegen = upgrade.level;
-                        upgrade.cost *= 2;
-                        
-                        saveFullProgress();
-                        if (window.Telegram && Telegram.WebApp) {
-                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-                        }
-                        updateUI();
-                        showNotification(`⚡ Улучшено! Теперь +${upgrade.level} энергии/сек`);
-                    }
-                });
-
-                document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
-                    const upgrade = gameState.upgrades.autoclicker;
-                    if (gameState.coins >= upgrade.cost) {
-                        gameState.coins -= upgrade.cost;
-                        upgrade.level += 1;
-                        upgrade.cost *= 2;
-                        
-                        startAutoclicker();
-                        saveFullProgress();
-                        if (window.Telegram && Telegram.WebApp) {
-                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-                        }
-                        updateUI();
-                        showNotification(`🤖 Улучшено! Теперь +${upgrade.level} авто-клик/сек`);
-                    }
-                });
-            }
-
-            function updateLeaderboard() {
-                const leaderboardList = document.getElementById('leaderboard-list');
-                
-                if (leaderboardList) {
-                    const currentPlayerName = getPlayerName();
-                    
-                    if (gameState.offlineMode) {
-                        leaderboardList.innerHTML = `
-                            <div style="text-align: center; padding: 20px; color: #FFE66D;">
-                                📱 Локальный режим<br>
-                                <small>Таблица лидеров недоступна</small>
-                            </div>
-                        `;
-                    } else if (!gameState.serverOnline) {
-                        leaderboardList.innerHTML = `
-                            <div style="text-align: center; padding: 20px; color: #FF6B6B;">
-                                🔴 Сервер недоступен<br>
-                                <small>Попытка подключения...</small>
-                            </div>
-                        `;
-                    } else if (gameState.leaderboard.length === 0) {
-                        leaderboardList.innerHTML = `
-                            <div style="text-align: center; padding: 20px;">
-                                🏆 Таблица лидеров пуста!<br>
-                                <small>Будьте первым игроком!</small>
-                            </div>
-                        `;
-                    } else {
-                        leaderboardList.innerHTML = gameState.leaderboard.map((player, index) => {
-                            const isCurrentPlayer = (player.name === currentPlayerName);
-                            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
-                            const date = player.date ? new Date(player.date).toLocaleDateString('ru-RU') : '';
-                            
-                            return `
-                                <div class="leaderboard-item" style="${isCurrentPlayer ? 'background: linear-gradient(90deg, rgba(255,215,0,0.3) 0%, rgba(255,215,0,0.1) 100%); border-left: 4px solid gold;' : ''}">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div style="flex: 1;">
-                                            <div style="font-weight: ${isCurrentPlayer ? 'bold' : 'normal'}; font-size: 14px;">
-                                                ${medal} ${player.name} 
-                                                ${isCurrentPlayer ? ' <span style="color: gold;">(Вы) 👑</span>' : ''}
-                                            </div>
-                                            <div style="font-size: 10px; opacity: 0.7; margin-top: 2px;">${date}</div>
-                                        </div>
-                                        <div style="font-weight: bold; font-size: 16px; color: #FFE66D; margin-left: 10px;">
-                                            ${player.score.toLocaleString()}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('');
-                    }
-                }
-
-                const statsElement = document.getElementById('leaderboard-stats');
-                if (statsElement) {
-                    if (gameState.serverOnline) {
-                        statsElement.innerHTML = `Всего игроков: ${gameState.totalPlayers} 🎮`;
-                    } else if (gameState.offlineMode) {
-                        statsElement.innerHTML = `Локальный режим 📱`;
-                    } else {
-                        statsElement.innerHTML = `Подключение к серверу... 🔄`;
-                    }
-                }
-            }
-
-            function setupTabs() {
-                const tabButtons = document.querySelectorAll('.tab-btn');
-                const tabContents = document.querySelectorAll('.tab-content');
-                
-                tabButtons.forEach(button => {
-                    button.addEventListener('click', () => {
-                        tabButtons.forEach(btn => btn.classList.remove('active'));
-                        tabContents.forEach(content => content.classList.remove('active'));
-                        button.classList.add('active');
-                        const tabName = button.getAttribute('data-tab');
-                        document.getElementById(`${tabName}-tab`).classList.add('active');
-                    });
-                });
-            }
-
-            function resetGame() {
-                if (confirm('🔄 Сбросить игру?\nВсе ваши монеты и улучшения будут потеряны.')) {
-                    gameState = {
-                        coins: 0,
-                        level: 1,
-                        energy: 650,
-                        maxEnergy: 650,
-                        energyPerClick: 5,
-                        energyRegen: 1,
-                        lastEnergyUpdate: Date.now(),
-                        upgrades: {
-                            clickPower: { level: 1, cost: 50 },
-                            energyRegen: { level: 1, cost: 100 },
-                            autoclicker: { level: 0, cost: 200 }
-                        },
-                        lastClickTime: 0,
-                        clickCooldown: 100,
-                        leaderboard: [],
-                        totalPlayers: 0,
-                        serverOnline: false,
-                        offlineMode: false
-                    };
-                    
-                    if (autoclickerInterval) clearInterval(autoclickerInterval);
-                    if (energyInterval) clearInterval(energyInterval);
-                    if (syncInterval) clearInterval(syncInterval);
-                    
-                    localStorage.removeItem('telegram_clicker_backup');
+                if (response.success) {
+                    userData = response.user;
                     updateUI();
-                    loadGameProgress();
-                    startEnergySystem();
-                    showNotification('Игра сброшена! ✅');
+                    loadTopPlayers();
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('app').style.display = 'block';
+                } else {
+                    showError('Ошибка загрузки данных');
                 }
+            } catch (error) {
+                showError('Ошибка соединения: ' + error.message);
             }
-
-            function retryConnection() {
-                gameState.offlineMode = false;
-                showLoadingMessage('Повторное подключение к серверу... 🔄');
-                loadGameProgress();
-            }
-
-            function createGameInterface() {
-                const app = document.getElementById('app');
-                app.innerHTML = `
-                    <div class="container">
-                        <div class="header">
-                            <h1>🎮 Энерго-Кликер</h1>
-                            <div class="stats">
-                                <div>Монеты: <span id="coins">0</span></div>
-                                <div>Уровень: <span id="level">1</span></div>
-                                <div>Энергия: <span id="energy">650/650</span></div>
-                                <div>За клик: <span id="click-power">+1 монет</span></div>
-                                <div id="autoclicker-info" class="autoclicker-info">Автокликер: +0 монет/сек</div>
-                                <div class="energy-info">⚡ Регенерация: <span id="energy-regen">1</span>/сек</div>
-                                <div id="server-status" class="server-status">Подключение к серверу...</div>
-                                <div id="last-sync" class="last-sync"></div>
-                            </div>
-                        </div>
-
-                        <!-- Офлайн режим -->
-                        <div id="offline-mode" class="offline-mode" style="display: none;">
-                            <div class="offline-warning">
-                                ⚠️ ЛОКАЛЬНЫЙ РЕЖИМ
-                            </div>
-                            <div style="font-size: 14px; margin: 10px 0;">
-                                Сервер временно недоступен
-                            </div>
-                            <button class="retry-button" onclick="retryConnection()">
-                                🔄 Повторить подключение
-                            </button>
-                            <div style="font-size: 12px; margin-top: 10px; opacity: 0.7;">
-                                Энергия восстанавливается даже офлайн!
-                            </div>
-                        </div>
-
-                        <div class="game-area">
-                            <button id="click-btn" class="click-button">⚡ КЛИК!<br><small>(-5 энергии)</small></button>
-                            <div class="energy-bar">
-                                <div id="energy-fill" class="energy-fill"></div>
-                            </div>
-                            <div style="text-align: center; margin-top: 10px;">
-                                <button class="reset-btn" onclick="resetGame()">🔄 Сбросить игру</button>
-                            </div>
-                        </div>
-
-                        <div class="tab-buttons">
-                            <button class="tab-btn active" data-tab="upgrades">Улучшения</button>
-                            <button class="tab-btn" data-tab="leaderboard">Лидеры</button>
-                        </div>
-
-                        <div id="upgrades-tab" class="tab-content active">
-                            <div class="upgrades">
-                                <h3>⚡ Улучшения</h3>
-                                <button class="upgrade-btn" id="upgrade-click-power">
-                                    💪 +1 монета за клик<br>
-                                    <small>Уровень: 1 | Стоимость: 50</small>
-                                </button>
-                                <button class="upgrade-btn" id="upgrade-energy-regen">
-                                    ⚡ +1 энергия/сек<br>
-                                    <small>Уровень: 1 | Стоимость: 100</small>
-                                </button>
-                                <button class="upgrade-btn" id="upgrade-autoclicker">
-                                    🤖 +1 авто-клик/сек<br>
-                                    <small>Уровень: 0 | Стоимость: 200</small>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="leaderboard-tab" class="tab-content">
-                            <div class="leaderboard">
-                                <h3>🏆 Топ игроков</h3>
-                                <div id="leaderboard-list">Загрузка таблицы... ⏳</div>
-                                <div id="leaderboard-stats" class="leaderboard-stats"></div>
-                                <button class="refresh-btn" onclick="loadGameProgress()">🔄 Обновить</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            function updateUI() {
-                const coinsElement = document.getElementById('coins');
-                const levelElement = document.getElementById('level');
-                const energyElement = document.getElementById('energy');
-                const clickPowerElement = document.getElementById('click-power');
-                const energyRegenElement = document.getElementById('energy-regen');
-                const autoclickerInfo = document.getElementById('autoclicker-info');
-                const serverStatus = document.getElementById('server-status');
-                const offlineModeElement = document.getElementById('offline-mode');
-                const lastSyncElement = document.getElementById('last-sync');
-                
-                if (coinsElement) coinsElement.textContent = gameState.coins.toLocaleString();
-                if (levelElement) levelElement.textContent = gameState.level;
-                if (energyElement) energyElement.textContent = `${Math.floor(gameState.energy)}/${gameState.maxEnergy}`;
-                if (clickPowerElement) clickPowerElement.textContent = `+${gameState.upgrades.clickPower.level} монет`;
-                if (energyRegenElement) energyRegenElement.textContent = `${gameState.energyRegen}/сек`;
-                
-                if (autoclickerInfo) {
-                    const autoCoins = gameState.upgrades.autoclicker.level * gameState.upgrades.clickPower.level;
-                    autoclickerInfo.textContent = `Автокликер: +${autoCoins} монет/сек`;
-                }
-                
-                if (serverStatus) {
-                    if (gameState.serverOnline) {
-                        serverStatus.textContent = '🟢 Сервер онлайн';
-                        serverStatus.className = 'server-status status-online';
-                    } else if (gameState.offlineMode) {
-                        serverStatus.textContent = '🟡 Локальный режим';
-                        serverStatus.className = 'server-status status-offline';
-                    } else {
-                        serverStatus.textContent = '🔴 Подключение...';
-                        serverStatus.className = 'server-status status-offline';
-                    }
-                }
-                
-                if (lastSyncElement) {
-                    if (gameState.serverOnline && lastServerSync > 0) {
-                        const syncAgo = Math.floor((Date.now() - lastServerSync) / 1000);
-                        lastSyncElement.textContent = `Синхронизировано ${syncAgo} сек назад`;
-                    } else if (gameState.offlineMode) {
-                        lastSyncElement.textContent = 'Локальное сохранение';
-                    } else {
-                        lastSyncElement.textContent = 'Ожидание синхронизации...';
-                    }
-                }
-                
-                // Показываем/скрываем офлайн режим
-                if (offlineModeElement) {
-                    offlineModeElement.style.display = gameState.offlineMode ? 'block' : 'none';
-                }
-                
-                updateUpgradeButtons();
-                updateEnergyBar();
-                updateLeaderboard();
-                
-                const clickButton = document.getElementById('click-btn');
-                if (clickButton) {
-                    clickButton.disabled = !canClick();
-                }
-            }
-
-            function startGameFeatures() {
-                startEnergySystem();
-                startAutoclicker();
-                setupUpgrades();
-                setupTabs();
-                
-                const clickButton = document.getElementById('click-btn');
-                if (clickButton) {
-                    clickButton.addEventListener('click', handleClick);
-                    clickButton.addEventListener('touchstart', function(e) {
-                        e.preventDefault();
-                        handleClick(e);
-                    });
-                }
-                
-                // Запускаем периодическую синхронизацию
-                syncInterval = setInterval(() => {
-                    if (gameState.serverOnline) {
-                        saveFullProgress();
-                    }
-                }, 60000); // Синхронизация каждую минуту
-                
-                // Сделаем функции глобальными
-                window.loadGameProgress = loadGameProgress;
-                window.resetGame = resetGame;
-                window.retryConnection = retryConnection;
-                
-                console.log('✅ Игра полностью запущена');
-            }
-
-            // 🚀 ЗАПУСКАЕМ ИГРУ
-            async function startGame() {
-                console.log('🎯 Начинаем загрузку игры...');
-                await loadGameProgress();
-                startGameFeatures();
-                console.log('✅ Игра готова!');
-            }
-
-            startGame();
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 Страница загружена');
-            initTelegramApp();
-        });
+        
+        // Добавление клика
+        async function addClick() {
+            try {
+                const user = tg.initDataUnsafe.user;
+                const response = await fetchJSONP(
+                    `${BACKEND_URL}?action=click&userId=${user.id}&username=${encodeURIComponent(user.username || user.first_name)}`
+                );
+                
+                if (response.success) {
+                    if (!userData) {
+                        userData = { clicks: 0 };
+                    }
+                    userData.clicks = response.clicks;
+                    updateUI();
+                    loadTopPlayers();
+                } else {
+                    showError('Ошибка при клике');
+                }
+            } catch (error) {
+                showError('Ошибка соединения');
+            }
+        }
+        
+        // Загрузка топа игроков
+        async function loadTopPlayers() {
+            try {
+                const response = await fetchJSONP(`${BACKEND_URL}?action=getTop`);
+                
+                if (response.success) {
+                    topPlayers = response.players;
+                    updateTopList();
+                    updateUserStats();
+                }
+            } catch (error) {
+                console.error('Error loading top players:', error);
+            }
+        }
+        
+        // Обновление статистики пользователя
+        async function updateUserStats() {
+            try {
+                const user = tg.initDataUnsafe.user;
+                const response = await fetchJSONP(`${BACKEND_URL}?action=getStats&userId=${user.id}`);
+                
+                if (response.success) {
+                    document.getElementById('userRank').textContent = 
+                        response.rank > 0 ? `#${response.rank}` : 'Не в топе';
+                    document.getElementById('totalPlayers').textContent = response.totalPlayers;
+                }
+            } catch (error) {
+                console.error('Error updating user stats:', error);
+            }
+        }
+        
+        // Обновление интерфейса
+        function updateUI() {
+            if (userData) {
+                document.getElementById('clickCount').textContent = userData.clicks || 0;
+                document.getElementById('userClicks').textContent = userData.clicks || 0;
+            }
+            
+            const user = tg.initDataUnsafe.user;
+            if (user) {
+                document.getElementById('userName').textContent = user.username || user.first_name;
+                document.getElementById('userBadge').textContent = `👋 Привет, ${user.first_name}!`;
+            }
+        }
+        
+        // Обновление списка топа
+        function updateTopList() {
+            const topList = document.getElementById('topList');
+            
+            if (!topPlayers.length) {
+                topList.innerHTML = '<div class="loading">Пока нет игроков в рейтинге</div>';
+                return;
+            }
+            
+            topList.innerHTML = '';
+            
+            topPlayers.forEach((player, index) => {
+                const item = document.createElement('div');
+                item.className = 'top-item';
+                
+                item.innerHTML = `
+                    <div class="rank ${index < 3 ? 'rank-' + (index + 1) : ''}">${player.rank}</div>
+                    <div class="player-info">
+                        <div class="player-name">${player.username}</div>
+                        <div class="player-clicks">${player.clicks} кликов</div>
+                    </div>
+                    <div class="clicks-badge">${player.clicks}</div>
+                `;
+                
+                topList.appendChild(item);
+            });
+        }
+        
+        // Переключение вкладок
+        function switchTab(tabName) {
+            // Скрыть все вкладки
+            document.querySelectorAll('.content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Убрать активный класс со всех кнопок
+            document.querySelectorAll('.tab').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Показать выбранную вкладку
+            document.getElementById(tabName).classList.add('active');
+            
+            // Активировать кнопку
+            event.target.classList.add('active');
+            
+            // Загрузить топ если переключились на вкладку топа
+            if (tabName === 'top') {
+                loadTopPlayers();
+            }
+        }
+        
+        // JSONP запрос
+        function fetchJSONP(url) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                const script = document.createElement('script');
+                
+                window[callbackName] = function(data) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    resolve(data);
+                };
+                
+                script.src = url + '&callback=' + callbackName;
+                script.onerror = () => {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    reject(new Error('JSONP request failed'));
+                };
+                document.body.appendChild(script);
+            });
+        }
+        
+        // Показать ошибку
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.container').prepend(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // Запуск приложения когда DOM готов
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
