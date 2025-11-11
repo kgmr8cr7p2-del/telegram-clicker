@@ -265,15 +265,49 @@
             text-align: center;
         }
 
-        .debug-info {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            padding: 10px;
+        .debug-panel {
+            background: rgba(0,0,0,0.8);
+            color: #00ff00;
+            padding: 15px;
             border-radius: 10px;
             font-size: 12px;
             margin-top: 20px;
-            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
         }
+
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .debug-toggle {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+        }
+
+        .log-level-info { color: #00ff00; }
+        .log-level-warn { color: #ffff00; }
+        .log-level-error { color: #ff4444; }
 
         .test-mode {
             background: #ffd700;
@@ -312,8 +346,8 @@
             </div>
             
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('stats')">📊 Статистика</button>
-                <button class="tab" onclick="switchTab('top')">🏆 Топ-10</button>
+                <button class="tab active" id="statsTab">📊 Статистика</button>
+                <button class="tab" id="topTab">🏆 Топ-10</button>
             </div>
             
             <div id="stats" class="content active">
@@ -348,316 +382,15 @@
             </div>
         </div>
 
-        <div class="debug-info" id="debugInfo">
-            Debug info will be here
+        <div class="debug-panel" id="debugPanel">
+            <div class="debug-header">
+                <span>Логи приложения</span>
+                <button class="debug-toggle" id="clearLogs">Очистить</button>
+            </div>
+            <div id="logContainer"></div>
         </div>
     </div>
 
-    <script>
-        // КОНФИГУРАЦИЯ - ВАШ URL APPS SCRIPT
-        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxtLY4Hww5cB5WPedekWriCYmkiIRonIYU1ojM6HyDyokUiFgsG1RM0agOSM4wW6B1r/exec';
-        
-        const tg = window.Telegram.WebApp;
-        let userData = null;
-        let topPlayers = [];
-        let isTestMode = false;
-        
-        // Инициализация приложения
-        function initApp() {
-            if (!window.Telegram?.WebApp) {
-                // Режим тестирования вне Telegram
-                isTestMode = true;
-                document.getElementById('testMode').style.display = 'block';
-                initTestMode();
-                return;
-            }
-
-            // Режим Telegram Mini App
-            updateDebugInfo();
-
-            // Безопасная инициализация Telegram Web App
-            try {
-                tg.expand();
-                tg.ready();
-                
-                // Проверяем поддержку функции перед вызовом
-                if (tg.enableClosingConfirmation && typeof tg.enableClosingConfirmation === 'function') {
-                    tg.enableClosingConfirmation();
-                }
-            } catch (error) {
-                console.log('Telegram Web App features:', error);
-            }
-            
-            loadUserData();
-            setupEventListeners();
-        }
-
-        // Режим тестирования вне Telegram
-        function initTestMode() {
-            // Создаем тестовые данные пользователя
-            const testUser = {
-                id: Math.floor(Math.random() * 1000000),
-                first_name: 'TestUser',
-                username: 'test_user'
-            };
-            
-            // Эмулируем Telegram WebApp
-            window.Telegram = {
-                WebApp: {
-                    initDataUnsafe: { user: testUser },
-                    expand: () => console.log('Expand'),
-                    ready: () => console.log('Ready'),
-                    version: '6.0+'
-                }
-            };
-            
-            loadUserData();
-            setupEventListeners();
-            
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-        }
-
-        // Обновление отладочной информации
-        function updateDebugInfo() {
-            const debugInfo = document.getElementById('debugInfo');
-            if (debugInfo && !isTestMode) {
-                const user = tg.initDataUnsafe?.user;
-                debugInfo.innerHTML = `
-                    <strong>Debug Info:</strong><br>
-                    Version: ${tg.version || 'unknown'}<br>
-                    Platform: ${tg.platform || 'unknown'}<br>
-                    User: ${user ? user.first_name : 'not loaded'}<br>
-                    User ID: ${user ? user.id : 'not loaded'}
-                `;
-            }
-        }
-        
-        // Настройка обработчиков событий
-        function setupEventListeners() {
-            document.getElementById('clickButton').addEventListener('click', handleClick);
-        }
-        
-        // Обработка клика
-        function handleClick() {
-            addClick();
-            
-            // Анимация клика
-            const clickButton = document.getElementById('clickButton');
-            clickButton.classList.add('pulse');
-            setTimeout(() => {
-                clickButton.classList.remove('pulse');
-            }, 500);
-        }
-        
-        // Загрузка данных пользователя
-        async function loadUserData() {
-            try {
-                const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe?.user;
-                
-                if (!user) {
-                    showError('Ошибка авторизации в Telegram');
-                    return;
-                }
-                
-                console.log('Loading data for user:', user.id);
-                
-                const response = await fetchJSONP(`${BACKEND_URL}?action=getUser&userId=${user.id}`);
-                console.log('User data response:', response);
-                
-                if (response.success) {
-                    userData = response.user || { clicks: 0 };
-                    updateUI();
-                    loadTopPlayers();
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('app').style.display = 'block';
-                } else {
-                    showError('Ошибка загрузки данных: ' + (response.error || 'unknown error'));
-                }
-            } catch (error) {
-                console.error('Load user data error:', error);
-                showError('Ошибка соединения: ' + error.message);
-            }
-        }
-        
-        // Добавление клика
-        async function addClick() {
-            try {
-                const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe.user;
-                const response = await fetchJSONP(
-                    `${BACKEND_URL}?action=click&userId=${user.id}&username=${encodeURIComponent(user.username || user.first_name)}`
-                );
-                
-                console.log('Click response:', response);
-                
-                if (response.success) {
-                    if (!userData) {
-                        userData = { clicks: 0 };
-                    }
-                    userData.clicks = response.clicks;
-                    updateUI();
-                    loadTopPlayers();
-                    
-                    // Виброотклик если поддерживается
-                    if (!isTestMode && tg.HapticFeedback && tg.HapticFeedback.impactOccurred) {
-                        tg.HapticFeedback.impactOccurred('light');
-                    }
-                } else {
-                    showError('Ошибка при клике: ' + (response.error || 'unknown error'));
-                }
-            } catch (error) {
-                console.error('Add click error:', error);
-                showError('Ошибка соединения');
-            }
-        }
-        
-        // Загрузка топа игроков
-        async function loadTopPlayers() {
-            try {
-                const response = await fetchJSONP(`${BACKEND_URL}?action=getTop`);
-                
-                if (response.success) {
-                    topPlayers = response.players || [];
-                    updateTopList();
-                    updateUserStats();
-                } else {
-                    console.error('Top players error:', response.error);
-                }
-            } catch (error) {
-                console.error('Load top players error:', error);
-            }
-        }
-        
-        // Обновление статистики пользователя
-        async function updateUserStats() {
-            try {
-                const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe.user;
-                const response = await fetchJSONP(`${BACKEND_URL}?action=getStats&userId=${user.id}`);
-                
-                if (response.success) {
-                    document.getElementById('userRank').textContent = 
-                        response.rank > 0 ? `#${response.rank}` : 'Не в топе';
-                    document.getElementById('totalPlayers').textContent = response.totalPlayers || 0;
-                }
-            } catch (error) {
-                console.error('Error updating user stats:', error);
-            }
-        }
-        
-        // Обновление интерфейса
-        function updateUI() {
-            if (userData) {
-                document.getElementById('clickCount').textContent = userData.clicks || 0;
-                document.getElementById('userClicks').textContent = userData.clicks || 0;
-            }
-            
-            const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe.user;
-            if (user) {
-                document.getElementById('userName').textContent = user.username || user.first_name;
-                document.getElementById('userBadge').textContent = `👋 Привет, ${user.first_name}!`;
-            }
-        }
-        
-        // Обновление списка топа
-        function updateTopList() {
-            const topList = document.getElementById('topList');
-            
-            if (!topPlayers.length) {
-                topList.innerHTML = '<div class="loading">Пока нет игроков в рейтинге</div>';
-                return;
-            }
-            
-            topList.innerHTML = '';
-            
-            topPlayers.forEach((player, index) => {
-                const item = document.createElement('div');
-                item.className = 'top-item';
-                
-                item.innerHTML = `
-                    <div class="rank ${index < 3 ? 'rank-' + (index + 1) : ''}">${player.rank}</div>
-                    <div class="player-info">
-                        <div class="player-name">${player.username}</div>
-                        <div class="player-clicks">${player.clicks} кликов</div>
-                    </div>
-                    <div class="clicks-badge">${player.clicks}</div>
-                `;
-                
-                topList.appendChild(item);
-            });
-        }
-        
-        // Переключение вкладок
-        function switchTab(tabName) {
-            // Скрыть все вкладки
-            document.querySelectorAll('.content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Убрать активный класс со всех кнопок
-            document.querySelectorAll('.tab').forEach(button => {
-                button.classList.remove('active');
-            });
-            
-            // Показать выбранную вкладку
-            document.getElementById(tabName).classList.add('active');
-            
-            // Активировать кнопку
-            event.target.classList.add('active');
-            
-            // Загрузить топ если переключились на вкладку топа
-            if (tabName === 'top') {
-                loadTopPlayers();
-            }
-        }
-        
-        // JSONP запрос
-        function fetchJSONP(url) {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-                const script = document.createElement('script');
-                
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
-                    document.body.removeChild(script);
-                    resolve(data);
-                };
-                
-                script.src = url + '&callback=' + callbackName;
-                script.onerror = () => {
-                    delete window[callbackName];
-                    document.body.removeChild(script);
-                    reject(new Error('JSONP request failed'));
-                };
-                
-                // Таймаут на случай если сервер не отвечает
-                setTimeout(() => {
-                    if (script.parentNode) {
-                        document.body.removeChild(script);
-                        reject(new Error('JSONP timeout'));
-                    }
-                }, 10000);
-                
-                document.body.appendChild(script);
-            });
-        }
-        
-        // Показать ошибку
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.textContent = message;
-            document.querySelector('.container').prepend(errorDiv);
-            
-            setTimeout(() => {
-                if (errorDiv.parentNode) {
-                    errorDiv.remove();
-                }
-            }, 5000);
-        }
-        
-        // Запуск приложения когда DOM готов
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
