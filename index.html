@@ -168,6 +168,19 @@
             opacity: 0.8;
             margin-top: 5px;
         }
+
+        .leaderboard-stats {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -176,6 +189,9 @@
     </div>
 
     <script>
+        // 🔧 НАСТРОЙКИ - ЗАМЕНИТЕ НА ВАШ URL!
+        const API_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+
         // Функция инициализации Telegram Web App
         function initTelegramApp() {
             console.log('🚀 Инициализация Telegram Web App...');
@@ -207,13 +223,27 @@
                     autoclickerPower: 1
                 },
                 lastClickTime: 0,
-                clickCooldown: 100, // 100ms cooldown между кликами
-                leaderboard: []
+                clickCooldown: 100,
+                leaderboard: [],
+                totalPlayers: 0
             };
 
             let autoclickerInterval = null;
 
-            // Загрузка состояния
+            // Получаем UserID из Telegram или создаем случайный
+            function getUserId() {
+                if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
+                    return 'tg_' + Telegram.WebApp.initDataUnsafe.user.id;
+                }
+                let userId = localStorage.getItem('clicker_user_id');
+                if (!userId) {
+                    userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('clicker_user_id', userId);
+                }
+                return userId;
+            }
+
+            // Загрузка состояния игры
             function loadGameState() {
                 try {
                     const saved = localStorage.getItem('telegramClickerPro');
@@ -222,18 +252,12 @@
                         gameState = { ...gameState, ...loaded };
                         console.log('✅ Загружено:', gameState);
                     }
-                    
-                    // Загружаем таблицу лидеров
-                    const leaders = localStorage.getItem('clickerLeaderboard');
-                    if (leaders) {
-                        gameState.leaderboard = JSON.parse(leaders);
-                    }
                 } catch (e) {
                     console.error('❌ Ошибка загрузки:', e);
                 }
             }
 
-            // Сохранение состояния
+            // Сохранение состояния игры
             function saveGameState() {
                 try {
                     localStorage.setItem('telegramClickerPro', JSON.stringify({
@@ -247,37 +271,76 @@
                 }
             }
 
-            // Сохранение таблицы лидеров
-            function saveLeaderboard() {
+            // Загрузка таблицы лидеров
+            async function loadLeaderboard() {
                 try {
-                    // Добавляем текущего игрока в таблицу лидеров
-                    const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
-                    const playerScore = gameState.score;
+                    console.log('📥 Загрузка таблицы лидеров...');
                     
-                    // Находим игрока в таблице
-                    const playerIndex = gameState.leaderboard.findIndex(p => p.name === playerName);
+                    const response = await fetch(`${API_URL}?action=getLeaderboard&t=${Date.now()}`);
+                    const data = await response.json();
                     
-                    if (playerIndex !== -1) {
-                        // Обновляем счет если он больше
-                        if (playerScore > gameState.leaderboard[playerIndex].score) {
-                            gameState.leaderboard[playerIndex].score = playerScore;
-                        }
+                    if (data.success) {
+                        gameState.leaderboard = data.leaders;
+                        gameState.totalPlayers = data.totalPlayers;
+                        console.log('✅ Загружена таблица лидеров:', data.leaders.length, 'реальных игроков');
                     } else {
-                        // Добавляем нового игрока
-                        gameState.leaderboard.push({
-                            name: playerName,
-                            score: playerScore
-                        });
+                        throw new Error(data.error);
                     }
-                    
-                    // Сортируем по убыванию и оставляем топ-10
-                    gameState.leaderboard.sort((a, b) => b.score - a.score);
-                    gameState.leaderboard = gameState.leaderboard.slice(0, 10);
-                    
-                    localStorage.setItem('clickerLeaderboard', JSON.stringify(gameState.leaderboard));
-                } catch (e) {
-                    console.error('❌ Ошибка сохранения таблицы лидеров:', e);
+                } catch (error) {
+                    console.error('❌ Ошибка загрузки лидерборда:', error);
+                    loadLocalLeaderboard();
                 }
+            }
+
+            // Локальный запасной вариант
+            function loadLocalLeaderboard() {
+                const local = localStorage.getItem('localLeaderboard');
+                if (local) {
+                    gameState.leaderboard = JSON.parse(local);
+                } else {
+                    gameState.leaderboard = [
+                        { name: "Чемпион", score: 1000000, date: new Date().toISOString() },
+                        { name: "Второй", score: 500000, date: new Date().toISOString() },
+                        { name: "Третий", score: 250000, date: new Date().toISOString() }
+                    ];
+                }
+            }
+
+            // Сохранение результата на сервер
+            async function saveScoreToServer(score) {
+                try {
+                    const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+                    const userId = getUserId();
+                    
+                    console.log('📤 Отправка результата:', playerName, score);
+                    
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `action=submitScore&name=${encodeURIComponent(playerName)}&score=${score}&userId=${encodeURIComponent(userId)}`
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('✅ Результат сохранен в Google Sheets!');
+                        await loadLeaderboard();
+                    } else {
+                        throw new Error(data.error);
+                    }
+                } catch (error) {
+                    console.error('❌ Ошибка сохранения:', error);
+                }
+            }
+
+            // Обновленная функция сохранения
+            async function saveLeaderboard() {
+                const playerScore = gameState.score;
+                
+                await saveScoreToServer(playerScore);
+                
+                localStorage.setItem('localLeaderboard', JSON.stringify(gameState.leaderboard));
             }
 
             // Обновление интерфейса
@@ -295,9 +358,7 @@
                     autoclickerInfo.textContent = `Автокликер: +${(gameState.upgrades.autoclicker * gameState.upgrades.autoclickerPower).toLocaleString()}/сек`;
                 }
                 
-                // Обновляем кнопки улучшений
                 updateUpgradeButtons();
-                // Обновляем таблицу лидеров
                 updateLeaderboard();
             }
 
@@ -306,18 +367,15 @@
                 const now = Date.now();
                 const timeSinceLastClick = now - gameState.lastClickTime;
                 
-                // Проверяем кулдаун
                 if (timeSinceLastClick < gameState.clickCooldown) {
-                    return; // Игнорируем клик если кулдаун не прошел
+                    return;
                 }
                 
                 gameState.lastClickTime = now;
                 
-                // Добавляем очки
                 const clickValue = gameState.clicksPerTap * gameState.upgrades.multiplier;
                 gameState.score += clickValue;
                 
-                // Проверка уровня
                 if (gameState.score >= gameState.level * 100) {
                     gameState.level++;
                     if (window.Telegram && Telegram.WebApp) {
@@ -329,17 +387,13 @@
                 saveLeaderboard();
                 updateUI();
                 
-                // Анимация кнопки
                 const clickButton = document.getElementById('click-btn');
                 if (clickButton) {
                     clickButton.style.transform = 'scale(0.95)';
                     setTimeout(() => {
                         clickButton.style.transform = 'scale(1)';
                     }, 100);
-                }
-                
-                // Временно блокируем кнопку на время кулдауна
-                if (clickButton) {
+                    
                     clickButton.classList.add('cooldown');
                     setTimeout(() => {
                         clickButton.classList.remove('cooldown');
@@ -359,7 +413,7 @@
                         gameState.score += autoValue;
                         saveGameState();
                         updateUI();
-                    }, 1000); // Каждую секунду
+                    }, 1000);
                 }
             }
 
@@ -384,7 +438,6 @@
 
             // Обработчики улучшений
             function setupUpgrades() {
-                // Умножитель клика
                 document.getElementById('upgrade-multiplier')?.addEventListener('click', function() {
                     const cost = 50 * Math.pow(2, gameState.upgrades.multiplier - 1);
                     
@@ -401,7 +454,6 @@
                     }
                 });
 
-                // Автокликер
                 document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
                     const cost = 100 * Math.pow(2, gameState.upgrades.autoclicker);
                     
@@ -419,7 +471,6 @@
                     }
                 });
 
-                // Мощность автокликера
                 document.getElementById('upgrade-autoclicker-power')?.addEventListener('click', function() {
                     const cost = 200 * Math.pow(2, gameState.upgrades.autoclickerPower - 1);
                     
@@ -437,7 +488,6 @@
                     }
                 });
 
-                // Сила клика
                 document.getElementById('upgrade-click-power')?.addEventListener('click', function() {
                     const cost = 150 * Math.pow(2, Math.log2(gameState.clicksPerTap));
                     
@@ -459,14 +509,50 @@
             function updateLeaderboard() {
                 const leaderboardList = document.getElementById('leaderboard-list');
                 if (leaderboardList) {
-                    leaderboardList.innerHTML = gameState.leaderboard
-                        .map((player, index) => `
-                            <div class="leaderboard-item">
-                                <span>${index + 1}. ${player.name}</span>
-                                <span>${player.score.toLocaleString()}</span>
-                            </div>
-                        `)
-                        .join('');
+                    if (gameState.leaderboard.length === 0) {
+                        leaderboardList.innerHTML = '<div style="text-align: center; padding: 20px;">Загрузка рейтинга... ⏳</div>';
+                    } else {
+                        const currentPlayerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+                        const currentUserId = getUserId();
+                        
+                        leaderboardList.innerHTML = gameState.leaderboard
+                            .map((player, index) => {
+                                const isCurrentPlayer = player.userId === currentUserId || player.name === currentPlayerName;
+                                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                                const date = player.date ? new Date(player.date).toLocaleDateString('ru-RU') : '';
+                                
+                                return `
+                                    <div class="leaderboard-item" style="
+                                        ${isCurrentPlayer ? 'background: linear-gradient(90deg, rgba(255,215,0,0.3) 0%, rgba(255,215,0,0.1) 100%); border-left: 4px solid gold;' : ''}
+                                        padding: 10px 12px;
+                                        margin: 3px 0;
+                                        border-radius: 10px;
+                                        border: 1px solid rgba(255,255,255,0.1);
+                                    ">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <span style="font-weight: ${isCurrentPlayer ? 'bold' : 'normal'}; font-size: 14px;">
+                                                    ${medal} ${player.name} 
+                                                    ${isCurrentPlayer ? ' <span style="color: gold;">(Вы) 👑</span>' : ''}
+                                                </span>
+                                                <div style="font-size: 10px; opacity: 0.7; margin-top: 2px;">
+                                                    ${date}
+                                                </div>
+                                            </div>
+                                            <span style="font-weight: bold; font-size: 16px; color: #FFE66D;">
+                                                ${player.score.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                `;
+                            })
+                            .join('');
+                    }
+                }
+
+                const statsElement = document.getElementById('leaderboard-stats');
+                if (statsElement) {
+                    statsElement.innerHTML = `Всего игроков: ${gameState.totalPlayers || gameState.leaderboard.length} 🎮`;
                 }
             }
 
@@ -477,11 +563,9 @@
                 
                 tabButtons.forEach(button => {
                     button.addEventListener('click', () => {
-                        // Убираем активный класс у всех кнопок и контента
                         tabButtons.forEach(btn => btn.classList.remove('active'));
                         tabContents.forEach(content => content.classList.remove('active'));
                         
-                        // Добавляем активный класс к выбранной кнопке и контенту
                         button.classList.add('active');
                         const tabName = button.getAttribute('data-tab');
                         document.getElementById(`${tabName}-tab`).classList.add('active');
@@ -539,29 +623,30 @@
                             <div class="leaderboard">
                                 <h3>🏆 Топ игроков</h3>
                                 <div id="leaderboard-list">
-                                    <div class="leaderboard-item">
-                                        <span>1. Вы</span>
-                                        <span>0</span>
-                                    </div>
+                                    <div style="text-align: center; padding: 20px;">Загрузка... ⏳</div>
                                 </div>
+                                <div id="leaderboard-stats" class="leaderboard-stats"></div>
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            // Инициализация
-            function startGame() {
+            // Инициализация игры
+            async function startGame() {
                 console.log('🎯 Старт игры');
                 loadGameState();
                 updateUI();
+                
+                await loadLeaderboard();
+                updateUI();
+                
                 startAutoclicker();
                 setupUpgrades();
                 setupTabs();
                 
                 const clickButton = document.getElementById('click-btn');
                 if (clickButton) {
-                    // Используем touchstart для мобильных и click для десктопа
                     clickButton.addEventListener('click', handleClick);
                     clickButton.addEventListener('touchstart', function(e) {
                         e.preventDefault();
@@ -570,13 +655,16 @@
                 }
                 
                 console.log('✅ Игра запущена');
+                
+                setInterval(async () => {
+                    await loadLeaderboard();
+                    updateUI();
+                }, 30000);
             }
 
-            // Запускаем игру
             startGame();
         }
 
-        // Запускаем при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📄 Страница загружена');
             initTelegramApp();
