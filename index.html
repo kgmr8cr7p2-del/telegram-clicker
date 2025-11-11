@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Clicker</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,7 +14,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             min-height: 100vh;
             padding: 20px;
@@ -35,9 +36,11 @@
         }
 
         .stats {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             padding: 15px;
             border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 10px;
         }
 
         .stats div {
@@ -47,7 +50,7 @@
 
         .game-area {
             text-align: center;
-            margin: 30px 0;
+            margin: 20px 0;
         }
 
         .click-button {
@@ -62,6 +65,10 @@
             cursor: pointer;
             transition: all 0.2s;
             box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+            display: block;
+            margin: 0 auto;
+            touch-action: manipulation;
+            user-select: none;
         }
 
         .click-button:active {
@@ -69,26 +76,29 @@
         }
 
         .upgrades {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
             border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 10px;
         }
 
         .upgrades h3 {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-align: center;
         }
 
         .upgrade-btn {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
+            padding: 10px;
+            margin: 5px 0;
             border: none;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
             color: white;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
+            transition: background 0.3s;
         }
 
         .upgrade-btn:disabled {
@@ -97,72 +107,126 @@
         }
 
         .upgrade-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .leaderboard {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 10px;
+        }
+
+        .leaderboard h3 {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cooldown {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
             background: rgba(255, 255, 255, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .autoclicker-info {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎮 Мой Кликер</h1>
-            <div class="stats">
-                <div>Очки: <span id="score">0</span></div>
-                <div>Уровень: <span id="level">1</span></div>
-                <div>За клик: <span id="cpt">1</span></div>
-            </div>
-        </div>
-
-        <div class="game-area">
-            <button id="click-btn" class="click-button">🎯 КЛИК!</button>
-        </div>
-
-        <div class="upgrades">
-            <h3>⚡ Улучшения</h3>
-            <button class="upgrade-btn" data-cost="10" data-type="double">
-                Усилитель x2 - <span>10</span> очков
-            </button>
-            <button class="upgrade-btn" data-cost="30" data-type="triple">
-                Усилитель x3 - <span>30</span> очков
-            </button>
-            <button class="upgrade-btn" data-cost="50" data-type="mega">
-                Мега-клик x5 - <span>50</span> очков
-            </button>
-        </div>
+    <div id="app">
+        <div class="loading">Загрузка игры... 🎮</div>
     </div>
 
     <script>
-        // Ждем полной загрузки страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Страница загружена!');
+        // Функция инициализации Telegram Web App
+        function initTelegramApp() {
+            console.log('🚀 Инициализация Telegram Web App...');
+            
+            if (window.Telegram && Telegram.WebApp) {
+                console.log('✅ В Telegram Web App');
+                const tg = Telegram.WebApp;
+                tg.expand();
+                tg.setHeaderColor('#667eea');
+                tg.setBackgroundColor('#667eea');
+            }
+            
+            initGame();
+        }
+
+        // Основная игра
+        function initGame() {
+            console.log('🎮 Запуск игры...');
+            createGameInterface();
             
             // Состояние игры
             let gameState = {
                 score: 0,
                 level: 1,
-                clicksPerTap: 1
+                clicksPerTap: 1,
+                upgrades: {
+                    multiplier: 1,
+                    autoclicker: 0,
+                    autoclickerPower: 1
+                },
+                lastClickTime: 0,
+                clickCooldown: 100, // 100ms cooldown между кликами
+                leaderboard: []
             };
 
-            // Элементы DOM
-            const scoreElement = document.getElementById('score');
-            const levelElement = document.getElementById('level');
-            const clicksPerTapElement = document.getElementById('cpt');
-            const clickButton = document.getElementById('click-btn');
-
-            // Проверяем что элементы найдены
-            if (!scoreElement || !levelElement || !clicksPerTapElement || !clickButton) {
-                console.error('❌ Не найдены элементы на странице!');
-                return;
-            }
-
-            console.log('✅ Все элементы найдены');
+            let autoclickerInterval = null;
 
             // Загрузка состояния
             function loadGameState() {
                 try {
-                    const saved = localStorage.getItem('clickerGame');
+                    const saved = localStorage.getItem('telegramClickerPro');
                     if (saved) {
-                        gameState = JSON.parse(saved);
+                        const loaded = JSON.parse(saved);
+                        gameState = { ...gameState, ...loaded };
                         console.log('✅ Загружено:', gameState);
+                    }
+                    
+                    // Загружаем таблицу лидеров
+                    const leaders = localStorage.getItem('clickerLeaderboard');
+                    if (leaders) {
+                        gameState.leaderboard = JSON.parse(leaders);
                     }
                 } catch (e) {
                     console.error('❌ Ошибка загрузки:', e);
@@ -172,103 +236,350 @@
             // Сохранение состояния
             function saveGameState() {
                 try {
-                    localStorage.setItem('clickerGame', JSON.stringify(gameState));
-                    console.log('💾 Сохранено:', gameState);
+                    localStorage.setItem('telegramClickerPro', JSON.stringify({
+                        score: gameState.score,
+                        level: gameState.level,
+                        clicksPerTap: gameState.clicksPerTap,
+                        upgrades: gameState.upgrades
+                    }));
                 } catch (e) {
                     console.error('❌ Ошибка сохранения:', e);
                 }
             }
 
-            // Обновление интерфейса
-            function updateUI() {
-                console.log('🔄 Обновление UI, очки:', gameState.score);
-                scoreElement.textContent = gameState.score;
-                levelElement.textContent = gameState.level;
-                clicksPerTapElement.textContent = gameState.clicksPerTap;
-                
-                // Обновляем кнопки улучшений
-                document.querySelectorAll('.upgrade-btn').forEach(btn => {
-                    const cost = parseInt(btn.dataset.cost);
-                    btn.disabled = gameState.score < cost;
-                });
+            // Сохранение таблицы лидеров
+            function saveLeaderboard() {
+                try {
+                    // Добавляем текущего игрока в таблицу лидеров
+                    const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+                    const playerScore = gameState.score;
+                    
+                    // Находим игрока в таблице
+                    const playerIndex = gameState.leaderboard.findIndex(p => p.name === playerName);
+                    
+                    if (playerIndex !== -1) {
+                        // Обновляем счет если он больше
+                        if (playerScore > gameState.leaderboard[playerIndex].score) {
+                            gameState.leaderboard[playerIndex].score = playerScore;
+                        }
+                    } else {
+                        // Добавляем нового игрока
+                        gameState.leaderboard.push({
+                            name: playerName,
+                            score: playerScore
+                        });
+                    }
+                    
+                    // Сортируем по убыванию и оставляем топ-10
+                    gameState.leaderboard.sort((a, b) => b.score - a.score);
+                    gameState.leaderboard = gameState.leaderboard.slice(0, 10);
+                    
+                    localStorage.setItem('clickerLeaderboard', JSON.stringify(gameState.leaderboard));
+                } catch (e) {
+                    console.error('❌ Ошибка сохранения таблицы лидеров:', e);
+                }
             }
 
-            // Обработчик клика
-            function handleClick() {
-                console.log('🎯 Клик!');
-                gameState.score += gameState.clicksPerTap;
+            // Обновление интерфейса
+            function updateUI() {
+                const scoreElement = document.getElementById('score');
+                const levelElement = document.getElementById('level');
+                const clicksPerTapElement = document.getElementById('cpt');
+                const autoclickerInfo = document.getElementById('autoclicker-info');
+                
+                if (scoreElement) scoreElement.textContent = gameState.score.toLocaleString();
+                if (levelElement) levelElement.textContent = gameState.level;
+                if (clicksPerTapElement) clicksPerTapElement.textContent = gameState.clicksPerTap.toLocaleString();
+                
+                if (autoclickerInfo) {
+                    autoclickerInfo.textContent = `Автокликер: +${(gameState.upgrades.autoclicker * gameState.upgrades.autoclickerPower).toLocaleString()}/сек`;
+                }
+                
+                // Обновляем кнопки улучшений
+                updateUpgradeButtons();
+                // Обновляем таблицу лидеров
+                updateLeaderboard();
+            }
+
+            // Обработчик клика с защитой от спама
+            function handleClick(event) {
+                const now = Date.now();
+                const timeSinceLastClick = now - gameState.lastClickTime;
+                
+                // Проверяем кулдаун
+                if (timeSinceLastClick < gameState.clickCooldown) {
+                    return; // Игнорируем клик если кулдаун не прошел
+                }
+                
+                gameState.lastClickTime = now;
+                
+                // Добавляем очки
+                const clickValue = gameState.clicksPerTap * gameState.upgrades.multiplier;
+                gameState.score += clickValue;
                 
                 // Проверка уровня
-                if (gameState.score >= gameState.level * 50) {
+                if (gameState.score >= gameState.level * 100) {
                     gameState.level++;
-                    alert(`🎉 Новый уровень! Теперь вы ${gameState.level} уровня!`);
+                    if (window.Telegram && Telegram.WebApp) {
+                        Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                    }
                 }
                 
                 saveGameState();
+                saveLeaderboard();
                 updateUI();
                 
                 // Анимация кнопки
-                clickButton.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    clickButton.style.transform = 'scale(1)';
-                }, 100);
+                const clickButton = document.getElementById('click-btn');
+                if (clickButton) {
+                    clickButton.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        clickButton.style.transform = 'scale(1)';
+                    }, 100);
+                }
+                
+                // Временно блокируем кнопку на время кулдауна
+                if (clickButton) {
+                    clickButton.classList.add('cooldown');
+                    setTimeout(() => {
+                        clickButton.classList.remove('cooldown');
+                    }, gameState.clickCooldown);
+                }
+            }
+
+            // Автокликер
+            function startAutoclicker() {
+                if (autoclickerInterval) {
+                    clearInterval(autoclickerInterval);
+                }
+                
+                if (gameState.upgrades.autoclicker > 0) {
+                    autoclickerInterval = setInterval(() => {
+                        const autoValue = gameState.upgrades.autoclicker * gameState.upgrades.autoclickerPower;
+                        gameState.score += autoValue;
+                        saveGameState();
+                        updateUI();
+                    }, 1000); // Каждую секунду
+                }
+            }
+
+            // Обновление кнопок улучшений
+            function updateUpgradeButtons() {
+                const upgrades = [
+                    { id: 'multiplier', cost: 50, baseCost: 50 },
+                    { id: 'autoclicker', cost: 100, baseCost: 100 },
+                    { id: 'autoclicker-power', cost: 200, baseCost: 200 },
+                    { id: 'click-power', cost: 150, baseCost: 150 }
+                ];
+                
+                upgrades.forEach(upgrade => {
+                    const btn = document.getElementById(`upgrade-${upgrade.id}`);
+                    if (btn) {
+                        const cost = upgrade.cost;
+                        btn.disabled = gameState.score < cost;
+                        btn.querySelector('.cost').textContent = cost.toLocaleString();
+                    }
+                });
             }
 
             // Обработчики улучшений
             function setupUpgrades() {
-                document.querySelectorAll('.upgrade-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const cost = parseInt(this.dataset.cost);
-                        const type = this.dataset.type;
+                // Умножитель клика
+                document.getElementById('upgrade-multiplier')?.addEventListener('click', function() {
+                    const cost = 50 * Math.pow(2, gameState.upgrades.multiplier - 1);
+                    
+                    if (gameState.score >= cost) {
+                        gameState.score -= cost;
+                        gameState.upgrades.multiplier *= 2;
                         
-                        if (gameState.score >= cost) {
-                            gameState.score -= cost;
-                            
-                            let oldPower = gameState.clicksPerTap;
-                            
-                            switch(type) {
-                                case 'double':
-                                    gameState.clicksPerTap *= 2;
-                                    break;
-                                case 'triple':
-                                    gameState.clicksPerTap *= 3;
-                                    break;
-                                case 'mega':
-                                    gameState.clicksPerTap *= 5;
-                                    break;
-                            }
-                            
-                            console.log('🛒 Куплено улучшение:', type);
-                            
-                            // Увеличиваем стоимость
-                            const newCost = cost * 2;
-                            this.dataset.cost = newCost;
-                            this.querySelector('span').textContent = newCost;
-                            
-                            saveGameState();
-                            updateUI();
-                            
-                            alert(`✅ Улучшение куплено! Теперь клик дает: ${gameState.clicksPerTap}`);
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
                         }
+                        
+                        saveGameState();
+                        updateUI();
+                    }
+                });
+
+                // Автокликер
+                document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
+                    const cost = 100 * Math.pow(2, gameState.upgrades.autoclicker);
+                    
+                    if (gameState.score >= cost) {
+                        gameState.score -= cost;
+                        gameState.upgrades.autoclicker += 1;
+                        startAutoclicker();
+                        
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
+                        
+                        saveGameState();
+                        updateUI();
+                    }
+                });
+
+                // Мощность автокликера
+                document.getElementById('upgrade-autoclicker-power')?.addEventListener('click', function() {
+                    const cost = 200 * Math.pow(2, gameState.upgrades.autoclickerPower - 1);
+                    
+                    if (gameState.score >= cost) {
+                        gameState.score -= cost;
+                        gameState.upgrades.autoclickerPower *= 2;
+                        startAutoclicker();
+                        
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
+                        
+                        saveGameState();
+                        updateUI();
+                    }
+                });
+
+                // Сила клика
+                document.getElementById('upgrade-click-power')?.addEventListener('click', function() {
+                    const cost = 150 * Math.pow(2, Math.log2(gameState.clicksPerTap));
+                    
+                    if (gameState.score >= cost) {
+                        gameState.score -= cost;
+                        gameState.clicksPerTap *= 2;
+                        
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
+                        
+                        saveGameState();
+                        updateUI();
+                    }
+                });
+            }
+
+            // Обновление таблицы лидеров
+            function updateLeaderboard() {
+                const leaderboardList = document.getElementById('leaderboard-list');
+                if (leaderboardList) {
+                    leaderboardList.innerHTML = gameState.leaderboard
+                        .map((player, index) => `
+                            <div class="leaderboard-item">
+                                <span>${index + 1}. ${player.name}</span>
+                                <span>${player.score.toLocaleString()}</span>
+                            </div>
+                        `)
+                        .join('');
+                }
+            }
+
+            // Система вкладок
+            function setupTabs() {
+                const tabButtons = document.querySelectorAll('.tab-btn');
+                const tabContents = document.querySelectorAll('.tab-content');
+                
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        // Убираем активный класс у всех кнопок и контента
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        tabContents.forEach(content => content.classList.remove('active'));
+                        
+                        // Добавляем активный класс к выбранной кнопке и контенту
+                        button.classList.add('active');
+                        const tabName = button.getAttribute('data-tab');
+                        document.getElementById(`${tabName}-tab`).classList.add('active');
                     });
                 });
             }
 
-            // Инициализация игры
-            function initGame() {
-                console.log('🎮 Инициализация игры...');
-                
+            // Создание интерфейса игры
+            function createGameInterface() {
+                const app = document.getElementById('app');
+                app.innerHTML = `
+                    <div class="container">
+                        <div class="header">
+                            <h1>🎮 Про Кликер</h1>
+                            <div class="stats">
+                                <div>Очки: <span id="score">0</span></div>
+                                <div>Уровень: <span id="level">1</span></div>
+                                <div>За клик: <span id="cpt">1</span></div>
+                                <div id="autoclicker-info" class="autoclicker-info">Автокликер: +0/сек</div>
+                            </div>
+                        </div>
+
+                        <div class="game-area">
+                            <button id="click-btn" class="click-button">🎯 КЛИК!</button>
+                        </div>
+
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" data-tab="upgrades">Улучшения</button>
+                            <button class="tab-btn" data-tab="leaderboard">Лидеры</button>
+                        </div>
+
+                        <div id="upgrades-tab" class="tab-content active">
+                            <div class="upgrades">
+                                <h3>⚡ Улучшения</h3>
+                                <button class="upgrade-btn" id="upgrade-click-power">
+                                    💪 Сила клика x2<br>
+                                    <small>Стоимость: <span class="cost">150</span></small>
+                                </button>
+                                <button class="upgrade-btn" id="upgrade-multiplier">
+                                    🔥 Множитель x2<br>
+                                    <small>Стоимость: <span class="cost">50</span></small>
+                                </button>
+                                <button class="upgrade-btn" id="upgrade-autoclicker">
+                                    🤖 Автокликер +1<br>
+                                    <small>Стоимость: <span class="cost">100</span></small>
+                                </button>
+                                <button class="upgrade-btn" id="upgrade-autoclicker-power">
+                                    🚀 Мощность автокликера x2<br>
+                                    <small>Стоимость: <span class="cost">200</span></small>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="leaderboard-tab" class="tab-content">
+                            <div class="leaderboard">
+                                <h3>🏆 Топ игроков</h3>
+                                <div id="leaderboard-list">
+                                    <div class="leaderboard-item">
+                                        <span>1. Вы</span>
+                                        <span>0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Инициализация
+            function startGame() {
+                console.log('🎯 Старт игры');
                 loadGameState();
                 updateUI();
-                
-                clickButton.addEventListener('click', handleClick);
+                startAutoclicker();
                 setupUpgrades();
+                setupTabs();
                 
-                console.log('✅ Игра готова!');
+                const clickButton = document.getElementById('click-btn');
+                if (clickButton) {
+                    // Используем touchstart для мобильных и click для десктопа
+                    clickButton.addEventListener('click', handleClick);
+                    clickButton.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        handleClick(e);
+                    });
+                }
+                
+                console.log('✅ Игра запущена');
             }
 
             // Запускаем игру
-            initGame();
+            startGame();
+        }
+
+        // Запускаем при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Страница загружена');
+            initTelegramApp();
         });
     </script>
 </body>
