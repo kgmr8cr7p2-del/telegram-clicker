@@ -16,6 +16,9 @@
         .game-area { text-align: center; margin: 20px 0; }
         .click-button { background: linear-gradient(45deg, #FF6B6B, #FFE66D); border: none; border-radius: 50%; width: 150px; height: 150px; font-size: 18px; font-weight: bold; color: #333; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4); display: block; margin: 0 auto; touch-action: manipulation; user-select: none; }
         .click-button:active { transform: scale(0.95); }
+        .click-button:disabled { background: #cccccc; cursor: not-allowed; }
+        .energy-bar { width: 100%; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        .energy-fill { height: 100%; background: linear-gradient(90deg, #00ff88, #00ccff); transition: width 0.3s; }
         .upgrades { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
         .upgrades h3 { margin-bottom: 10px; text-align: center; }
         .upgrade-btn { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; font-size: 12px; transition: background 0.3s; }
@@ -46,10 +49,11 @@
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzGhuJLb5BlJwNxDTQw4dtQ17bCnYe-tWM_MUQn5oChUVEqGgUupv1CMnrUBAm8w93l/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw7Mg4o4z4p9AOzPFFaQ9jNwKuusS6dBdxqa9SeIcUPZhrsnr-9WwykILAt9xvuCh62/exec';
 
         let gameState;
         let autoclickerInterval;
+        let energyInterval;
 
         function initTelegramApp() {
             console.log('🚀 Инициализация Telegram Web App...');
@@ -64,12 +68,22 @@
             console.log('🎮 Запуск игры...');
             createGameInterface();
             
-            // Инициализируем состояние по умолчанию
+            // Инициализируем состояние с системой энергии
             gameState = {
-                score: 0,
+                coins: 0,
                 level: 1,
-                clicksPerTap: 1,
-                upgrades: { multiplier: 1, autoclicker: 0, autoclickerPower: 1 },
+                energy: 650,           // Текущая энергия
+                maxEnergy: 650,        // Максимальная энергия
+                energyPerClick: 5,     // Энергия за клик
+                energyRegen: 1,        // Восстановление энергии в секунду
+                
+                // Улучшения
+                upgrades: {
+                    clickPower: { level: 1, cost: 50 },        // +1 монета за клик
+                    energyRegen: { level: 1, cost: 100 },      // +1 энергия в секунду
+                    autoclicker: { level: 0, cost: 200 }       // +1 авто-клик в секунду
+                },
+                
                 lastClickTime: 0,
                 clickCooldown: 100,
                 leaderboard: [],
@@ -78,6 +92,7 @@
             };
 
             autoclickerInterval = null;
+            energyInterval = null;
 
             function getUserId() {
                 if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
@@ -90,7 +105,7 @@
                 return window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
             }
 
-            // 📥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ПРОГРЕССА ПРИ ЗАПУСКЕ
+            // 📥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ПРОГРЕССА
             async function loadGameProgress() {
                 try {
                     console.log('📥 Автозагрузка прогресса...');
@@ -109,7 +124,7 @@
                         gameState.totalPlayers = data.totalPlayers || 0;
                         gameState.serverOnline = true;
                         
-                        // 🎯 АВТОМАТИЧЕСКИ ВОССТАНАВЛИВАЕМ ВАШ ПРОГРЕСС
+                        // Восстанавливаем прогресс
                         await restoreMyProgress();
                         
                         console.log('✅ Прогресс загружен автоматически');
@@ -126,7 +141,7 @@
                 startGameFeatures();
             }
 
-            // 🎯 ВОССТАНОВЛЕНИЕ ВАШЕГО ПРОГРЕССА ИЗ ТАБЛИЦЫ ЛИДЕРОВ
+            // 🎯 ВОССТАНОВЛЕНИЕ ПРОГРЕССА
             async function restoreMyProgress() {
                 try {
                     const playerName = getPlayerName();
@@ -136,25 +151,9 @@
                     
                     if (myBestResult) {
                         console.log('🎯 Восстанавливаем ваш прогресс:', myBestResult.score);
-                        
-                        // Восстанавливаем очки
-                        gameState.score = myBestResult.score;
-                        
-                        // Автоматически рассчитываем уровень на основе очков
-                        gameState.level = Math.max(1, Math.floor(gameState.score / 100) + 1);
-                        
-                        // Автоматически рассчитываем улучшения на основе очков
-                        const calculatedClicks = Math.max(1, Math.pow(2, Math.floor(Math.log2(gameState.score / 1000))));
-                        gameState.clicksPerTap = calculatedClicks;
-                        
-                        console.log('✅ Прогресс восстановлен:', {
-                            score: gameState.score,
-                            level: gameState.level,
-                            clicksPerTap: gameState.clicksPerTap
-                        });
-                        
-                        // Показываем уведомление о восстановлении
-                        showNotification(`Прогресс восстановлен! ${gameState.score.toLocaleString()} очков ✅`);
+                        gameState.coins = myBestResult.score;
+                        gameState.level = Math.max(1, Math.floor(gameState.coins / 100) + 1);
+                        showNotification(`Прогресс восстановлен! ${gameState.coins.toLocaleString()} монет ✅`);
                     } else {
                         console.log('ℹ️ Вы новый игрок, начинаем с 0');
                         showNotification('Добро пожаловать! Начинаем с начала 🎮');
@@ -163,6 +162,31 @@
                 } catch (error) {
                     console.error('❌ Ошибка восстановления прогресса:', error);
                 }
+            }
+
+            // ⚡ СИСТЕМА ЭНЕРГИИ
+            function startEnergySystem() {
+                if (energyInterval) clearInterval(energyInterval);
+                
+                energyInterval = setInterval(() => {
+                    if (gameState.energy < gameState.maxEnergy) {
+                        gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + gameState.energyRegen);
+                        updateEnergyBar();
+                        updateUI();
+                    }
+                }, 1000);
+            }
+
+            function updateEnergyBar() {
+                const energyFill = document.getElementById('energy-fill');
+                if (energyFill) {
+                    const percentage = (gameState.energy / gameState.maxEnergy) * 100;
+                    energyFill.style.width = percentage + '%';
+                }
+            }
+
+            function canClick() {
+                return gameState.energy >= gameState.energyPerClick;
             }
 
             function showNotification(message) {
@@ -187,18 +211,16 @@
                 }, 3000);
             }
 
-            // 📤 СОХРАНЕНИЕ ОЧКОВ НА СЕРВЕР
-            async function saveScoreToServer(score) {
+            // 📤 СОХРАНЕНИЕ НА СЕРВЕР
+            async function saveScoreToServer(coins) {
                 try {
                     const playerName = getPlayerName();
                     const userId = getUserId();
                     
-                    console.log('📤 Сохранение на сервер:', playerName, score);
-                    
                     const formData = new URLSearchParams();
                     formData.append('action', 'submitScore');
                     formData.append('name', playerName);
-                    formData.append('score', score);
+                    formData.append('score', coins);
                     formData.append('userId', userId);
                     
                     const response = await fetch(API_URL, {
@@ -218,7 +240,6 @@
                     if (data && data.success) {
                         console.log('✅ Результат сохранен на сервере!');
                         gameState.serverOnline = true;
-                        // Обновляем таблицу лидеров
                         await loadGameProgress();
                     } else {
                         throw new Error(data ? data.error : 'Save failed');
@@ -231,18 +252,21 @@
             }
 
             function updateUI() {
-                const scoreElement = document.getElementById('score');
+                const coinsElement = document.getElementById('coins');
                 const levelElement = document.getElementById('level');
-                const clicksPerTapElement = document.getElementById('cpt');
+                const energyElement = document.getElementById('energy');
+                const clickPowerElement = document.getElementById('click-power');
                 const autoclickerInfo = document.getElementById('autoclicker-info');
                 const serverStatus = document.getElementById('server-status');
                 
-                if (scoreElement) scoreElement.textContent = gameState.score.toLocaleString();
+                if (coinsElement) coinsElement.textContent = gameState.coins.toLocaleString();
                 if (levelElement) levelElement.textContent = gameState.level;
-                if (clicksPerTapElement) clicksPerTapElement.textContent = gameState.clicksPerTap.toLocaleString();
+                if (energyElement) energyElement.textContent = `${gameState.energy}/${gameState.maxEnergy}`;
+                if (clickPowerElement) clickPowerElement.textContent = `+${gameState.upgrades.clickPower.level} монет`;
                 
                 if (autoclickerInfo) {
-                    autoclickerInfo.textContent = `Автокликер: +${(gameState.upgrades.autoclicker * gameState.upgrades.autoclickerPower).toLocaleString()}/сек`;
+                    const autoCoins = gameState.upgrades.autoclicker.level * gameState.upgrades.clickPower.level;
+                    autoclickerInfo.textContent = `Автокликер: +${autoCoins} монет/сек`;
                 }
                 
                 if (serverStatus) {
@@ -251,27 +275,41 @@
                 }
                 
                 updateUpgradeButtons();
+                updateEnergyBar();
                 updateLeaderboard();
+                
+                // Обновляем состояние кнопки клика
+                const clickButton = document.getElementById('click-btn');
+                if (clickButton) {
+                    clickButton.disabled = !canClick();
+                }
             }
 
             function handleClick(event) {
+                if (!canClick()) return;
+                
                 const now = Date.now();
                 const timeSinceLastClick = now - gameState.lastClickTime;
                 if (timeSinceLastClick < gameState.clickCooldown) return;
                 
                 gameState.lastClickTime = now;
-                const clickValue = gameState.clicksPerTap * gameState.upgrades.multiplier;
-                gameState.score += clickValue;
                 
-                if (gameState.score >= gameState.level * 100) {
+                // Тратим энергию
+                gameState.energy -= gameState.energyPerClick;
+                
+                // Получаем монеты
+                const coinsEarned = gameState.upgrades.clickPower.level;
+                gameState.coins += coinsEarned;
+                
+                if (gameState.coins >= gameState.level * 100) {
                     gameState.level++;
                     if (window.Telegram && Telegram.WebApp) {
                         Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
                     }
                 }
                 
-                // Автоматически сохраняем на сервер
-                saveScoreToServer(gameState.score);
+                // Сохраняем на сервер
+                saveScoreToServer(gameState.coins);
                 updateUI();
                 
                 const clickButton = document.getElementById('click-btn');
@@ -285,85 +323,103 @@
 
             function startAutoclicker() {
                 if (autoclickerInterval) clearInterval(autoclickerInterval);
-                if (gameState.upgrades.autoclicker > 0) {
+                
+                if (gameState.upgrades.autoclicker.level > 0) {
                     autoclickerInterval = setInterval(() => {
-                        const autoValue = gameState.upgrades.autoclicker * gameState.upgrades.autoclickerPower;
-                        gameState.score += autoValue;
-                        
-                        // Автоматически сохраняем каждые 10 секунд при автокликере
-                        if (gameState.score % 100 === 0) {
-                            saveScoreToServer(gameState.score);
+                        if (canClick()) {
+                            // Тратим энергию
+                            gameState.energy -= gameState.energyPerClick;
+                            
+                            // Получаем монеты
+                            const autoCoins = gameState.upgrades.autoclicker.level * gameState.upgrades.clickPower.level;
+                            gameState.coins += autoCoins;
+                            
+                            // Сохраняем каждые 10 монет
+                            if (gameState.coins % 10 === 0) {
+                                saveScoreToServer(gameState.coins);
+                            }
+                            
+                            updateUI();
                         }
-                        
-                        updateUI();
                     }, 1000);
                 }
             }
 
             function updateUpgradeButtons() {
-                const upgrades = [
-                    { id: 'click-power', cost: 150 },
-                    { id: 'multiplier', cost: 50 },
-                    { id: 'autoclicker', cost: 100 },
-                    { id: 'autoclicker-power', cost: 200 }
-                ];
+                // Кнопка улучшения кликов
+                const clickBtn = document.getElementById('upgrade-click-power');
+                if (clickBtn) {
+                    const cost = gameState.upgrades.clickPower.cost;
+                    clickBtn.disabled = gameState.coins < cost;
+                    clickBtn.innerHTML = `💪 +1 монета за клик<br><small>Уровень: ${gameState.upgrades.clickPower.level} | Стоимость: ${cost}</small>`;
+                }
                 
-                upgrades.forEach(upgrade => {
-                    const btn = document.getElementById(`upgrade-${upgrade.id}`);
-                    if (btn) {
-                        btn.disabled = gameState.score < upgrade.cost;
-                    }
-                });
+                // Кнопка улучшения восстановления энергии
+                const energyBtn = document.getElementById('upgrade-energy-regen');
+                if (energyBtn) {
+                    const cost = gameState.upgrades.energyRegen.cost;
+                    energyBtn.disabled = gameState.coins < cost;
+                    energyBtn.innerHTML = `⚡ +1 энергия/сек<br><small>Уровень: ${gameState.upgrades.energyRegen.level} | Стоимость: ${cost}</small>`;
+                }
+                
+                // Кнопка автокликера
+                const autoBtn = document.getElementById('upgrade-autoclicker');
+                if (autoBtn) {
+                    const cost = gameState.upgrades.autoclicker.cost;
+                    autoBtn.disabled = gameState.coins < cost;
+                    autoBtn.innerHTML = `🤖 +1 авто-клик/сек<br><small>Уровень: ${gameState.upgrades.autoclicker.level} | Стоимость: ${cost}</small>`;
+                }
             }
 
             function setupUpgrades() {
-                document.getElementById('upgrade-multiplier')?.addEventListener('click', function() {
-                    const cost = 50;
-                    if (gameState.score >= cost) {
-                        gameState.score -= cost;
-                        gameState.upgrades.multiplier *= 2;
-                        if (window.Telegram && Telegram.WebApp) {
-                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-                        }
-                        updateUI();
-                    }
-                });
-
-                document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
-                    const cost = 100;
-                    if (gameState.score >= cost) {
-                        gameState.score -= cost;
-                        gameState.upgrades.autoclicker += 1;
-                        startAutoclicker();
-                        if (window.Telegram && Telegram.WebApp) {
-                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-                        }
-                        updateUI();
-                    }
-                });
-
-                document.getElementById('upgrade-autoclicker-power')?.addEventListener('click', function() {
-                    const cost = 200;
-                    if (gameState.score >= cost) {
-                        gameState.score -= cost;
-                        gameState.upgrades.autoclickerPower *= 2;
-                        startAutoclicker();
-                        if (window.Telegram && Telegram.WebApp) {
-                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
-                        }
-                        updateUI();
-                    }
-                });
-
+                // Улучшение кликов
                 document.getElementById('upgrade-click-power')?.addEventListener('click', function() {
-                    const cost = 150;
-                    if (gameState.score >= cost) {
-                        gameState.score -= cost;
-                        gameState.clicksPerTap *= 2;
+                    const upgrade = gameState.upgrades.clickPower;
+                    if (gameState.coins >= upgrade.cost) {
+                        gameState.coins -= upgrade.cost;
+                        upgrade.level += 1;
+                        upgrade.cost *= 2; // Удваиваем стоимость
+                        
                         if (window.Telegram && Telegram.WebApp) {
                             Telegram.WebApp.HapticFeedback.impactOccurred('medium');
                         }
                         updateUI();
+                        showNotification(`💪 Улучшено! Теперь +${upgrade.level} монет за клик`);
+                    }
+                });
+
+                // Улучшение восстановления энергии
+                document.getElementById('upgrade-energy-regen')?.addEventListener('click', function() {
+                    const upgrade = gameState.upgrades.energyRegen;
+                    if (gameState.coins >= upgrade.cost) {
+                        gameState.coins -= upgrade.cost;
+                        upgrade.level += 1;
+                        gameState.energyRegen = upgrade.level;
+                        upgrade.cost *= 2; // Удваиваем стоимость
+                        
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
+                        updateUI();
+                        showNotification(`⚡ Улучшено! Теперь +${upgrade.level} энергии/сек`);
+                    }
+                });
+
+                // Улучшение автокликера
+                document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
+                    const upgrade = gameState.upgrades.autoclicker;
+                    if (gameState.coins >= upgrade.cost) {
+                        gameState.coins -= upgrade.cost;
+                        upgrade.level += 1;
+                        upgrade.cost *= 2; // Удваиваем стоимость
+                        
+                        startAutoclicker();
+                        
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
+                        updateUI();
+                        showNotification(`🤖 Улучшено! Теперь +${upgrade.level} авто-клик/сек`);
                     }
                 });
             }
@@ -440,12 +496,19 @@
             }
 
             function resetGame() {
-                if (confirm('🔄 Сбросить игру?\nВсе ваши очки и улучшения будут потеряны.')) {
+                if (confirm('🔄 Сбросить игру?\nВсе ваши монеты и улучшения будут потеряны.')) {
                     gameState = {
-                        score: 0,
+                        coins: 0,
                         level: 1,
-                        clicksPerTap: 1,
-                        upgrades: { multiplier: 1, autoclicker: 0, autoclickerPower: 1 },
+                        energy: 650,
+                        maxEnergy: 650,
+                        energyPerClick: 5,
+                        energyRegen: 1,
+                        upgrades: {
+                            clickPower: { level: 1, cost: 50 },
+                            energyRegen: { level: 1, cost: 100 },
+                            autoclicker: { level: 0, cost: 200 }
+                        },
                         lastClickTime: 0,
                         clickCooldown: 100,
                         leaderboard: [],
@@ -453,13 +516,12 @@
                         serverOnline: false
                     };
                     
-                    if (autoclickerInterval) {
-                        clearInterval(autoclickerInterval);
-                        autoclickerInterval = null;
-                    }
+                    if (autoclickerInterval) clearInterval(autoclickerInterval);
+                    if (energyInterval) clearInterval(energyInterval);
                     
                     updateUI();
                     loadGameProgress();
+                    startEnergySystem();
                     showNotification('Игра сброшена! ✅');
                 }
             }
@@ -469,18 +531,22 @@
                 app.innerHTML = `
                     <div class="container">
                         <div class="header">
-                            <h1>🎮 Про Кликер</h1>
+                            <h1>🎮 Энерго-Кликер</h1>
                             <div class="stats">
-                                <div>Очки: <span id="score">0</span></div>
+                                <div>Монеты: <span id="coins">0</span></div>
                                 <div>Уровень: <span id="level">1</span></div>
-                                <div>За клик: <span id="cpt">1</span></div>
-                                <div id="autoclicker-info" class="autoclicker-info">Автокликер: +0/сек</div>
+                                <div>Энергия: <span id="energy">650/650</span></div>
+                                <div>За клик: <span id="click-power">+1 монет</span></div>
+                                <div id="autoclicker-info" class="autoclicker-info">Автокликер: +0 монет/сек</div>
                                 <div id="server-status" class="server-status">Подключение к серверу...</div>
                             </div>
                         </div>
 
                         <div class="game-area">
-                            <button id="click-btn" class="click-button">🎯 КЛИК!</button>
+                            <button id="click-btn" class="click-button">⚡ КЛИК!<br><small>(-5 энергии)</small></button>
+                            <div class="energy-bar">
+                                <div id="energy-fill" class="energy-fill"></div>
+                            </div>
                             <div style="text-align: center; margin-top: 10px;">
                                 <button class="reset-btn" onclick="resetGame()">🔄 Сбросить игру</button>
                             </div>
@@ -495,20 +561,16 @@
                             <div class="upgrades">
                                 <h3>⚡ Улучшения</h3>
                                 <button class="upgrade-btn" id="upgrade-click-power">
-                                    💪 Сила клика x2<br>
-                                    <small>Стоимость: 150</small>
+                                    💪 +1 монета за клик<br>
+                                    <small>Уровень: 1 | Стоимость: 50</small>
                                 </button>
-                                <button class="upgrade-btn" id="upgrade-multiplier">
-                                    🔥 Множитель x2<br>
-                                    <small>Стоимость: 50</small>
+                                <button class="upgrade-btn" id="upgrade-energy-regen">
+                                    ⚡ +1 энергия/сек<br>
+                                    <small>Уровень: 1 | Стоимость: 100</small>
                                 </button>
                                 <button class="upgrade-btn" id="upgrade-autoclicker">
-                                    🤖 Автокликер +1<br>
-                                    <small>Стоимость: 100</small>
-                                </button>
-                                <button class="upgrade-btn" id="upgrade-autoclicker-power">
-                                    🚀 Мощность автокликера x2<br>
-                                    <small>Стоимость: 200</small>
+                                    🤖 +1 авто-клик/сек<br>
+                                    <small>Уровень: 0 | Стоимость: 200</small>
                                 </button>
                             </div>
                         </div>
@@ -526,6 +588,7 @@
             }
 
             function startGameFeatures() {
+                startEnergySystem();
                 startAutoclicker();
                 setupUpgrades();
                 setupTabs();
@@ -546,16 +609,11 @@
                 console.log('✅ Игра полностью запущена');
             }
 
-            // 🚀 ЗАПУСКАЕМ ИГРУ - СНАЧАЛА ГРУЗИМ ПРОГРЕСС, ПОТОМ ВСЕ ОСТАЛЬНОЕ
+            // 🚀 ЗАПУСКАЕМ ИГРУ
             async function startGame() {
                 console.log('🎯 Начинаем загрузку игры...');
-                
-                // Сначала загружаем прогресс с сервера
                 await loadGameProgress();
-                
-                // Затем запускаем все функции игры
                 startGameFeatures();
-                
                 console.log('✅ Игра готова!');
             }
 
