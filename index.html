@@ -124,11 +124,10 @@
         }
 
         .leaderboard-item {
-            padding: 10px 12px;
-            margin: 5px 0;
-            border-radius: 10px;
+            padding: 8px 10px;
+            margin: 3px 0;
+            border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
         }
 
         .cooldown {
@@ -177,39 +176,17 @@
             opacity: 0.8;
         }
 
-        .server-status {
-            text-align: center;
-            font-size: 12px;
-            margin-top: 5px;
-            padding: 5px;
-            border-radius: 5px;
-        }
-
-        .status-online {
-            background: rgba(76, 175, 80, 0.3);
-            color: #90EE90;
-        }
-
-        .status-offline {
-            background: rgba(244, 67, 54, 0.3);
-            color: #FF6B6B;
-        }
-
         .loading {
             text-align: center;
             padding: 20px;
             font-size: 16px;
         }
 
-        .refresh-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            padding: 8px 15px;
-            margin-top: 10px;
-            cursor: pointer;
-            font-size: 12px;
+        .server-status {
+            text-align: center;
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -220,7 +197,8 @@
 
     <script>
         // 🔧 НАСТРОЙКИ СЕРВЕРА
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzKIxCrvnBjRg2MXZCW1FE0P40NuY_-4dTmwA08AbmksZxwWcxn9pCpwH3YiOnwT78F/exec;
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzGhuJLb5BlJwNxDTQw4dtQ17bCnYe-tWM_MUQn5oChUVEqGgUupv1CMnrUBAm8w93l/exec';
+
         function initTelegramApp() {
             console.log('🚀 Инициализация Telegram Web App...');
             
@@ -268,10 +246,7 @@
                     const saved = localStorage.getItem('telegramClickerPro');
                     if (saved) {
                         const loaded = JSON.parse(saved);
-                        gameState.score = loaded.score || 0;
-                        gameState.level = loaded.level || 1;
-                        gameState.clicksPerTap = loaded.clicksPerTap || 1;
-                        gameState.upgrades = loaded.upgrades || { multiplier: 1, autoclicker: 0, autoclickerPower: 1 };
+                        gameState = { ...gameState, ...loaded };
                         console.log('✅ Загружено состояние игры');
                     }
                 } catch (e) {
@@ -317,12 +292,26 @@
                     
                 } catch (error) {
                     console.error('❌ Ошибка загрузки лидерборда:', error);
+                    console.log('🔄 Используем локальную таблицу...');
                     gameState.serverOnline = false;
-                    gameState.leaderboard = [];
-                    gameState.totalPlayers = 0;
+                    loadLocalLeaderboard();
                 }
                 
                 updateUI();
+            }
+
+            function loadLocalLeaderboard() {
+                const local = localStorage.getItem('localLeaderboard');
+                if (local) {
+                    gameState.leaderboard = JSON.parse(local);
+                } else {
+                    gameState.leaderboard = [
+                        { name: "Чемпион", score: 1000000, date: new Date().toISOString(), userId: "demo1" },
+                        { name: "Второй", score: 500000, date: new Date().toISOString(), userId: "demo2" },
+                        { name: "Третий", score: 250000, date: new Date().toISOString(), userId: "demo3" }
+                    ];
+                }
+                gameState.totalPlayers = gameState.leaderboard.length;
             }
 
             // 📤 ОТПРАВКА РЕЗУЛЬТАТА НА СЕРВЕР
@@ -366,12 +355,50 @@
                 } catch (error) {
                     console.error('❌ Ошибка сохранения на сервере:', error);
                     gameState.serverOnline = false;
+                    // Сохраняем локально
+                    saveScoreLocally(score);
                 }
+            }
+
+            // 💾 ЛОКАЛЬНОЕ СОХРАНЕНИЕ
+            function saveScoreLocally(score) {
+                const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+                const userId = getUserId();
+                
+                console.log('💾 Сохранение результата локально:', playerName, score);
+                
+                const playerIndex = gameState.leaderboard.findIndex(p => p.userId === userId);
+                
+                if (playerIndex !== -1) {
+                    if (score > gameState.leaderboard[playerIndex].score) {
+                        gameState.leaderboard[playerIndex].score = score;
+                        gameState.leaderboard[playerIndex].date = new Date().toISOString();
+                    }
+                } else {
+                    gameState.leaderboard.push({
+                        name: playerName,
+                        score: score,
+                        date: new Date().toISOString(),
+                        userId: userId
+                    });
+                }
+                
+                gameState.leaderboard.sort((a, b) => b.score - a.score);
+                gameState.leaderboard = gameState.leaderboard.slice(0, 10);
+                gameState.totalPlayers = gameState.leaderboard.length;
+                
+                localStorage.setItem('localLeaderboard', JSON.stringify(gameState.leaderboard));
+                updateUI();
             }
 
             async function saveLeaderboard() {
                 const playerScore = gameState.score;
+                
+                // Пытаемся сохранить на сервер
                 await saveScoreToServer(playerScore);
+                
+                // Всегда сохраняем локально для надежности
+                localStorage.setItem('localLeaderboard', JSON.stringify(gameState.leaderboard));
             }
 
             function updateUI() {
@@ -391,7 +418,7 @@
                 
                 if (serverStatus) {
                     serverStatus.textContent = gameState.serverOnline ? '🟢 Сервер онлайн' : '🔴 Сервер офлайн';
-                    serverStatus.className = gameState.serverOnline ? 'server-status status-online' : 'server-status status-offline';
+                    serverStatus.style.color = gameState.serverOnline ? '#90EE90' : '#FF6B6B';
                 }
                 
                 updateUpgradeButtons();
@@ -456,6 +483,7 @@
             }
 
             function setupUpgrades() {
+                // Умножитель клика
                 document.getElementById('upgrade-multiplier')?.addEventListener('click', function() {
                     const cost = 50;
                     if (gameState.score >= cost) {
@@ -469,6 +497,7 @@
                     }
                 });
 
+                // Автокликер
                 document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
                     const cost = 100;
                     if (gameState.score >= cost) {
@@ -483,6 +512,7 @@
                     }
                 });
 
+                // Мощность автокликера
                 document.getElementById('upgrade-autoclicker-power')?.addEventListener('click', function() {
                     const cost = 200;
                     if (gameState.score >= cost) {
@@ -497,6 +527,7 @@
                     }
                 });
 
+                // Сила клика
                 document.getElementById('upgrade-click-power')?.addEventListener('click', function() {
                     const cost = 150;
                     if (gameState.score >= cost) {
@@ -513,26 +544,12 @@
 
             function updateLeaderboard() {
                 const leaderboardList = document.getElementById('leaderboard-list');
-                const refreshBtn = document.getElementById('refresh-btn');
-                
                 if (leaderboardList) {
                     const currentPlayerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
                     const currentUserId = getUserId();
                     
-                    if (!gameState.serverOnline) {
-                        leaderboardList.innerHTML = `
-                            <div style="text-align: center; padding: 20px; color: #FF6B6B;">
-                                ❌ Сервер недоступен<br>
-                                <small>Попробуйте обновить страницу</small>
-                            </div>
-                        `;
-                    } else if (gameState.leaderboard.length === 0) {
-                        leaderboardList.innerHTML = `
-                            <div style="text-align: center; padding: 20px;">
-                                🏆 Таблица лидеров пуста!<br>
-                                <small>Будьте первым игроком!</small>
-                            </div>
-                        `;
+                    if (gameState.leaderboard.length === 0) {
+                        leaderboardList.innerHTML = '<div style="text-align: center; padding: 20px;">Пока нет игроков!<br>Будьте первым! 🏆</div>';
                     } else {
                         leaderboardList.innerHTML = gameState.leaderboard.map((player, index) => {
                             const isCurrentPlayer = (player.userId === currentUserId);
@@ -542,16 +559,14 @@
                             return `
                                 <div class="leaderboard-item" style="${isCurrentPlayer ? 'background: linear-gradient(90deg, rgba(255,215,0,0.3) 0%, rgba(255,215,0,0.1) 100%); border-left: 4px solid gold;' : ''}">
                                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div style="flex: 1;">
-                                            <div style="font-weight: ${isCurrentPlayer ? 'bold' : 'normal'}; font-size: 14px;">
+                                        <div>
+                                            <span style="font-weight: ${isCurrentPlayer ? 'bold' : 'normal'}; font-size: 14px;">
                                                 ${medal} ${player.name} 
                                                 ${isCurrentPlayer ? ' <span style="color: gold;">(Вы) 👑</span>' : ''}
-                                            </div>
+                                            </span>
                                             <div style="font-size: 10px; opacity: 0.7; margin-top: 2px;">${date}</div>
                                         </div>
-                                        <div style="font-weight: bold; font-size: 16px; color: #FFE66D; margin-left: 10px;">
-                                            ${player.score.toLocaleString()}
-                                        </div>
+                                        <span style="font-weight: bold; font-size: 16px; color: #FFE66D;">${player.score.toLocaleString()}</span>
                                     </div>
                                 </div>
                             `;
@@ -561,11 +576,7 @@
 
                 const statsElement = document.getElementById('leaderboard-stats');
                 if (statsElement) {
-                    if (gameState.serverOnline) {
-                        statsElement.innerHTML = `Всего игроков: ${gameState.totalPlayers} 🎮`;
-                    } else {
-                        statsElement.innerHTML = `Сервер недоступен 🔴`;
-                    }
+                    statsElement.innerHTML = `Всего игроков: ${gameState.totalPlayers} 🎮`;
                 }
             }
 
@@ -580,11 +591,6 @@
                         button.classList.add('active');
                         const tabName = button.getAttribute('data-tab');
                         document.getElementById(`${tabName}-tab`).classList.add('active');
-                        
-                        // При переключении на лидерборд обновляем данные
-                        if (tabName === 'leaderboard') {
-                            loadLeaderboard();
-                        }
                     });
                 });
             }
@@ -640,7 +646,6 @@
                                 <h3>🏆 Топ игроков</h3>
                                 <div id="leaderboard-list">Загрузка с сервера... ⏳</div>
                                 <div id="leaderboard-stats" class="leaderboard-stats"></div>
-                                <button id="refresh-btn" class="refresh-btn" onclick="loadLeaderboard()">🔄 Обновить</button>
                             </div>
                         </div>
                     </div>
@@ -668,10 +673,12 @@
                     });
                 }
                 
-                // Сделаем функцию loadLeaderboard глобальной для кнопки обновления
-                window.loadLeaderboard = loadLeaderboard;
-                
                 console.log('✅ Игра запущена');
+                
+                // Периодическое обновление таблицы лидеров
+                setInterval(async () => {
+                    await loadLeaderboard();
+                }, 30000);
             }
 
             startGame();
