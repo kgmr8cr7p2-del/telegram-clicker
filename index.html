@@ -189,8 +189,8 @@
     </div>
 
     <script>
-        // 🔧 НАСТРОЙКИ - ЗАМЕНИТЕ НА ВАШ URL!
-        const API_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+        // 🔧 НАСТРОЙКИ - ВАШ GOOGLE APPS SCRIPT URL
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw7Mg4o4z4p9AOzPFFaQ9jNwKuusS6dBdxqa9SeIcUPZhrsnr-9WwykILAt9xvuCh62/exec';
 
         // Функция инициализации Telegram Web App
         function initTelegramApp() {
@@ -200,8 +200,7 @@
                 console.log('✅ В Telegram Web App');
                 const tg = Telegram.WebApp;
                 tg.expand();
-                tg.setHeaderColor('#667eea');
-                tg.setBackgroundColor('#667eea');
+                // Убрали setHeaderColor и setBackgroundColor из-за ошибок версии
             }
             
             initGame();
@@ -271,25 +270,39 @@
                 }
             }
 
-            // Загрузка таблицы лидеров
-            async function loadLeaderboard() {
-                try {
-                    console.log('📥 Загрузка таблицы лидеров...');
+            // Загрузка таблицы лидеров через JSONP
+            function loadLeaderboard() {
+                return new Promise((resolve) => {
+                    console.log('📥 Загрузка таблицы лидеров через JSONP...');
                     
-                    const response = await fetch(`${API_URL}?action=getLeaderboard&t=${Date.now()}`);
-                    const data = await response.json();
+                    // Создаем callback функцию
+                    window.leaderboardCallback = function(data) {
+                        console.log('📨 Получены данные лидерборда:', data);
+                        if (data && data.success) {
+                            gameState.leaderboard = data.leaders || [];
+                            gameState.totalPlayers = data.totalPlayers || data.leaders.length;
+                            console.log('✅ Загружена таблица лидеров:', data.leaders.length, 'игроков');
+                        } else {
+                            console.error('❌ Ошибка загрузки лидерборда:', data ? data.error : 'No data');
+                            loadLocalLeaderboard();
+                        }
+                        updateUI();
+                        resolve();
+                    };
                     
-                    if (data.success) {
-                        gameState.leaderboard = data.leaders;
-                        gameState.totalPlayers = data.totalPlayers;
-                        console.log('✅ Загружена таблица лидеров:', data.leaders.length, 'реальных игроков');
-                    } else {
-                        throw new Error(data.error);
-                    }
-                } catch (error) {
-                    console.error('❌ Ошибка загрузки лидерборда:', error);
-                    loadLocalLeaderboard();
-                }
+                    // Создаем script тег для JSONP
+                    const script = document.createElement('script');
+                    script.src = `${API_URL}?action=getLeaderboard&t=${Date.now()}&callback=leaderboardCallback`;
+                    document.head.appendChild(script);
+                    
+                    // Удаляем скрипт после загрузки
+                    setTimeout(() => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        resolve();
+                    }, 5000);
+                });
             }
 
             // Локальный запасной вариант
@@ -304,42 +317,53 @@
                         { name: "Третий", score: 250000, date: new Date().toISOString() }
                     ];
                 }
+                gameState.totalPlayers = gameState.leaderboard.length;
             }
 
-            // Сохранение результата на сервер
-            async function saveScoreToServer(score) {
-                try {
+            // Сохранение результата на сервер через JSONP
+            function saveScoreToServer(score) {
+                return new Promise((resolve) => {
                     const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
                     const userId = getUserId();
                     
                     console.log('📤 Отправка результата:', playerName, score);
                     
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `action=submitScore&name=${encodeURIComponent(playerName)}&score=${score}&userId=${encodeURIComponent(userId)}`
-                    });
+                    // Создаем callback функцию
+                    window.saveScoreCallback = function(data) {
+                        console.log('📨 Ответ от сервера:', data);
+                        if (data && data.success) {
+                            console.log('✅ Результат сохранен в Google Sheets!');
+                            // Обновляем таблицу
+                            loadLeaderboard();
+                        } else {
+                            console.error('❌ Ошибка сохранения:', data ? data.error : 'No data');
+                        }
+                        resolve();
+                    };
                     
-                    const data = await response.json();
-                    if (data.success) {
-                        console.log('✅ Результат сохранен в Google Sheets!');
-                        await loadLeaderboard();
-                    } else {
-                        throw new Error(data.error);
-                    }
-                } catch (error) {
-                    console.error('❌ Ошибка сохранения:', error);
-                }
+                    // Создаем script тег для JSONP
+                    const script = document.createElement('script');
+                    script.src = `${API_URL}?action=submitScore&name=${encodeURIComponent(playerName)}&score=${score}&userId=${encodeURIComponent(userId)}&callback=saveScoreCallback&t=${Date.now()}`;
+                    document.head.appendChild(script);
+                    
+                    // Удаляем скрипт после загрузки
+                    setTimeout(() => {
+                        if (script.parentNode) {
+                            document.head.removeChild(script);
+                        }
+                        resolve();
+                    }, 3000);
+                });
             }
 
             // Обновленная функция сохранения
             async function saveLeaderboard() {
                 const playerScore = gameState.score;
                 
-                await saveScoreToServer(playerScore);
+                // Сохраняем на сервер (не ждем завершения для скорости)
+                saveScoreToServer(playerScore);
                 
+                // Сохраняем локально сразу
                 localStorage.setItem('localLeaderboard', JSON.stringify(gameState.leaderboard));
             }
 
@@ -517,7 +541,7 @@
                         
                         leaderboardList.innerHTML = gameState.leaderboard
                             .map((player, index) => {
-                                const isCurrentPlayer = player.userId === currentUserId || player.name === currentPlayerName;
+                                const isCurrentPlayer = (player.userId === currentUserId) || (player.name === currentPlayerName);
                                 const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
                                 const date = player.date ? new Date(player.date).toLocaleDateString('ru-RU') : '';
                                 
@@ -638,8 +662,8 @@
                 loadGameState();
                 updateUI();
                 
+                // Загружаем таблицу лидеров
                 await loadLeaderboard();
-                updateUI();
                 
                 startAutoclicker();
                 setupUpgrades();
@@ -656,9 +680,9 @@
                 
                 console.log('✅ Игра запущена');
                 
+                // Периодическое обновление таблицы лидеров
                 setInterval(async () => {
                     await loadLeaderboard();
-                    updateUI();
                 }, 30000);
             }
 
