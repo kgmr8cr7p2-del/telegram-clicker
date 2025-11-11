@@ -181,6 +181,13 @@
             padding: 20px;
             font-size: 16px;
         }
+
+        .server-status {
+            text-align: center;
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -216,7 +223,8 @@
                 lastClickTime: 0,
                 clickCooldown: 100,
                 leaderboard: [],
-                totalPlayers: 0
+                totalPlayers: 0,
+                serverOnline: false
             };
 
             let autoclickerInterval = null;
@@ -239,6 +247,7 @@
                     if (saved) {
                         const loaded = JSON.parse(saved);
                         gameState = { ...gameState, ...loaded };
+                        console.log('✅ Загружено состояние игры');
                     }
                 } catch (e) {
                     console.error('❌ Ошибка загрузки:', e);
@@ -259,33 +268,36 @@
             }
 
             // 📥 ЗАГРУЗКА ТАБЛИЦЫ ЛИДЕРОВ С СЕРВЕРА
-            function loadLeaderboard() {
-                return new Promise((resolve) => {
+            async function loadLeaderboard() {
+                try {
                     console.log('📥 Загрузка таблицы лидеров с сервера...');
                     
-                    window.leaderboardCallback = function(data) {
-                        console.log('📨 Получены данные с сервера:', data);
-                        if (data && data.success) {
-                            gameState.leaderboard = data.leaders || [];
-                            gameState.totalPlayers = data.totalPlayers || 0;
-                            console.log('✅ Загружено игроков:', gameState.leaderboard.length);
-                        } else {
-                            console.error('❌ Ошибка сервера:', data ? data.error : 'No data');
-                            loadLocalLeaderboard();
-                        }
-                        updateUI();
-                        resolve();
-                    };
+                    const response = await fetch(`${API_URL}?action=getLeaderboard&t=${Date.now()}`);
                     
-                    const script = document.createElement('script');
-                    script.src = `${API_URL}?action=getLeaderboard&callback=leaderboardCallback&t=${Date.now()}`;
-                    document.head.appendChild(script);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     
-                    setTimeout(() => {
-                        if (script.parentNode) document.head.removeChild(script);
-                        resolve();
-                    }, 5000);
-                });
+                    const data = await response.json();
+                    console.log('📨 Получены данные с сервера:', data);
+                    
+                    if (data && data.success) {
+                        gameState.leaderboard = data.leaders || [];
+                        gameState.totalPlayers = data.totalPlayers || 0;
+                        gameState.serverOnline = true;
+                        console.log('✅ Загружено игроков:', gameState.leaderboard.length);
+                    } else {
+                        throw new Error(data ? data.error : 'No data');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Ошибка загрузки лидерборда:', error);
+                    console.log('🔄 Используем локальную таблицу...');
+                    gameState.serverOnline = false;
+                    loadLocalLeaderboard();
+                }
+                
+                updateUI();
             }
 
             function loadLocalLeaderboard() {
@@ -294,46 +306,98 @@
                     gameState.leaderboard = JSON.parse(local);
                 } else {
                     gameState.leaderboard = [
-                        { name: "Сервер недоступен", score: 0, date: new Date().toISOString(), userId: "error" }
+                        { name: "Чемпион", score: 1000000, date: new Date().toISOString(), userId: "demo1" },
+                        { name: "Второй", score: 500000, date: new Date().toISOString(), userId: "demo2" },
+                        { name: "Третий", score: 250000, date: new Date().toISOString(), userId: "demo3" }
                     ];
                 }
                 gameState.totalPlayers = gameState.leaderboard.length;
             }
 
             // 📤 ОТПРАВКА РЕЗУЛЬТАТА НА СЕРВЕР
-            function saveScoreToServer(score) {
-                return new Promise((resolve) => {
+            async function saveScoreToServer(score) {
+                try {
                     const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
                     const userId = getUserId();
                     
                     console.log('📤 Отправка на сервер:', playerName, score);
                     
-                    window.saveScoreCallback = function(data) {
-                        console.log('📨 Ответ сервера:', data);
-                        if (data && data.success) {
-                            console.log('✅ Результат сохранен на сервере!');
-                            loadLeaderboard(); // Обновляем таблицу
-                        } else {
-                            console.error('❌ Ошибка сохранения на сервере');
-                        }
-                        resolve();
-                    };
+                    const formData = new URLSearchParams();
+                    formData.append('action', 'submitScore');
+                    formData.append('name', playerName);
+                    formData.append('score', score);
+                    formData.append('userId', userId);
                     
-                    const script = document.createElement('script');
-                    const url = `${API_URL}?action=submitScore&name=${encodeURIComponent(playerName)}&score=${score}&userId=${encodeURIComponent(userId)}&callback=saveScoreCallback&t=${Date.now()}`;
-                    script.src = url;
-                    document.head.appendChild(script);
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: formData
+                    });
                     
-                    setTimeout(() => {
-                        if (script.parentNode) document.head.removeChild(script);
-                        resolve();
-                    }, 3000);
-                });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('📨 Ответ сервера:', data);
+                    
+                    if (data && data.success) {
+                        console.log('✅ Результат сохранен на сервере!');
+                        gameState.serverOnline = true;
+                        // Обновляем таблицу
+                        await loadLeaderboard();
+                    } else {
+                        throw new Error(data ? data.error : 'Save failed');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Ошибка сохранения на сервере:', error);
+                    gameState.serverOnline = false;
+                    // Сохраняем локально
+                    saveScoreLocally(score);
+                }
             }
 
-            function saveLeaderboard() {
+            // 💾 ЛОКАЛЬНОЕ СОХРАНЕНИЕ
+            function saveScoreLocally(score) {
+                const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+                const userId = getUserId();
+                
+                console.log('💾 Сохранение результата локально:', playerName, score);
+                
+                const playerIndex = gameState.leaderboard.findIndex(p => p.userId === userId);
+                
+                if (playerIndex !== -1) {
+                    if (score > gameState.leaderboard[playerIndex].score) {
+                        gameState.leaderboard[playerIndex].score = score;
+                        gameState.leaderboard[playerIndex].date = new Date().toISOString();
+                    }
+                } else {
+                    gameState.leaderboard.push({
+                        name: playerName,
+                        score: score,
+                        date: new Date().toISOString(),
+                        userId: userId
+                    });
+                }
+                
+                gameState.leaderboard.sort((a, b) => b.score - a.score);
+                gameState.leaderboard = gameState.leaderboard.slice(0, 10);
+                gameState.totalPlayers = gameState.leaderboard.length;
+                
+                localStorage.setItem('localLeaderboard', JSON.stringify(gameState.leaderboard));
+                updateUI();
+            }
+
+            async function saveLeaderboard() {
                 const playerScore = gameState.score;
-                saveScoreToServer(playerScore);
+                
+                // Пытаемся сохранить на сервер
+                await saveScoreToServer(playerScore);
+                
+                // Всегда сохраняем локально для надежности
                 localStorage.setItem('localLeaderboard', JSON.stringify(gameState.leaderboard));
             }
 
@@ -342,6 +406,7 @@
                 const levelElement = document.getElementById('level');
                 const clicksPerTapElement = document.getElementById('cpt');
                 const autoclickerInfo = document.getElementById('autoclicker-info');
+                const serverStatus = document.getElementById('server-status');
                 
                 if (scoreElement) scoreElement.textContent = gameState.score.toLocaleString();
                 if (levelElement) levelElement.textContent = gameState.level;
@@ -349,6 +414,11 @@
                 
                 if (autoclickerInfo) {
                     autoclickerInfo.textContent = `Автокликер: +${(gameState.upgrades.autoclicker * gameState.upgrades.autoclickerPower).toLocaleString()}/сек`;
+                }
+                
+                if (serverStatus) {
+                    serverStatus.textContent = gameState.serverOnline ? '🟢 Сервер онлайн' : '🔴 Сервер офлайн';
+                    serverStatus.style.color = gameState.serverOnline ? '#90EE90' : '#FF6B6B';
                 }
                 
                 updateUpgradeButtons();
@@ -397,59 +467,75 @@
             }
 
             function updateUpgradeButtons() {
-                const btn1 = document.getElementById('upgrade-click-power');
-                const btn2 = document.getElementById('upgrade-multiplier');
-                const btn3 = document.getElementById('upgrade-autoclicker');
-                const btn4 = document.getElementById('upgrade-autoclicker-power');
+                const upgrades = [
+                    { id: 'click-power', cost: 150 },
+                    { id: 'multiplier', cost: 50 },
+                    { id: 'autoclicker', cost: 100 },
+                    { id: 'autoclicker-power', cost: 200 }
+                ];
                 
-                if (btn1) btn1.disabled = gameState.score < 150;
-                if (btn2) btn2.disabled = gameState.score < 50;
-                if (btn3) btn3.disabled = gameState.score < 100;
-                if (btn4) btn4.disabled = gameState.score < 200;
+                upgrades.forEach(upgrade => {
+                    const btn = document.getElementById(`upgrade-${upgrade.id}`);
+                    if (btn) {
+                        btn.disabled = gameState.score < upgrade.cost;
+                    }
+                });
             }
 
             function setupUpgrades() {
+                // Умножитель клика
                 document.getElementById('upgrade-multiplier')?.addEventListener('click', function() {
                     const cost = 50;
                     if (gameState.score >= cost) {
                         gameState.score -= cost;
                         gameState.upgrades.multiplier *= 2;
-                        if (window.Telegram && Telegram.WebApp) Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
                         saveGameState();
                         updateUI();
                     }
                 });
 
+                // Автокликер
                 document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
                     const cost = 100;
                     if (gameState.score >= cost) {
                         gameState.score -= cost;
                         gameState.upgrades.autoclicker += 1;
                         startAutoclicker();
-                        if (window.Telegram && Telegram.WebApp) Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
                         saveGameState();
                         updateUI();
                     }
                 });
 
+                // Мощность автокликера
                 document.getElementById('upgrade-autoclicker-power')?.addEventListener('click', function() {
                     const cost = 200;
                     if (gameState.score >= cost) {
                         gameState.score -= cost;
                         gameState.upgrades.autoclickerPower *= 2;
                         startAutoclicker();
-                        if (window.Telegram && Telegram.WebApp) Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
                         saveGameState();
                         updateUI();
                     }
                 });
 
+                // Сила клика
                 document.getElementById('upgrade-click-power')?.addEventListener('click', function() {
                     const cost = 150;
                     if (gameState.score >= cost) {
                         gameState.score -= cost;
                         gameState.clicksPerTap *= 2;
-                        if (window.Telegram && Telegram.WebApp) Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        if (window.Telegram && Telegram.WebApp) {
+                            Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                        }
                         saveGameState();
                         updateUI();
                     }
@@ -520,6 +606,7 @@
                                 <div>Уровень: <span id="level">1</span></div>
                                 <div>За клик: <span id="cpt">1</span></div>
                                 <div id="autoclicker-info" class="autoclicker-info">Автокликер: +0/сек</div>
+                                <div id="server-status" class="server-status">Проверка сервера...</div>
                             </div>
                         </div>
 
@@ -535,10 +622,22 @@
                         <div id="upgrades-tab" class="tab-content active">
                             <div class="upgrades">
                                 <h3>⚡ Улучшения</h3>
-                                <button class="upgrade-btn" id="upgrade-click-power">💪 Сила клика x2<br><small>Стоимость: 150</small></button>
-                                <button class="upgrade-btn" id="upgrade-multiplier">🔥 Множитель x2<br><small>Стоимость: 50</small></button>
-                                <button class="upgrade-btn" id="upgrade-autoclicker">🤖 Автокликер +1<br><small>Стоимость: 100</small></button>
-                                <button class="upgrade-btn" id="upgrade-autoclicker-power">🚀 Мощность автокликера x2<br><small>Стоимость: 200</small></button>
+                                <button class="upgrade-btn" id="upgrade-click-power">
+                                    💪 Сила клика x2<br>
+                                    <small>Стоимость: 150</small>
+                                </button>
+                                <button class="upgrade-btn" id="upgrade-multiplier">
+                                    🔥 Множитель x2<br>
+                                    <small>Стоимость: 50</small>
+                                </button>
+                                <button class="upgrade-btn" id="upgrade-autoclicker">
+                                    🤖 Автокликер +1<br>
+                                    <small>Стоимость: 100</small>
+                                </button>
+                                <button class="upgrade-btn" id="upgrade-autoclicker-power">
+                                    🚀 Мощность автокликера x2<br>
+                                    <small>Стоимость: 200</small>
+                                </button>
                             </div>
                         </div>
 
@@ -557,7 +656,10 @@
                 console.log('🎯 Старт игры');
                 loadGameState();
                 updateUI();
+                
+                // Загружаем таблицу лидеров
                 await loadLeaderboard();
+                
                 startAutoclicker();
                 setupUpgrades();
                 setupTabs();
@@ -565,11 +667,15 @@
                 const clickButton = document.getElementById('click-btn');
                 if (clickButton) {
                     clickButton.addEventListener('click', handleClick);
-                    clickButton.addEventListener('touchstart', function(e) { e.preventDefault(); handleClick(e); });
+                    clickButton.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        handleClick(e);
+                    });
                 }
                 
                 console.log('✅ Игра запущена');
                 
+                // Периодическое обновление таблицы лидеров
                 setInterval(async () => {
                     await loadLeaderboard();
                 }, 30000);
