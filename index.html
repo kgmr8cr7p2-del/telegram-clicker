@@ -6,246 +6,57 @@
     <title>Telegram Clicker</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 15px;
-        }
-
-        .stats {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            margin-bottom: 10px;
-        }
-
-        .stats div {
-            margin: 5px 0;
-            font-size: 16px;
-        }
-
-        .game-area {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .click-button {
-            background: linear-gradient(45deg, #FF6B6B, #FFE66D);
-            border: none;
-            border-radius: 50%;
-            width: 150px;
-            height: 150px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
-            display: block;
-            margin: 0 auto;
-            touch-action: manipulation;
-            user-select: none;
-        }
-
-        .click-button:active {
-            transform: scale(0.95);
-        }
-
-        .upgrades {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            margin-bottom: 10px;
-        }
-
-        .upgrades h3 {
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .upgrade-btn {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background 0.3s;
-        }
-
-        .upgrade-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .upgrade-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .leaderboard {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            margin-bottom: 10px;
-        }
-
-        .leaderboard h3 {
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .leaderboard-item {
-            padding: 10px 12px;
-            margin: 5px 0;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
-        }
-
-        .cooldown {
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 10px;
-            gap: 5px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            cursor: pointer;
-        }
-
-        .tab-btn.active {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .autoclicker-info {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-
-        .leaderboard-stats {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .server-status {
-            text-align: center;
-            font-size: 12px;
-            margin-top: 5px;
-            padding: 5px;
-            border-radius: 5px;
-        }
-
-        .status-online {
-            background: rgba(76, 175, 80, 0.3);
-            color: #90EE90;
-        }
-
-        .status-offline {
-            background: rgba(244, 67, 54, 0.3);
-            color: #FF6B6B;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            font-size: 16px;
-        }
-
-        .refresh-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            padding: 8px 15px;
-            margin-top: 10px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .reset-btn {
-            background: rgba(255, 100, 100, 0.3);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            padding: 8px 15px;
-            margin: 5px;
-            cursor: pointer;
-            font-size: 12px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 24px; margin-bottom: 15px; }
+        .stats { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
+        .stats div { margin: 5px 0; font-size: 16px; }
+        .game-area { text-align: center; margin: 20px 0; }
+        .click-button { background: linear-gradient(45deg, #FF6B6B, #FFE66D); border: none; border-radius: 50%; width: 150px; height: 150px; font-size: 18px; font-weight: bold; color: #333; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4); display: block; margin: 0 auto; touch-action: manipulation; user-select: none; }
+        .click-button:active { transform: scale(0.95); }
+        .upgrades { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
+        .upgrades h3 { margin-bottom: 10px; text-align: center; }
+        .upgrade-btn { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; font-size: 12px; transition: background 0.3s; }
+        .upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .upgrade-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.3); }
+        .leaderboard { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
+        .leaderboard h3 { margin-bottom: 10px; text-align: center; }
+        .leaderboard-item { padding: 10px 12px; margin: 5px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
+        .cooldown { pointer-events: none; opacity: 0.7; }
+        .tab-buttons { display: flex; margin-bottom: 10px; gap: 5px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; }
+        .tab-btn.active { background: rgba(255, 255, 255, 0.4); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .autoclicker-info { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .leaderboard-stats { text-align: center; margin-top: 10px; font-size: 12px; opacity: 0.8; }
+        .server-status { text-align: center; font-size: 12px; margin-top: 5px; padding: 5px; border-radius: 5px; }
+        .status-online { background: rgba(76, 175, 80, 0.3); color: #90EE90; }
+        .status-offline { background: rgba(244, 67, 54, 0.3); color: #FF6B6B; }
+        .loading { text-align: center; padding: 20px; font-size: 16px; }
+        .refresh-btn { background: rgba(255, 255, 255, 0.2); border: none; border-radius: 8px; color: white; padding: 8px 15px; margin-top: 10px; cursor: pointer; font-size: 12px; }
+        .reset-btn { background: rgba(255, 100, 100, 0.3); border: none; border-radius: 8px; color: white; padding: 8px 15px; margin: 5px; cursor: pointer; font-size: 12px; }
     </style>
 </head>
 <body>
     <div id="app">
-        <div class="loading">Загрузка игры... 🎮</div>
+        <div class="loading">Загрузка вашего прогресса... ⏳</div>
     </div>
 
     <script>
-        // 🔧 НАСТРОЙКИ СЕРВЕРА
         const API_URL = 'https://script.google.com/macros/s/AKfycbzGhuJLb5BlJwNxDTQw4dtQ17bCnYe-tWM_MUQn5oChUVEqGgUupv1CMnrUBAm8w93l/exec';
 
-        // Глобальные переменные
         let gameState;
         let autoclickerInterval;
 
         function initTelegramApp() {
             console.log('🚀 Инициализация Telegram Web App...');
-            
             if (window.Telegram && Telegram.WebApp) {
                 console.log('✅ В Telegram Web App');
-                const tg = Telegram.WebApp;
-                tg.expand();
+                Telegram.WebApp.expand();
             }
-            
             initGame();
         }
 
@@ -253,7 +64,7 @@
             console.log('🎮 Запуск игры...');
             createGameInterface();
             
-            // Инициализируем состояние игры (только в памяти)
+            // Инициализируем состояние по умолчанию
             gameState = {
                 score: 0,
                 level: 1,
@@ -272,14 +83,17 @@
                 if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
                     return 'tg_' + Telegram.WebApp.initDataUnsafe.user.id;
                 }
-                // Генерируем случайный ID для сессии
-                return 'session_' + Math.random().toString(36).substr(2, 9);
+                return 'user_' + Math.random().toString(36).substr(2, 9);
             }
 
-            // 📥 ЗАГРУЗКА ТАБЛИЦЫ ЛИДЕРОВ С СЕРВЕРА
-            async function loadLeaderboard() {
+            function getPlayerName() {
+                return window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+            }
+
+            // 📥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ПРОГРЕССА ПРИ ЗАПУСКЕ
+            async function loadGameProgress() {
                 try {
-                    console.log('📥 Загрузка таблицы лидеров с сервера...');
+                    console.log('📥 Автозагрузка прогресса...');
                     
                     const response = await fetch(`${API_URL}?action=getLeaderboard&t=${Date.now()}`);
                     
@@ -294,28 +108,92 @@
                         gameState.leaderboard = data.leaders || [];
                         gameState.totalPlayers = data.totalPlayers || 0;
                         gameState.serverOnline = true;
-                        console.log('✅ Загружено игроков:', gameState.leaderboard.length);
+                        
+                        // 🎯 АВТОМАТИЧЕСКИ ВОССТАНАВЛИВАЕМ ВАШ ПРОГРЕСС
+                        await restoreMyProgress();
+                        
+                        console.log('✅ Прогресс загружен автоматически');
                     } else {
                         throw new Error(data ? data.error : 'No data');
                     }
                     
                 } catch (error) {
-                    console.error('❌ Ошибка загрузки лидерборда:', error);
+                    console.error('❌ Ошибка загрузки:', error);
                     gameState.serverOnline = false;
-                    gameState.leaderboard = [];
-                    gameState.totalPlayers = 0;
                 }
                 
                 updateUI();
+                startGameFeatures();
             }
 
-            // 📤 ОТПРАВКА РЕЗУЛЬТАТА НА СЕРВЕР
+            // 🎯 ВОССТАНОВЛЕНИЕ ВАШЕГО ПРОГРЕССА ИЗ ТАБЛИЦЫ ЛИДЕРОВ
+            async function restoreMyProgress() {
+                try {
+                    const playerName = getPlayerName();
+                    const myBestResult = gameState.leaderboard.find(player => 
+                        player.name === playerName
+                    );
+                    
+                    if (myBestResult) {
+                        console.log('🎯 Восстанавливаем ваш прогресс:', myBestResult.score);
+                        
+                        // Восстанавливаем очки
+                        gameState.score = myBestResult.score;
+                        
+                        // Автоматически рассчитываем уровень на основе очков
+                        gameState.level = Math.max(1, Math.floor(gameState.score / 100) + 1);
+                        
+                        // Автоматически рассчитываем улучшения на основе очков
+                        const calculatedClicks = Math.max(1, Math.pow(2, Math.floor(Math.log2(gameState.score / 1000))));
+                        gameState.clicksPerTap = calculatedClicks;
+                        
+                        console.log('✅ Прогресс восстановлен:', {
+                            score: gameState.score,
+                            level: gameState.level,
+                            clicksPerTap: gameState.clicksPerTap
+                        });
+                        
+                        // Показываем уведомление о восстановлении
+                        showNotification(`Прогресс восстановлен! ${gameState.score.toLocaleString()} очков ✅`);
+                    } else {
+                        console.log('ℹ️ Вы новый игрок, начинаем с 0');
+                        showNotification('Добро пожаловать! Начинаем с начала 🎮');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Ошибка восстановления прогресса:', error);
+                }
+            }
+
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.8);
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 10px;
+                    z-index: 1000;
+                    font-size: 14px;
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 3000);
+            }
+
+            // 📤 СОХРАНЕНИЕ ОЧКОВ НА СЕРВЕР
             async function saveScoreToServer(score) {
                 try {
-                    const playerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+                    const playerName = getPlayerName();
                     const userId = getUserId();
                     
-                    console.log('📤 Отправка на сервер:', playerName, score);
+                    console.log('📤 Сохранение на сервер:', playerName, score);
                     
                     const formData = new URLSearchParams();
                     formData.append('action', 'submitScore');
@@ -336,19 +214,18 @@
                     }
                     
                     const data = await response.json();
-                    console.log('📨 Ответ сервера:', data);
                     
                     if (data && data.success) {
                         console.log('✅ Результат сохранен на сервере!');
                         gameState.serverOnline = true;
-                        // Обновляем таблицу
-                        await loadLeaderboard();
+                        // Обновляем таблицу лидеров
+                        await loadGameProgress();
                     } else {
                         throw new Error(data ? data.error : 'Save failed');
                     }
                     
                 } catch (error) {
-                    console.error('❌ Ошибка сохранения на сервере:', error);
+                    console.error('❌ Ошибка сохранения:', error);
                     gameState.serverOnline = false;
                 }
             }
@@ -393,7 +270,7 @@
                     }
                 }
                 
-                // Сохраняем только на сервер
+                // Автоматически сохраняем на сервер
                 saveScoreToServer(gameState.score);
                 updateUI();
                 
@@ -413,7 +290,7 @@
                         const autoValue = gameState.upgrades.autoclicker * gameState.upgrades.autoclickerPower;
                         gameState.score += autoValue;
                         
-                        // Сохраняем на сервер каждые 10 секунд при автокликере
+                        // Автоматически сохраняем каждые 10 секунд при автокликере
                         if (gameState.score % 100 === 0) {
                             saveScoreToServer(gameState.score);
                         }
@@ -495,14 +372,13 @@
                 const leaderboardList = document.getElementById('leaderboard-list');
                 
                 if (leaderboardList) {
-                    const currentPlayerName = window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
-                    const currentUserId = getUserId();
+                    const currentPlayerName = getPlayerName();
                     
                     if (!gameState.serverOnline) {
                         leaderboardList.innerHTML = `
                             <div style="text-align: center; padding: 20px; color: #FF6B6B;">
                                 ❌ Сервер недоступен<br>
-                                <small>Попробуйте обновить страницу</small>
+                                <small>Прогресс не сохраняется</small>
                             </div>
                         `;
                     } else if (gameState.leaderboard.length === 0) {
@@ -514,7 +390,7 @@
                         `;
                     } else {
                         leaderboardList.innerHTML = gameState.leaderboard.map((player, index) => {
-                            const isCurrentPlayer = (player.userId === currentUserId);
+                            const isCurrentPlayer = (player.name === currentPlayerName);
                             const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
                             const date = player.date ? new Date(player.date).toLocaleDateString('ru-RU') : '';
                             
@@ -559,15 +435,10 @@
                         button.classList.add('active');
                         const tabName = button.getAttribute('data-tab');
                         document.getElementById(`${tabName}-tab`).classList.add('active');
-                        
-                        if (tabName === 'leaderboard') {
-                            loadLeaderboard();
-                        }
                     });
                 });
             }
 
-            // 🔄 ФУНКЦИЯ СБРОСА ИГРЫ
             function resetGame() {
                 if (confirm('🔄 Сбросить игру?\nВсе ваши очки и улучшения будут потеряны.')) {
                     gameState = {
@@ -588,28 +459,8 @@
                     }
                     
                     updateUI();
-                    loadLeaderboard();
-                    
-                    // Показываем уведомление
-                    const notification = document.createElement('div');
-                    notification.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        background: rgba(0,0,0,0.8);
-                        color: white;
-                        padding: 10px 20px;
-                        border-radius: 10px;
-                        z-index: 1000;
-                        font-size: 14px;
-                    `;
-                    notification.textContent = 'Игра сброшена! ✅';
-                    document.body.appendChild(notification);
-                    
-                    setTimeout(() => {
-                        document.body.removeChild(notification);
-                    }, 2000);
+                    loadGameProgress();
+                    showNotification('Игра сброшена! ✅');
                 }
             }
 
@@ -624,7 +475,7 @@
                                 <div>Уровень: <span id="level">1</span></div>
                                 <div>За клик: <span id="cpt">1</span></div>
                                 <div id="autoclicker-info" class="autoclicker-info">Автокликер: +0/сек</div>
-                                <div id="server-status" class="server-status">Проверка сервера...</div>
+                                <div id="server-status" class="server-status">Подключение к серверу...</div>
                             </div>
                         </div>
 
@@ -665,22 +516,16 @@
                         <div id="leaderboard-tab" class="tab-content">
                             <div class="leaderboard">
                                 <h3>🏆 Топ игроков</h3>
-                                <div id="leaderboard-list">Загрузка с сервера... ⏳</div>
+                                <div id="leaderboard-list">Загрузка таблицы... ⏳</div>
                                 <div id="leaderboard-stats" class="leaderboard-stats"></div>
-                                <button class="refresh-btn" onclick="loadLeaderboard()">🔄 Обновить таблицу</button>
+                                <button class="refresh-btn" onclick="loadGameProgress()">🔄 Обновить</button>
                             </div>
                         </div>
                     </div>
                 `;
             }
 
-            async function startGame() {
-                console.log('🎯 Старт игры');
-                updateUI();
-                
-                // Загружаем таблицу лидеров
-                await loadLeaderboard();
-                
+            function startGameFeatures() {
                 startAutoclicker();
                 setupUpgrades();
                 setupTabs();
@@ -694,11 +539,24 @@
                     });
                 }
                 
-                // Сделаем функции глобальными для кнопок
-                window.loadLeaderboard = loadLeaderboard;
+                // Сделаем функции глобальными
+                window.loadGameProgress = loadGameProgress;
                 window.resetGame = resetGame;
                 
-                console.log('✅ Игра запущена');
+                console.log('✅ Игра полностью запущена');
+            }
+
+            // 🚀 ЗАПУСКАЕМ ИГРУ - СНАЧАЛА ГРУЗИМ ПРОГРЕСС, ПОТОМ ВСЕ ОСТАЛЬНОЕ
+            async function startGame() {
+                console.log('🎯 Начинаем загрузку игры...');
+                
+                // Сначала загружаем прогресс с сервера
+                await loadGameProgress();
+                
+                // Затем запускаем все функции игры
+                startGameFeatures();
+                
+                console.log('✅ Игра готова!');
             }
 
             startGame();
