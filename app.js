@@ -19,15 +19,11 @@ class Logger {
 
         this.logs.push(logEntry);
         
-        // Ограничиваем количество логов
         if (this.logs.length > this.maxLogs) {
             this.logs.shift();
         }
 
-        // Вывод в консоль
         console[level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log'](`[${timestamp}] ${level.toUpperCase()}: ${message}`, data || '');
-
-        // Обновление UI
         this.updateLogDisplay(logEntry);
     }
 
@@ -69,50 +65,33 @@ class Logger {
     }
 }
 
-// Инициализация логгера
 const logger = new Logger();
 
-// API клиент для работы с бэкендом
+// API клиент для работы с Google Apps Script
 class ApiClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
     }
 
-    async request(endpoint, params = {}) {
-        const url = new URL(this.baseUrl);
-        Object.keys(params).forEach(key => {
-            url.searchParams.append(key, params[key]);
-        });
-
-        logger.info(`API запрос: ${endpoint}`, params);
-
-        try {
-            const response = await fetch(url.toString(), {
-                method: 'GET',
-                mode: 'no-cors' // Используем no-cors для обхода CORS
-            });
-
-            // Для no-cors mode мы не можем прочитать ответ, поэтому используем альтернативный подход
-            return await this.jsonpRequest(url.toString());
-            
-        } catch (error) {
-            logger.error(`API ошибка: ${endpoint}`, error);
-            throw error;
-        }
-    }
-
-    // Альтернативный метод через JSONP
-    jsonpRequest(url) {
+    // JSONP запрос для обхода CORS
+    jsonpRequest(params) {
         return new Promise((resolve, reject) => {
             const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-            const script = document.createElement('script');
+            const url = new URL(this.baseUrl);
             
-            logger.info('JSONP запрос', { url: url.split('?')[0], callbackName });
+            Object.keys(params).forEach(key => {
+                url.searchParams.append(key, params[key]);
+            });
+            url.searchParams.append('callback', callbackName);
 
-            // Таймаут
+            logger.info('JSONP запрос', { 
+                action: params.action, 
+                callbackName 
+            });
+
             const timeoutId = setTimeout(() => {
-                if (script.parentNode) {
-                    document.body.removeChild(script);
+                if (window[callbackName]) {
+                    delete window[callbackName];
                 }
                 reject(new Error('JSONP timeout'));
             }, 10000);
@@ -120,19 +99,17 @@ class ApiClient {
             window[callbackName] = (data) => {
                 clearTimeout(timeoutId);
                 delete window[callbackName];
-                if (script.parentNode) {
-                    document.body.removeChild(script);
-                }
+                logger.info('JSONP ответ получен', data);
                 resolve(data);
             };
 
-            script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+            const script = document.createElement('script');
+            script.src = url.toString();
             
             script.onerror = () => {
                 clearTimeout(timeoutId);
-                delete window[callbackName];
-                if (script.parentNode) {
-                    document.body.removeChild(script);
+                if (window[callbackName]) {
+                    delete window[callbackName];
                 }
                 reject(new Error('JSONP request failed'));
             };
@@ -142,19 +119,19 @@ class ApiClient {
     }
 
     async getUser(userId) {
-        return this.request('', { action: 'getUser', userId });
+        return this.jsonpRequest({ action: 'getUser', userId });
     }
 
     async addClick(userId, username) {
-        return this.request('', { action: 'click', userId, username });
+        return this.jsonpRequest({ action: 'click', userId, username });
     }
 
     async getTopPlayers() {
-        return this.request('', { action: 'getTop' });
+        return this.jsonpRequest({ action: 'getTop' });
     }
 
     async getUserStats(userId) {
-        return this.request('', { action: 'getStats', userId });
+        return this.jsonpRequest({ action: 'getStats', userId });
     }
 }
 
@@ -169,7 +146,6 @@ class ClickerApp {
         this.currentUser = null;
         
         logger.info('Приложение инициализировано');
-        logger.info('Backend URL:', BACKEND_URL);
     }
 
     init() {
@@ -188,14 +164,10 @@ class ClickerApp {
     initTelegramApp() {
         try {
             logger.info('Инициализация Telegram Web App');
-            logger.info('Версия Telegram Web App:', this.tg.version);
-            logger.info('Платформа:', this.tg.platform);
             
-            // Расширяем на весь экран
             this.tg.expand();
             this.tg.ready();
             
-            // Получаем данные пользователя
             this.currentUser = this.getUserData();
             
             if (this.currentUser) {
@@ -204,9 +176,6 @@ class ClickerApp {
                 logger.warn('Данные пользователя не доступны, используем анонимный режим');
                 this.currentUser = this.createAnonymousUser();
             }
-
-            // Проверяем поддержку функций (без enableClosingConfirmation)
-            logger.info('Telegram Web App инициализирован');
             
         } catch (error) {
             logger.error('Ошибка инициализации Telegram Web App:', error);
@@ -216,37 +185,13 @@ class ClickerApp {
         this.loadUserData();
     }
 
-    // Получение данных пользователя
     getUserData() {
-        logger.info('Поиск данных пользователя...');
-        
-        // Основной способ
         if (this.tg.initDataUnsafe?.user) {
-            logger.info('Пользователь найден в initDataUnsafe.user');
             return this.tg.initDataUnsafe.user;
         }
-        
-        // Альтернативные способы
-        if (this.tg.initData) {
-            logger.info('Пытаемся распарсить initData');
-            try {
-                const params = new URLSearchParams(this.tg.initData);
-                const userParam = params.get('user');
-                if (userParam) {
-                    const user = JSON.parse(decodeURIComponent(userParam));
-                    logger.info('Пользователь найден в initData:', user);
-                    return user;
-                }
-            } catch (error) {
-                logger.warn('Ошибка парсинга initData:', error);
-            }
-        }
-
-        logger.warn('Данные пользователя не найдены');
         return null;
     }
 
-    // Создание анонимного пользователя
     createAnonymousUser() {
         const anonymousId = 'anon_' + Math.random().toString(36).substr(2, 9);
         return {
@@ -258,8 +203,6 @@ class ClickerApp {
     }
 
     initTestMode() {
-        logger.info('Инициализация тестового режима');
-        
         const testUser = {
             id: Math.floor(Math.random() * 1000000),
             first_name: 'TestUser',
@@ -274,8 +217,7 @@ class ClickerApp {
                 initDataUnsafe: { user: testUser },
                 expand: () => logger.info('Expand called'),
                 ready: () => logger.info('Ready called'),
-                version: '6.0+',
-                initData: ''
+                version: '6.0+'
             }
         };
 
@@ -284,14 +226,9 @@ class ClickerApp {
         
         this.setupEventListeners();
         this.loadUserData();
-        
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
     }
 
     setupEventListeners() {
-        logger.info('Настройка обработчиков событий');
-        
         document.getElementById('clickButton').addEventListener('click', () => this.handleClick());
         document.getElementById('statsTab').addEventListener('click', (e) => this.switchTab('stats', e));
         document.getElementById('topTab').addEventListener('click', (e) => this.switchTab('top', e));
@@ -303,9 +240,6 @@ class ClickerApp {
     }
 
     async handleClick() {
-        logger.info('Обработка клика');
-        
-        // Анимация
         const clickButton = document.getElementById('clickButton');
         clickButton.classList.add('pulse');
         setTimeout(() => clickButton.classList.remove('pulse'), 500);
@@ -316,133 +250,82 @@ class ClickerApp {
     async loadUserData() {
         try {
             if (!this.currentUser) {
-                logger.error('Пользователь не определен');
                 this.showError('Не удалось определить пользователя');
                 return;
             }
 
             logger.info('Загрузка данных пользователя', { 
-                userId: this.currentUser.id,
-                username: this.currentUser.first_name 
+                userId: this.currentUser.id
             });
             
             const response = await this.apiClient.getUser(this.currentUser.id);
-            logger.info('Ответ от сервера (getUser):', response);
+            logger.info('Ответ от сервера:', response);
 
             if (response.success) {
                 this.userData = response.user || { clicks: 0 };
-                logger.info('Данные пользователя загружены', this.userData);
-                
                 this.updateUI();
                 await this.loadTopPlayers();
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
             } else {
-                logger.error('Ошибка загрузки данных', response.error);
-                // Показываем приложение даже при ошибке
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('app').style.display = 'block';
-                this.userData = { clicks: 0 };
-                this.updateUI();
+                this.showError('Ошибка загрузки данных: ' + (response.error || 'Unknown error'));
             }
         } catch (error) {
-            logger.error('Ошибка загрузки данных пользователя:', error);
-            // Показываем приложение даже при ошибке
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            this.userData = { clicks: 0 };
-            this.updateUI();
-            this.showError('Оффлайн режим. Данные сохранятся локально.');
+            logger.error('Ошибка загрузки данных:', error);
+            this.showError('Ошибка соединения с сервером');
         }
     }
 
     async addClick() {
         try {
-            if (!this.currentUser) {
-                logger.error('Пользователь не определен для клика');
-                return;
-            }
-
-            logger.info('Добавление клика для пользователя', { 
-                userId: this.currentUser.id,
-                username: this.currentUser.first_name 
-            });
+            if (!this.currentUser) return;
 
             const username = this.currentUser.username || this.currentUser.first_name || 'Anonymous';
             const response = await this.apiClient.addClick(this.currentUser.id, username);
-
-            logger.info('Ответ от сервера (click):', response);
 
             if (response.success) {
                 if (!this.userData) {
                     this.userData = { clicks: 0 };
                 }
                 this.userData.clicks = response.clicks;
-                logger.info('Клик добавлен', { clicks: response.clicks });
-                
                 this.updateUI();
                 await this.loadTopPlayers();
                 
                 // Виброотклик
                 if (!this.isTestMode && this.tg.HapticFeedback && this.tg.HapticFeedback.impactOccurred) {
                     this.tg.HapticFeedback.impactOccurred('light');
-                    logger.info('Виброотклик активирован');
                 }
             } else {
-                logger.error('Ошибка при клике', response.error);
-                // Локальное увеличение счетчика при ошибке
-                if (!this.userData) {
-                    this.userData = { clicks: 0 };
-                }
-                this.userData.clicks = (this.userData.clicks || 0) + 1;
-                this.updateUI();
-                this.showError('Оффлайн режим. Клик сохранен локально.');
+                this.showError('Ошибка при клике: ' + (response.error || 'Unknown error'));
             }
         } catch (error) {
             logger.error('Ошибка добавления клика:', error);
-            // Локальное увеличение счетчика при ошибке
-            if (!this.userData) {
-                this.userData = { clicks: 0 };
-            }
-            this.userData.clicks = (this.userData.clicks || 0) + 1;
-            this.updateUI();
-            this.showError('Оффлайн режим. Клик сохранен локально.');
+            this.showError('Ошибка соединения с сервером');
         }
     }
 
     async loadTopPlayers() {
         try {
-            logger.info('Загрузка топа игроков');
-            
             const response = await this.apiClient.getTopPlayers();
-            logger.info('Ответ от сервера (getTop):', response);
 
             if (response.success) {
                 this.topPlayers = response.players || [];
-                logger.info('Топ игроков загружен', { count: this.topPlayers.length });
-                
                 this.updateTopList();
                 await this.updateUserStats();
             } else {
-                logger.error('Ошибка загрузки топа', response.error);
+                logger.error('Ошибка загрузки топа:', response.error);
             }
         } catch (error) {
-            logger.error('Ошибка загрузки топа игроков:', error);
+            logger.error('Ошибка загрузки топа:', error);
         }
     }
 
     async updateUserStats() {
         try {
-            if (!this.currentUser) {
-                logger.warn('Не могу обновить статистику: пользователь не определен');
-                return;
-            }
-
-            logger.info('Обновление статистики пользователя', { userId: this.currentUser.id });
+            if (!this.currentUser) return;
 
             const response = await this.apiClient.getUserStats(this.currentUser.id);
-            logger.info('Ответ от сервера (getStats):', response);
 
             if (response.success) {
                 const rankElement = document.getElementById('userRank');
@@ -454,11 +337,6 @@ class ClickerApp {
                 if (totalPlayersElement) {
                     totalPlayersElement.textContent = response.totalPlayers || 0;
                 }
-                
-                logger.info('Статистика обновлена', { 
-                    rank: response.rank, 
-                    totalPlayers: response.totalPlayers 
-                });
             }
         } catch (error) {
             logger.error('Ошибка обновления статистики:', error);
@@ -493,11 +371,6 @@ class ClickerApp {
                     userBadgeElement.textContent = greeting;
                 }
             }
-            
-            logger.info('UI обновлен', { 
-                clicks: this.userData?.clicks,
-                user: this.currentUser?.first_name 
-            });
         } catch (error) {
             logger.error('Ошибка обновления UI:', error);
         }
@@ -506,14 +379,10 @@ class ClickerApp {
     updateTopList() {
         try {
             const topList = document.getElementById('topList');
-            if (!topList) {
-                logger.error('Элемент topList не найден');
-                return;
-            }
+            if (!topList) return;
             
             if (!this.topPlayers.length) {
                 topList.innerHTML = '<div class="loading">Пока нет игроков в рейтинге</div>';
-                logger.info('Топ игроков пуст');
                 return;
             }
 
@@ -532,8 +401,6 @@ class ClickerApp {
                 `;
                 topList.appendChild(item);
             });
-
-            logger.info('Список топа обновлен', { players: this.topPlayers.length });
         } catch (error) {
             logger.error('Ошибка обновления списка топа:', error);
         }
@@ -541,34 +408,23 @@ class ClickerApp {
 
     switchTab(tabName, event) {
         try {
-            logger.info('Переключение вкладки', { tab: tabName });
-            
-            if (event) {
-                event.preventDefault();
-            }
-            
-            // Скрыть все вкладки
             document.querySelectorAll('.content').forEach(tab => {
                 tab.classList.remove('active');
             });
             
-            // Убрать активный класс со всех кнопок
             document.querySelectorAll('.tab').forEach(button => {
                 button.classList.remove('active');
             });
             
-            // Показать выбранную вкладку
             const targetTab = document.getElementById(tabName);
             if (targetTab) {
                 targetTab.classList.add('active');
             }
             
-            // Активировать кнопку
             if (event && event.target) {
                 event.target.classList.add('active');
             }
             
-            // Загрузить топ если переключились на вкладку топа
             if (tabName === 'top') {
                 this.loadTopPlayers();
             }
@@ -578,8 +434,6 @@ class ClickerApp {
     }
 
     showError(message) {
-        logger.error('Показать ошибку', { message });
-        
         try {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error';
@@ -598,6 +452,11 @@ class ClickerApp {
         } catch (error) {
             logger.error('Ошибка показа ошибки:', error);
         }
+    }
+
+    showApp() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
     }
 }
 
