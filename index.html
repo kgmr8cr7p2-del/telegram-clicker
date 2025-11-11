@@ -1,260 +1,163 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Clicker</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+<script>
+    // Состояние игры
+    let gameState = {
+        score: 0,
+        level: 1,
+        clicksPerTap: 1,
+        playerName: "Игрок"
+    };
+
+    // Элементы DOM
+    const scoreElement = document.getElementById('score');
+    const levelElement = document.getElementById('level');
+    const clicksPerTapElement = document.getElementById('cpt');
+    const clickButton = document.getElementById('click-btn');
+
+    // Загрузка состояния
+    function loadGameState() {
+        const saved = localStorage.getItem('clickerGame');
+        if (saved) {
+            gameState = JSON.parse(saved);
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 15px;
-        }
-
-        .stats {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 15px;
-            border-radius: 15px;
-        }
-
-        .stats div {
-            margin: 5px 0;
-            font-size: 16px;
-        }
-
-        .game-area {
-            text-align: center;
-            margin: 30px 0;
-        }
-
-        .click-button {
-            background: linear-gradient(45deg, #FF6B6B, #FFE66D);
-            border: none;
-            border-radius: 50%;
-            width: 150px;
-            height: 150px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
-        }
-
-        .click-button:active {
-            transform: scale(0.95);
-        }
-
-        .upgrades {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 20px;
-            border-radius: 15px;
-        }
-
-        .upgrades h3 {
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .upgrade-btn {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .upgrade-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .upgrade-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.4);
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎮 Мой Кликер</h1>
-            <div class="stats">
-                <div>Очки: <span id="score">0</span></div>
-                <div>Уровень: <span id="level">1</span></div>
-                <div>За клик: <span id="cpt">1</span></div>
-            </div>
-        </div>
-
-        <div class="game-area">
-            <button id="click-btn" class="click-button">🎯 КЛИК!</button>
-        </div>
-
-        <div class="upgrades">
-            <h3>⚡ Улучшения</h3>
-            <button class="upgrade-btn" data-cost="10" data-type="double">
-                Усилитель x2 - <span>10</span> очков
-            </button>
-            <button class="upgrade-btn" data-cost="30" data-type="triple">
-                Усилитель x3 - <span>30</span> очков
-            </button>
-            <button class="upgrade-btn" data-cost="50" data-type="mega">
-                Мега-клик x5 - <span>50</span> очков
-            </button>
-        </div>
-    </div>
-
-    <script>
-        // Состояние игры
-        let gameState = {
-            score: 0,
-            level: 1,
-            clicksPerTap: 1
-        };
-
-        // Элементы DOM
-        const scoreElement = document.getElementById('score');
-        const levelElement = document.getElementById('level');
-        const clicksPerTapElement = document.getElementById('cpt');
-        const clickButton = document.getElementById('click-btn');
-
-        // Загрузка состояния
-        function loadGameState() {
-            const saved = localStorage.getItem('clickerGame');
-            if (saved) {
-                gameState = JSON.parse(saved);
-                console.log('✅ Загружено:', gameState);
+        
+        // Пытаемся получить имя из Telegram
+        if (window.Telegram && Telegram.WebApp) {
+            const user = Telegram.WebApp.initDataUnsafe.user;
+            if (user) {
+                gameState.playerName = user.first_name || "Игрок";
             }
         }
+    }
 
-        // Сохранение состояния
-        function saveGameState() {
-            localStorage.setItem('clickerGame', JSON.stringify(gameState));
-            console.log('💾 Сохранено:', gameState);
-        }
+    // Сохранение состояния
+    function saveGameState() {
+        localStorage.setItem('clickerGame', JSON.stringify(gameState));
+        updateLeaderboard();
+    }
 
-        // Обновление интерфейса
-        function updateUI() {
-            scoreElement.textContent = gameState.score;
-            levelElement.textContent = gameState.level;
-            clicksPerTapElement.textContent = gameState.clicksPerTap;
-            
-            // Обновляем кнопки улучшений
-            document.querySelectorAll('.upgrade-btn').forEach(btn => {
-                const cost = parseInt(btn.dataset.cost);
-                btn.disabled = gameState.score < cost;
+    // Обновление интерфейса
+    function updateUI() {
+        scoreElement.textContent = gameState.score;
+        levelElement.textContent = gameState.level;
+        clicksPerTapElement.textContent = gameState.clicksPerTap;
+        
+        document.querySelectorAll('.upgrade-btn').forEach(btn => {
+            const cost = parseInt(btn.dataset.cost);
+            btn.disabled = gameState.score < cost;
+        });
+    }
+
+    // Простая таблица лидеров (на основе localStorage)
+    function updateLeaderboard() {
+        // Получаем текущих лидеров
+        let leaders = JSON.parse(localStorage.getItem('clickerLeaders') || '[]');
+        
+        // Добавляем/обновляем текущего игрока
+        const playerIndex = leaders.findIndex(p => p.name === gameState.playerName);
+        if (playerIndex !== -1) {
+            if (gameState.score > leaders[playerIndex].score) {
+                leaders[playerIndex].score = gameState.score;
+            }
+        } else {
+            leaders.push({
+                name: gameState.playerName,
+                score: gameState.score
             });
-            
-            console.log('🔄 Интерфейс обновлен. Очки:', gameState.score);
         }
+        
+        // Сортируем по очкам
+        leaders.sort((a, b) => b.score - a.score);
+        
+        // Сохраняем только топ-5
+        leaders = leaders.slice(0, 5);
+        localStorage.setItem('clickerLeaders', JSON.stringify(leaders));
+        
+        // Показываем таблицу лидеров
+        showLeaderboard(leaders);
+    }
 
-        // Обработчик клика
-        function handleClick() {
-            gameState.score += gameState.clicksPerTap;
-            
-            console.log('🎯 Клик! +' + gameState.clicksPerTap + ' очков');
-            
-            // Проверка уровня
-            if (gameState.score >= gameState.level * 50) {
-                gameState.level++;
-                console.log('🎉 Новый уровень:', gameState.level);
-                alert(`🎉 Новый уровень! Теперь вы ${gameState.level} уровня!`);
-            }
-            
-            saveGameState();
-            updateUI();
-            
-            // Анимация кнопки
-            clickButton.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                clickButton.style.transform = 'scale(1)';
-            }, 100);
+    function showLeaderboard(leaders) {
+        // Создаем или находим блок таблицы лидеров
+        let leaderboardEl = document.getElementById('leaderboard');
+        if (!leaderboardEl) {
+            leaderboardEl = document.createElement('div');
+            leaderboardEl.id = 'leaderboard';
+            leaderboardEl.innerHTML = '<h3>🏆 Топ игроков</h3>';
+            document.querySelector('.container').appendChild(leaderboardEl);
         }
+        
+        leaderboardEl.innerHTML = '<h3>🏆 Топ игроков</h3>' + 
+            leaders.map((player, index) => `
+                <div style="margin: 5px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    ${index + 1}. ${player.name}: ${player.score} очков
+                </div>
+            `).join('');
+    }
 
-        // Обработчики улучшений
-        function setupUpgrades() {
-            document.querySelectorAll('.upgrade-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const cost = parseInt(this.dataset.cost);
-                    const type = this.dataset.type;
+    // Обработчик клика
+    function handleClick() {
+        gameState.score += gameState.clicksPerTap;
+        
+        if (gameState.score >= gameState.level * 50) {
+            gameState.level++;
+            alert(`🎉 Новый уровень! Теперь вы ${gameState.level} уровня!`);
+        }
+        
+        saveGameState();
+        updateUI();
+        
+        clickButton.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            clickButton.style.transform = 'scale(1)';
+        }, 100);
+    }
+
+    // Обработчики улучшений
+    function setupUpgrades() {
+        document.querySelectorAll('.upgrade-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const cost = parseInt(this.dataset.cost);
+                const type = this.dataset.type;
+                
+                if (gameState.score >= cost) {
+                    gameState.score -= cost;
                     
-                    if (gameState.score >= cost) {
-                        gameState.score -= cost;
-                        
-                        let oldPower = gameState.clicksPerTap;
-                        
-                        switch(type) {
-                            case 'double':
-                                gameState.clicksPerTap *= 2;
-                                break;
-                            case 'triple':
-                                gameState.clicksPerTap *= 3;
-                                break;
-                            case 'mega':
-                                gameState.clicksPerTap *= 5;
-                                break;
-                        }
-                        
-                        console.log('🛒 Куплено улучшение:', type, 'Мощность:', oldPower + '→' + gameState.clicksPerTap);
-                        
-                        // Увеличиваем стоимость
-                        const newCost = cost * 2;
-                        this.dataset.cost = newCost;
-                        this.querySelector('span').textContent = newCost;
-                        
-                        saveGameState();
-                        updateUI();
-                        
-                        alert(`✅ Улучшение куплено! Теперь клик дает: ${gameState.clicksPerTap}`);
-                    } else {
-                        console.log('❌ Не хватает очков для улучшения');
+                    switch(type) {
+                        case 'double':
+                            gameState.clicksPerTap *= 2;
+                            break;
+                        case 'triple':
+                            gameState.clicksPerTap *= 3;
+                            break;
+                        case 'mega':
+                            gameState.clicksPerTap *= 5;
+                            break;
                     }
-                });
+                    
+                    const newCost = cost * 2;
+                    this.dataset.cost = newCost;
+                    this.querySelector('span').textContent = newCost;
+                    
+                    saveGameState();
+                    updateUI();
+                    
+                    alert(`✅ Улучшение куплено! Теперь клик дает: ${gameState.clicksPerTap}`);
+                }
             });
-        }
+        });
+    }
 
-        // Инициализация игры
-        function initGame() {
-            console.log('🎮 Игра запускается...');
-            
-            loadGameState();
-            updateUI();
-            
-            clickButton.addEventListener('click', handleClick);
-            setupUpgrades();
-            
-            console.log('🎮 Игра запущена! Текущие очки:', gameState.score);
-            console.log('✨ Всё готово! Можно кликать!');
-        }
+    // Инициализация игры
+    function initGame() {
+        loadGameState();
+        updateUI();
+        updateLeaderboard(); // Показываем таблицу лидеров при запуске
+        
+        clickButton.addEventListener('click', handleClick);
+        setupUpgrades();
+        
+        console.log('🎮 Игра запущена! Игрок:', gameState.playerName);
+    }
 
-        // Запускаем при загрузке страницы
-        document.addEventListener('DOMContentLoaded', initGame);
-    </script>
-</body>
-</html>
+    document.addEventListener('DOMContentLoaded', initGame);
+</script>
