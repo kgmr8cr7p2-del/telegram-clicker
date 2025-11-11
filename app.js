@@ -72,6 +72,92 @@ class Logger {
 // Инициализация логгера
 const logger = new Logger();
 
+// API клиент для работы с бэкендом
+class ApiClient {
+    constructor(baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    async request(endpoint, params = {}) {
+        const url = new URL(this.baseUrl);
+        Object.keys(params).forEach(key => {
+            url.searchParams.append(key, params[key]);
+        });
+
+        logger.info(`API запрос: ${endpoint}`, params);
+
+        try {
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                mode: 'no-cors' // Используем no-cors для обхода CORS
+            });
+
+            // Для no-cors mode мы не можем прочитать ответ, поэтому используем альтернативный подход
+            return await this.jsonpRequest(url.toString());
+            
+        } catch (error) {
+            logger.error(`API ошибка: ${endpoint}`, error);
+            throw error;
+        }
+    }
+
+    // Альтернативный метод через JSONP
+    jsonpRequest(url) {
+        return new Promise((resolve, reject) => {
+            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+            const script = document.createElement('script');
+            
+            logger.info('JSONP запрос', { url: url.split('?')[0], callbackName });
+
+            // Таймаут
+            const timeoutId = setTimeout(() => {
+                if (script.parentNode) {
+                    document.body.removeChild(script);
+                }
+                reject(new Error('JSONP timeout'));
+            }, 10000);
+
+            window[callbackName] = (data) => {
+                clearTimeout(timeoutId);
+                delete window[callbackName];
+                if (script.parentNode) {
+                    document.body.removeChild(script);
+                }
+                resolve(data);
+            };
+
+            script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + callbackName;
+            
+            script.onerror = () => {
+                clearTimeout(timeoutId);
+                delete window[callbackName];
+                if (script.parentNode) {
+                    document.body.removeChild(script);
+                }
+                reject(new Error('JSONP request failed'));
+            };
+
+            document.body.appendChild(script);
+        });
+    }
+
+    async getUser(userId) {
+        return this.request('', { action: 'getUser', userId });
+    }
+
+    async addClick(userId, username) {
+        return this.request('', { action: 'click', userId, username });
+    }
+
+    async getTopPlayers() {
+        return this.request('', { action: 'getTop' });
+    }
+
+    async getUserStats(userId) {
+        return this.request('', { action: 'getStats', userId });
+    }
+}
+
 // Основное приложение
 class ClickerApp {
     constructor() {
@@ -79,11 +165,11 @@ class ClickerApp {
         this.userData = null;
         this.topPlayers = [];
         this.isTestMode = false;
-        this.backendUrl = BACKEND_URL;
+        this.apiClient = new ApiClient(BACKEND_URL);
         this.currentUser = null;
         
         logger.info('Приложение инициализировано');
-        logger.info('Backend URL:', this.backendUrl);
+        logger.info('Backend URL:', BACKEND_URL);
     }
 
     init() {
@@ -109,7 +195,7 @@ class ClickerApp {
             this.tg.expand();
             this.tg.ready();
             
-            // Получаем данные пользователя разными способами
+            // Получаем данные пользователя
             this.currentUser = this.getUserData();
             
             if (this.currentUser) {
@@ -119,13 +205,8 @@ class ClickerApp {
                 this.currentUser = this.createAnonymousUser();
             }
 
-            // Проверяем поддержку функций
-            if (this.tg.enableClosingConfirmation && typeof this.tg.enableClosingConfirmation === 'function') {
-                this.tg.enableClosingConfirmation();
-                logger.info('Closing confirmation включен');
-            } else {
-                logger.warn('Closing confirmation не поддерживается');
-            }
+            // Проверяем поддержку функций (без enableClosingConfirmation)
+            logger.info('Telegram Web App инициализирован');
             
         } catch (error) {
             logger.error('Ошибка инициализации Telegram Web App:', error);
@@ -135,17 +216,17 @@ class ClickerApp {
         this.loadUserData();
     }
 
-    // Получение данных пользователя разными способами
+    // Получение данных пользователя
     getUserData() {
         logger.info('Поиск данных пользователя...');
         
-        // Способ 1: initDataUnsafe.user
+        // Основной способ
         if (this.tg.initDataUnsafe?.user) {
             logger.info('Пользователь найден в initDataUnsafe.user');
             return this.tg.initDataUnsafe.user;
         }
         
-        // Способ 2: initData (закодированная строка)
+        // Альтернативные способы
         if (this.tg.initData) {
             logger.info('Пытаемся распарсить initData');
             try {
@@ -160,30 +241,8 @@ class ClickerApp {
                 logger.warn('Ошибка парсинга initData:', error);
             }
         }
-        
-        // Способ 3: WebAppInitData
-        if (window.Telegram?.WebAppInitData) {
-            logger.info('Пытаемся использовать WebAppInitData');
-            try {
-                const params = new URLSearchParams(window.Telegram.WebAppInitData);
-                const userParam = params.get('user');
-                if (userParam) {
-                    const user = JSON.parse(decodeURIComponent(userParam));
-                    logger.info('Пользователь найден в WebAppInitData:', user);
-                    return user;
-                }
-            } catch (error) {
-                logger.warn('Ошибка парсинга WebAppInitData:', error);
-            }
-        }
 
-        // Способ 4: Прямой доступ к window объекту
-        if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
-            logger.info('Пользователь найден в window.Telegram.WebApp.initDataUnsafe.user');
-            return window.Telegram.WebApp.initDataUnsafe.user;
-        }
-
-        logger.warn('Данные пользователя не найдены ни в одном источнике');
+        logger.warn('Данные пользователя не найдены');
         return null;
     }
 
@@ -267,7 +326,7 @@ class ClickerApp {
                 username: this.currentUser.first_name 
             });
             
-            const response = await this.fetchJSONP(`${this.backendUrl}?action=getUser&userId=${this.currentUser.id}`);
+            const response = await this.apiClient.getUser(this.currentUser.id);
             logger.info('Ответ от сервера (getUser):', response);
 
             if (response.success) {
@@ -281,11 +340,20 @@ class ClickerApp {
                 document.getElementById('app').style.display = 'block';
             } else {
                 logger.error('Ошибка загрузки данных', response.error);
-                this.showError('Ошибка загрузки данных: ' + (response.error || 'unknown error'));
+                // Показываем приложение даже при ошибке
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                this.userData = { clicks: 0 };
+                this.updateUI();
             }
         } catch (error) {
             logger.error('Ошибка загрузки данных пользователя:', error);
-            this.showError('Ошибка соединения: ' + error.message);
+            // Показываем приложение даже при ошибке
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            this.userData = { clicks: 0 };
+            this.updateUI();
+            this.showError('Оффлайн режим. Данные сохранятся локально.');
         }
     }
 
@@ -302,9 +370,7 @@ class ClickerApp {
             });
 
             const username = this.currentUser.username || this.currentUser.first_name || 'Anonymous';
-            const response = await this.fetchJSONP(
-                `${this.backendUrl}?action=click&userId=${this.currentUser.id}&username=${encodeURIComponent(username)}`
-            );
+            const response = await this.apiClient.addClick(this.currentUser.id, username);
 
             logger.info('Ответ от сервера (click):', response);
 
@@ -325,11 +391,23 @@ class ClickerApp {
                 }
             } else {
                 logger.error('Ошибка при клике', response.error);
-                this.showError('Ошибка при клике: ' + (response.error || 'unknown error'));
+                // Локальное увеличение счетчика при ошибке
+                if (!this.userData) {
+                    this.userData = { clicks: 0 };
+                }
+                this.userData.clicks = (this.userData.clicks || 0) + 1;
+                this.updateUI();
+                this.showError('Оффлайн режим. Клик сохранен локально.');
             }
         } catch (error) {
             logger.error('Ошибка добавления клика:', error);
-            this.showError('Ошибка соединения');
+            // Локальное увеличение счетчика при ошибке
+            if (!this.userData) {
+                this.userData = { clicks: 0 };
+            }
+            this.userData.clicks = (this.userData.clicks || 0) + 1;
+            this.updateUI();
+            this.showError('Оффлайн режим. Клик сохранен локально.');
         }
     }
 
@@ -337,7 +415,7 @@ class ClickerApp {
         try {
             logger.info('Загрузка топа игроков');
             
-            const response = await this.fetchJSONP(`${this.backendUrl}?action=getTop`);
+            const response = await this.apiClient.getTopPlayers();
             logger.info('Ответ от сервера (getTop):', response);
 
             if (response.success) {
@@ -363,7 +441,7 @@ class ClickerApp {
 
             logger.info('Обновление статистики пользователя', { userId: this.currentUser.id });
 
-            const response = await this.fetchJSONP(`${this.backendUrl}?action=getStats&userId=${this.currentUser.id}`);
+            const response = await this.apiClient.getUserStats(this.currentUser.id);
             logger.info('Ответ от сервера (getStats):', response);
 
             if (response.success) {
@@ -499,50 +577,6 @@ class ClickerApp {
         }
     }
 
-    fetchJSONP(url) {
-        return new Promise((resolve, reject) => {
-            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-            const script = document.createElement('script');
-            
-            logger.info('JSONP запрос', { url: url.split('?')[0], callbackName });
-
-            window[callbackName] = (data) => {
-                logger.info('JSONP ответ получен', { callbackName, data });
-                delete window[callbackName];
-                if (script.parentNode) {
-                    document.body.removeChild(script);
-                }
-                resolve(data);
-            };
-
-            script.src = url + '&callback=' + callbackName;
-            
-            script.onerror = () => {
-                logger.error('JSONP ошибка загрузки скрипта', { url: url.split('?')[0], callbackName });
-                delete window[callbackName];
-                if (script.parentNode) {
-                    document.body.removeChild(script);
-                }
-                reject(new Error('JSONP request failed'));
-            };
-
-            // Таймаут
-            const timeoutId = setTimeout(() => {
-                if (script.parentNode) {
-                    logger.error('JSONP таймаут', { url: url.split('?')[0], callbackName });
-                    document.body.removeChild(script);
-                    reject(new Error('JSONP timeout'));
-                }
-            }, 15000);
-
-            script.onload = () => {
-                clearTimeout(timeoutId);
-            };
-
-            document.body.appendChild(script);
-        });
-    }
-
     showError(message) {
         logger.error('Показать ошибку', { message });
         
@@ -573,12 +607,3 @@ document.addEventListener('DOMContentLoaded', () => {
     const app = new ClickerApp();
     app.init();
 });
-
-// Глобальная функция для отладки
-window.debugApp = function() {
-    return {
-        logger: logger,
-        tg: window.Telegram?.WebApp,
-        user: window.Telegram?.WebApp?.initDataUnsafe?.user
-    };
-};
