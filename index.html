@@ -264,6 +264,26 @@
             margin-bottom: 15px;
             text-align: center;
         }
+
+        .debug-info {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .test-mode {
+            background: #ffd700;
+            color: #333;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -271,6 +291,10 @@
         <div class="header">
             <h1>🎮 Telegram Clicker</h1>
             <p>Кликай и становись лучшим!</p>
+        </div>
+
+        <div id="testMode" class="test-mode" style="display: none;">
+            🔧 Тестовый режим (не в Telegram)
         </div>
         
         <div id="loading" class="loading">
@@ -323,24 +347,90 @@
                 </div>
             </div>
         </div>
+
+        <div class="debug-info" id="debugInfo">
+            Debug info will be here
+        </div>
     </div>
 
     <script>
-        // КОНФИГУРАЦИЯ - ЗАМЕНИТЕ НА ВАШ URL!
+        // КОНФИГУРАЦИЯ - ВАШ URL APPS SCRIPT
         const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxtLY4Hww5cB5WPedekWriCYmkiIRonIYU1ojM6HyDyokUiFgsG1RM0agOSM4wW6B1r/exec';
         
         const tg = window.Telegram.WebApp;
         let userData = null;
         let topPlayers = [];
+        let isTestMode = false;
         
         // Инициализация приложения
         function initApp() {
-            tg.expand();
-            tg.ready();
-            tg.enableClosingConfirmation();
+            if (!window.Telegram?.WebApp) {
+                // Режим тестирования вне Telegram
+                isTestMode = true;
+                document.getElementById('testMode').style.display = 'block';
+                initTestMode();
+                return;
+            }
+
+            // Режим Telegram Mini App
+            updateDebugInfo();
+
+            // Безопасная инициализация Telegram Web App
+            try {
+                tg.expand();
+                tg.ready();
+                
+                // Проверяем поддержку функции перед вызовом
+                if (tg.enableClosingConfirmation && typeof tg.enableClosingConfirmation === 'function') {
+                    tg.enableClosingConfirmation();
+                }
+            } catch (error) {
+                console.log('Telegram Web App features:', error);
+            }
             
             loadUserData();
             setupEventListeners();
+        }
+
+        // Режим тестирования вне Telegram
+        function initTestMode() {
+            // Создаем тестовые данные пользователя
+            const testUser = {
+                id: Math.floor(Math.random() * 1000000),
+                first_name: 'TestUser',
+                username: 'test_user'
+            };
+            
+            // Эмулируем Telegram WebApp
+            window.Telegram = {
+                WebApp: {
+                    initDataUnsafe: { user: testUser },
+                    expand: () => console.log('Expand'),
+                    ready: () => console.log('Ready'),
+                    version: '6.0+'
+                }
+            };
+            
+            loadUserData();
+            setupEventListeners();
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+        }
+
+        // Обновление отладочной информации
+        function updateDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            if (debugInfo && !isTestMode) {
+                const user = tg.initDataUnsafe?.user;
+                debugInfo.innerHTML = `
+                    <strong>Debug Info:</strong><br>
+                    Version: ${tg.version || 'unknown'}<br>
+                    Platform: ${tg.platform || 'unknown'}<br>
+                    User: ${user ? user.first_name : 'not loaded'}<br>
+                    User ID: ${user ? user.id : 'not loaded'}
+                `;
+            }
         }
         
         // Настройка обработчиков событий
@@ -363,25 +453,30 @@
         // Загрузка данных пользователя
         async function loadUserData() {
             try {
-                if (!tg.initDataUnsafe?.user) {
+                const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe?.user;
+                
+                if (!user) {
                     showError('Ошибка авторизации в Telegram');
                     return;
                 }
                 
-                const user = tg.initDataUnsafe.user;
+                console.log('Loading data for user:', user.id);
+                
                 const response = await fetchJSONP(`${BACKEND_URL}?action=getUser&userId=${user.id}`);
+                console.log('User data response:', response);
                 
                 if (response.success) {
-                    userData = response.user;
+                    userData = response.user || { clicks: 0 };
                     updateUI();
                     loadTopPlayers();
                     
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('app').style.display = 'block';
                 } else {
-                    showError('Ошибка загрузки данных');
+                    showError('Ошибка загрузки данных: ' + (response.error || 'unknown error'));
                 }
             } catch (error) {
+                console.error('Load user data error:', error);
                 showError('Ошибка соединения: ' + error.message);
             }
         }
@@ -389,10 +484,12 @@
         // Добавление клика
         async function addClick() {
             try {
-                const user = tg.initDataUnsafe.user;
+                const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe.user;
                 const response = await fetchJSONP(
                     `${BACKEND_URL}?action=click&userId=${user.id}&username=${encodeURIComponent(user.username || user.first_name)}`
                 );
+                
+                console.log('Click response:', response);
                 
                 if (response.success) {
                     if (!userData) {
@@ -401,10 +498,16 @@
                     userData.clicks = response.clicks;
                     updateUI();
                     loadTopPlayers();
+                    
+                    // Виброотклик если поддерживается
+                    if (!isTestMode && tg.HapticFeedback && tg.HapticFeedback.impactOccurred) {
+                        tg.HapticFeedback.impactOccurred('light');
+                    }
                 } else {
-                    showError('Ошибка при клике');
+                    showError('Ошибка при клике: ' + (response.error || 'unknown error'));
                 }
             } catch (error) {
+                console.error('Add click error:', error);
                 showError('Ошибка соединения');
             }
         }
@@ -415,25 +518,27 @@
                 const response = await fetchJSONP(`${BACKEND_URL}?action=getTop`);
                 
                 if (response.success) {
-                    topPlayers = response.players;
+                    topPlayers = response.players || [];
                     updateTopList();
                     updateUserStats();
+                } else {
+                    console.error('Top players error:', response.error);
                 }
             } catch (error) {
-                console.error('Error loading top players:', error);
+                console.error('Load top players error:', error);
             }
         }
         
         // Обновление статистики пользователя
         async function updateUserStats() {
             try {
-                const user = tg.initDataUnsafe.user;
+                const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe.user;
                 const response = await fetchJSONP(`${BACKEND_URL}?action=getStats&userId=${user.id}`);
                 
                 if (response.success) {
                     document.getElementById('userRank').textContent = 
                         response.rank > 0 ? `#${response.rank}` : 'Не в топе';
-                    document.getElementById('totalPlayers').textContent = response.totalPlayers;
+                    document.getElementById('totalPlayers').textContent = response.totalPlayers || 0;
                 }
             } catch (error) {
                 console.error('Error updating user stats:', error);
@@ -447,7 +552,7 @@
                 document.getElementById('userClicks').textContent = userData.clicks || 0;
             }
             
-            const user = tg.initDataUnsafe.user;
+            const user = isTestMode ? window.Telegram.WebApp.initDataUnsafe.user : tg.initDataUnsafe.user;
             if (user) {
                 document.getElementById('userName').textContent = user.username || user.first_name;
                 document.getElementById('userBadge').textContent = `👋 Привет, ${user.first_name}!`;
@@ -524,6 +629,15 @@
                     document.body.removeChild(script);
                     reject(new Error('JSONP request failed'));
                 };
+                
+                // Таймаут на случай если сервер не отвечает
+                setTimeout(() => {
+                    if (script.parentNode) {
+                        document.body.removeChild(script);
+                        reject(new Error('JSONP timeout'));
+                    }
+                }, 10000);
+                
                 document.body.appendChild(script);
             });
         }
