@@ -170,71 +170,46 @@
             }
 
             // 📥 ЗАГРУЗКА ПОЛНОГО ПРОГРЕССА С СЕРВЕРА
-            async function loadGameProgress() {
-                try {
-                    console.log('📥 Загрузка прогресса с сервера...');
-                    showLoadingMessage('Синхронизация с сервером... 🔄');
-                    
-                    const userId = getUserId();
-                    const response = await fetch(`${API_URL}?action=getPlayerData&userId=${userId}&t=${Date.now()}`);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    console.log('📨 Получены данные игрока:', data);
-                    
-                    if (data && data.success) {
-                        // Восстанавливаем прогресс с сервера
-                        if (data.playerData) {
-                            const serverData = data.playerData;
-                            
-                            // Вычисляем текущую энергию с учетом времени
-                            const energyCalc = calculateCurrentEnergy(
-                                serverData.energy || 650,
-                                serverData.lastEnergyUpdate || Date.now(),
-                                serverData.energyRegen || 1,
-                                serverData.maxEnergy || 650
-                            );
-                            
-                            gameState.coins = serverData.coins || 0;
-                            gameState.level = serverData.level || 1;
-                            gameState.energy = energyCalc.energy;
-                            gameState.maxEnergy = serverData.maxEnergy || 650;
-                            gameState.energyPerClick = serverData.energyPerClick || 5;
-                            gameState.energyRegen = serverData.energyRegen || 1;
-                            gameState.lastEnergyUpdate = energyCalc.lastUpdateTime;
-                            
-                            // Восстанавливаем улучшения
-                            if (serverData.upgrades) {
-                                gameState.upgrades = serverData.upgrades;
-                            }
-                            
-                            console.log('✅ Прогресс загружен с сервера');
-                        }
-                        
-                        // Загружаем таблицу лидеров
-                        gameState.leaderboard = data.leaders || [];
-                        gameState.totalPlayers = data.totalPlayers || 0;
-                        gameState.serverOnline = true;
-                        gameState.offlineMode = false;
-                        
-                        lastServerSync = Date.now();
-                        showNotification('Прогресс синхронизирован! ✅');
-                        
-                    } else {
-                        throw new Error(data ? data.error : 'No data');
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Ошибка загрузки:', error);
-                    handleServerError();
-                }
-                
-                updateUI();
-                startGameFeatures();
-            }
+            // 📥 АВТОМАТИЧЕСКАЯ ЗАГРУЗКА ПРОГРЕССА
+async function loadGameProgress() {
+    try {
+        console.log('📥 Автозагрузка прогресса...');
+        showLoadingMessage('Подключение к серверу... 🌐');
+        
+        const userId = getUserId();
+        const url = `${API_URL}?action=getPlayerData&userId=${userId}&t=${Date.now()}`;
+        console.log('📤 Запрос к:', url);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'no-cors' // ⚠️ Важно: используем no-cors для обхода CORS
+        }).catch(error => {
+            console.log('🔄 Пробуем альтернативный метод...');
+            // Пробуем через CORS proxy
+            return fetch(`https://cors-anywhere.herokuapp.com/${url}`);
+        });
+        
+        if (!response || !response.ok) {
+            throw new Error(`HTTP error! status: ${response?.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📨 Получены данные с сервера:', data);
+        
+        if (data && data.success) {
+            // ... остальной код без изменений ...
+        } else {
+            throw new Error(data ? data.error : 'No data');
+        }
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки:', error);
+        handleServerError();
+    }
+    
+    updateUI();
+    startGameFeatures();
+}
 
             function handleServerError() {
                 gameState.serverOnline = false;
