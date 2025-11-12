@@ -240,25 +240,15 @@
       }
     }, 1000);
 
-    // Автокликер
-    setInterval(() => {
-      if (player.isInitialized && player.autoClickerLevel > 0) {
-        let clicksDone = 0;
-        for (let i = 0; i < player.autoClickerLevel; i++) {
-          if (player.energy >= 5) {
-            player.energy -= 5;
-            player.score++;
-            clicksDone++;
-          } else {
-            break;
-          }
-        }
-        if (clicksDone > 0) {
-          updateUI();
-          if (player.score % 10 === 0) savePlayerData();
-        }
-      }
-    }, 1000);
+// Автокликер (без траты энергии)
+setInterval(() => {
+  if (player.isInitialized && player.autoClickerLevel > 0) {
+    // Просто добавляем очки — энергия НЕ тратится
+    player.score += player.autoClickerLevel;
+    updateUI();
+    if (player.score % 10 === 0) savePlayerData();
+  }
+}, 1000);
 
     // Автосохранение
     setInterval(() => {
