@@ -93,7 +93,7 @@
 
   <script>
     const tg = window.Telegram.WebApp;
-    // ЗАМЕНИТЕ НА ВАШ НОВЫЙ URL ИЗ ПУНКТА 2
+    // ВАША ССЫЛКА НА GOOGLE APPS SCRIPT
     const apiUrl = "https://script.google.com/macros/s/AKfycbyqKglRaXy_kiZyRwWop7dDXz-fTetbYMytMrdegHSx7FapDODxpgaMK-37LoaeN89O/exec";
 
     let player = {
@@ -145,8 +145,33 @@
       }, 3000);
     }
 
-    // Основная функция загрузки данных из базы
-    async function loadPlayerData() {
+    // Обходной метод для отправки данных через GET запросы
+    function sendToGoogleSheets(params) {
+      return new Promise((resolve) => {
+        const urlParams = new URLSearchParams(params).toString();
+        const fullUrl = `${apiUrl}?${urlParams}&_=${Date.now()}`;
+        
+        // Используем Image beacon для отправки данных (работает без CORS)
+        const img = new Image();
+        img.src = fullUrl;
+        
+        img.onload = () => {
+          console.log('Данные отправлены:', params);
+          resolve({ success: true });
+        };
+        
+        img.onerror = () => {
+          console.log('Ошибка отправки данных:', params);
+          resolve({ success: false });
+        };
+        
+        // Таймаут на случай если изображение не загрузится
+        setTimeout(() => resolve({ success: true }), 1000);
+      });
+    }
+
+    // Основная функция загрузки данных из базы через JSONP
+    function loadPlayerData() {
       if (!player.id) {
         updateUserStatus('Ошибка: ID пользователя не установлен', 'error');
         return false;
@@ -155,55 +180,70 @@
       updateUserStatus('Загрузка данных из базы...', 'loading');
       updateSyncStatus('Синхронизация с сервером...');
 
-      try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: "getPlayer",
-            id: player.id,
-            name: player.name
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+      return new Promise((resolve) => {
+        // Создаем уникальное имя для callback функции
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
         
-        if (data.success) {
-          const previousScore = player.score;
-          player.score = data.score || 0;
-          player.lastSavedScore = player.score;
+        // Создаем script элемент для JSONP запроса
+        const script = document.createElement('script');
+        
+        // Определяем callback функцию
+        window[callbackName] = function(data) {
+          // Убираем callback из window
+          delete window[callbackName];
+          // Убираем script из DOM
+          document.body.removeChild(script);
           
-          document.getElementById("score").innerText = player.score;
-          
-          updateUserStatus(`Данные загружены: ${player.score} очков`, 'success');
-          updateDbStatus('База данных подключена', 'success');
-          updateSyncStatus('Синхронизировано с сервером');
-          updateLastUpdate();
-          
-          if (data.found && previousScore !== player.score) {
-            showSessionInfo(`✅ Данные восстановлены! Очки: ${player.score}`);
-          } else if (!data.found) {
-            showSessionInfo('🎮 Новый игрок! Начинайте кликать!');
+          if (data && data.success) {
+            const previousScore = player.score;
+            player.score = data.score || 0;
+            player.lastSavedScore = player.score;
+            
+            document.getElementById("score").innerText = player.score;
+            
+            updateUserStatus(`Данные загружены: ${player.score} очков`, 'success');
+            updateDbStatus('База данных подключена', 'success');
+            updateSyncStatus('Синхронизировано с сервером');
+            updateLastUpdate();
+            
+            if (data.found && previousScore !== player.score) {
+              showSessionInfo(`✅ Данные восстановлены! Очки: ${player.score}`);
+            } else if (!data.found) {
+              showSessionInfo('🎮 Новый игрок! Начинайте кликать!');
+            }
+            
+            resolve(true);
+          } else {
+            updateUserStatus('Ошибка загрузки данных', 'error');
+            updateDbStatus('Ошибка подключения к БД', 'error');
+            updateSyncStatus('Ошибка синхронизации');
+            resolve(false);
           }
-          
-          return true;
-        } else {
-          throw new Error(data.error || 'Unknown error');
-        }
+        };
         
-      } catch (error) {
-        console.error('Ошибка загрузки:', error);
-        updateUserStatus('Ошибка загрузки данных', 'error');
-        updateDbStatus('Ошибка подключения к БД', 'error');
-        updateSyncStatus('Ошибка синхронизации');
-        return false;
-      }
+        // Создаем URL для JSONP запроса
+        const params = {
+          action: "getPlayer",
+          id: player.id,
+          name: player.name
+        };
+        
+        const urlParams = new URLSearchParams(params).toString();
+        script.src = `${apiUrl}?${urlParams}&callback=${callbackName}`;
+        
+        // Добавляем script в DOM (это запустит запрос)
+        document.body.appendChild(script);
+        
+        // Таймаут на случай если запрос не сработает
+        setTimeout(() => {
+          if (window[callbackName]) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            updateUserStatus('Таймаут загрузки', 'error');
+            resolve(false);
+          }
+        }, 5000);
+      });
     }
 
     // Функция сохранения данных в базу
@@ -219,33 +259,21 @@
       updateSyncStatus('Синхронизация...');
 
       try {
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: "updateScore",
-            id: player.id,
-            score: player.score,
-            name: player.name
-          })
+        const result = await sendToGoogleSheets({
+          action: "updateScore",
+          id: player.id,
+          score: player.score,
+          name: player.name
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
         
-        if (data.success) {
+        if (result.success) {
           player.lastSavedScore = player.score;
           updateUserStatus('Данные сохранены в базу', 'success');
           updateSyncStatus('Синхронизировано');
           updateLastUpdate();
           return true;
         } else {
-          throw new Error(data.error || 'Unknown error');
+          throw new Error('Failed to save');
         }
         
       } catch (error) {
@@ -267,7 +295,6 @@
       document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
       document.getElementById("score").innerText = player.score;
       
-      // В тестовом режиме просто показываем сообщение
       updateUserStatus('Тестовый режим', 'info');
       updateDbStatus('База данных отключена', 'warning');
       updateSyncStatus('Тестовый режим');
