@@ -7,87 +7,131 @@
   <style>
     body { font-family: sans-serif; text-align: center; margin-top: 50px; background: #f7f9fc; }
     h1 { color: #222; }
-    button { padding: 10px 20px; font-size: 18px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; }
-    #authMessage { color: #d63031; margin: 20px; }
+    button { padding: 10px 20px; font-size: 18px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; margin: 10px; }
+    #authMessage { color: #d63031; margin: 20px; padding: 20px; background: #ffeaa7; border-radius: 10px; }
+    #game { display: none; }
   </style>
 </head>
 <body>
-  <h1>Кликер</h1>
-  <div id="authMessage">Запускайте игру через Telegram бота</div>
+  <h1>🎮 Кликер игра</h1>
   
-  <div id="game" style="display: none;">
+  <div id="authMessage">
+    <h3>Запускайте игру через Telegram бота!</h3>
+    <p>Эта игра работает только внутри Telegram.</p>
+    <button onclick="simulateTelegram()">Тестовый режим (для разработки)</button>
+  </div>
+  
+  <div id="game">
     <p id="user"></p>
     <p>Очки: <span id="score">0</span></p>
     <button id="clickBtn">Клик!</button>
+    <button onclick="resetGame()">Сбросить игру</button>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     const apiUrl = "https://script.google.com/macros/s/AKfycbzMW_6yKWD8txaOTW5dZUNCx5MAnNzCqQK97T3Yj6FFGKU6EimT_IuQp-r9rwk1-68D/exec";
 
-    // Проверяем, запущено ли в Telegram
-    if (tg && tg.initDataUnsafe) {
-      tg.expand();
+    let player = {
+      id: null,
+      name: 'Гость',
+      score: 0
+    };
+
+    // Функция для симуляции Telegram (для тестирования)
+    function simulateTelegram() {
+      player.id = Math.floor(Math.random() * 1000000);
+      player.name = 'Тестовый пользователь';
+      player.score = 0;
+      
       document.getElementById('authMessage').style.display = 'none';
       document.getElementById('game').style.display = 'block';
-      
-      const user = tg.initDataUnsafe.user;
-      let player = { 
-        id: user.id, 
-        name: user.first_name || 'Игрок', 
-        username: user.username || '',
-        score: 0 
-      };
+      document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
+      document.getElementById("score").innerText = player.score;
+    }
 
-      async function loadPlayer() {
-        try {
-          const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              action: "getPlayer", 
-              id: player.id, 
-              name: player.name,
-              username: player.username
-            })
-          });
-          const data = await res.json();
-          player.score = data.score;
-          document.getElementById("user").innerText = `Привет, ${player.name}!`;
-          document.getElementById("score").innerText = player.score;
-        } catch (error) {
-          console.error('Ошибка загрузки:', error);
-        }
-      }
-
-      async function updateScore() {
-        try {
-          await fetch(apiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              action: "updateScore", 
-              id: player.id, 
-              score: player.score 
-            })
-          });
-        } catch (error) {
-          console.error('Ошибка сохранения:', error);
-        }
-      }
-
-      document.getElementById("clickBtn").addEventListener("click", () => {
-        player.score++;
+    // Функция сброса игры
+    function resetGame() {
+      if (confirm('Сбросить все очки?')) {
+        player.score = 0;
         document.getElementById("score").innerText = player.score;
         updateScore();
-      });
-
-      loadPlayer();
-    } else {
-      // Не в Telegram - показываем сообщение
-      document.getElementById('authMessage').innerText = 
-        'Эта игра работает только в Telegram. Запустите через бота!';
+      }
     }
+
+    // Основная логика для Telegram
+    function initTelegramGame() {
+      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        const user = tg.initDataUnsafe.user;
+        player.id = user.id;
+        player.name = user.first_name || 'Игрок';
+        
+        tg.expand();
+        document.getElementById('authMessage').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        
+        loadPlayer();
+      } else {
+        // Не в Telegram - показываем сообщение
+        console.log('Запуск вне Telegram');
+      }
+    }
+
+    async function loadPlayer() {
+      try {
+        if (!player.id) return;
+        
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            action: "getPlayer", 
+            id: player.id, 
+            name: player.name
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          player.score = data.score || 0;
+          document.getElementById("user").innerText = `Привет, ${player.name}!`;
+          document.getElementById("score").innerText = player.score;
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        document.getElementById("user").innerText = `Привет, ${player.name}! (Оффлайн режим)`;
+      }
+    }
+
+    async function updateScore() {
+      try {
+        if (!player.id) return;
+        
+        await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            action: "updateScore", 
+            id: player.id, 
+            score: player.score 
+          })
+        });
+      } catch (error) {
+        console.error('Ошибка сохранения:', error);
+      }
+    }
+
+    // Обработчик клика
+    document.getElementById("clickBtn").addEventListener("click", () => {
+      player.score++;
+      document.getElementById("score").innerText = player.score;
+      updateScore();
+    });
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+      initTelegramGame();
+    });
   </script>
 </body>
 </html>
