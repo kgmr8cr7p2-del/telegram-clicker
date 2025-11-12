@@ -10,6 +10,7 @@
     button { padding: 10px 20px; font-size: 18px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; margin: 10px; }
     #authMessage { color: #d63031; margin: 20px; padding: 20px; background: #ffeaa7; border-radius: 10px; }
     #game { display: none; }
+    #status { color: #666; font-size: 14px; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -26,17 +27,26 @@
     <p>Очки: <span id="score">0</span></p>
     <button id="clickBtn">Клик!</button>
     <button onclick="resetGame()">Сбросить игру</button>
+    <div id="status"></div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
-    const apiUrl = "https://script.google.com/macros/s/AKfycbzMW_6yKWD8txaOTW5dZUNCx5MAnNzCqQK97T3Yj6FFGKU6EimT_IuQp-r9rwk1-68D/exec";
+    // ЗАМЕНИТЕ НА НОВЫЙ URL ПОСЛЕ ПЕРЕПУБЛИКАЦИИ
+    const apiUrl = "https://script.google.com/macros/s/AKfycbyqKglRaXy_kiZyRwWop7dDXz-fTetbYMytMrdegHSx7FapDODxpgaMK-37LoaeN89O/exec";
 
     let player = {
       id: null,
       name: 'Гость',
       score: 0
     };
+
+    function showStatus(message, isError = false) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? '#d63031' : '#00b894';
+      setTimeout(() => statusEl.textContent = '', 3000);
+    }
 
     function simulateTelegram() {
       player.id = Math.floor(Math.random() * 1000000);
@@ -73,94 +83,78 @@
       }
     }
 
-    // Используем JSONP подход для обхода CORS
-    function makeJSONPRequest(params, callback) {
-      const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-      const script = document.createElement('script');
-      
-      window[callbackName] = function(data) {
-        delete window[callbackName];
-        document.body.removeChild(script);
-        callback(data);
-      };
-      
-      const urlParams = new URLSearchParams(params).toString();
-      script.src = apiUrl + '?' + urlParams + '&callback=' + callbackName;
-      document.body.appendChild(script);
-    }
-
     async function loadPlayer() {
       try {
         if (!player.id) return;
         
-        const params = {
-          action: "getPlayer",
-          id: player.id,
-          name: player.name
-        };
+        showStatus('Загрузка данных...');
         
-        makeJSONPRequest(params, function(data) {
-          if (data && data.score !== undefined) {
-            player.score = data.score;
-            document.getElementById("user").innerText = `Привет, ${player.name}!`;
-            document.getElementById("score").innerText = player.score;
-          }
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: "getPlayer",
+            id: player.id,
+            name: player.name
+          })
         });
+        
+        if (response.ok) {
+          const data = await response.json();
+          player.score = data.score || 0;
+          document.getElementById("user").innerText = `Привет, ${player.name}!`;
+          document.getElementById("score").innerText = player.score;
+          showStatus('Данные загружены!');
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
       } catch (error) {
         console.error('Ошибка загрузки:', error);
         document.getElementById("user").innerText = `Привет, ${player.name}!`;
         document.getElementById("score").innerText = player.score;
+        showStatus('Оффлайн режим', true);
       }
     }
 
-    function updateScore() {
+    async function updateScore() {
       try {
         if (!player.id) return;
         
-        const params = {
-          action: "updateScore",
-          id: player.id,
-          score: player.score
-        };
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: "updateScore",
+            id: player.id,
+            score: player.score,
+            name: player.name
+          })
+        });
         
-        // Создаем изображение для отправки GET запроса (обход CORS)
-        const img = new Image();
-        const urlParams = new URLSearchParams(params).toString();
-        img.src = apiUrl + '?' + urlParams;
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Счет обновлен:', player.score);
+          showStatus('Счет сохранен!');
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
-        console.log('Счет обновлен:', player.score);
       } catch (error) {
-        console.log('Ошибка обновления счета:', error);
+        console.error('Ошибка сохранения:', error);
+        showStatus('Ошибка сохранения', true);
       }
-    }
-
-    // Альтернативный метод через iframe
-    function updateScoreWithIframe() {
-      if (!player.id) return;
-      
-      const params = {
-        action: "updateScore",
-        id: player.id,
-        score: player.score
-      };
-      
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      const urlParams = new URLSearchParams(params).toString();
-      iframe.src = apiUrl + '?' + urlParams;
-      document.body.appendChild(iframe);
-      
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
     }
 
     // Обработчик клика
     document.getElementById("clickBtn").addEventListener("click", () => {
       player.score++;
       document.getElementById("score").innerText = player.score;
-      updateScoreWithIframe(); // Используем iframe метод
+      updateScore();
     });
 
     // Инициализация при загрузке
