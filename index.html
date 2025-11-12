@@ -30,7 +30,6 @@
 
   <script>
     const tg = window.Telegram.WebApp;
-    // Используем URL с добавлением /exec для обхода CORS
     const apiUrl = "https://script.google.com/macros/s/AKfycbzMW_6yKWD8txaOTW5dZUNCx5MAnNzCqQK97T3Yj6FFGKU6EimT_IuQp-r9rwk1-68D/exec";
 
     let player = {
@@ -39,7 +38,6 @@
       score: 0
     };
 
-    // Функция для симуляции Telegram (для тестирования)
     function simulateTelegram() {
       player.id = Math.floor(Math.random() * 1000000);
       player.name = 'Тестовый пользователь';
@@ -75,39 +73,39 @@
       }
     }
 
-    // Функция для отправки данных без CORS проблем
-    async function makeRequest(payload) {
-      try {
-        // Создаем форму для обхода CORS
-        const formData = new FormData();
-        formData.append('payload', JSON.stringify(payload));
-        
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          body: formData,
-          mode: 'no-cors' // Используем no-cors режим
-        });
-        
-        return { success: true };
-      } catch (error) {
-        console.log('Запрос отправлен (no-cors mode)');
-        return { success: true }; // Предполагаем успех в no-cors режиме
-      }
+    // Используем JSONP подход для обхода CORS
+    function makeJSONPRequest(params, callback) {
+      const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+      const script = document.createElement('script');
+      
+      window[callbackName] = function(data) {
+        delete window[callbackName];
+        document.body.removeChild(script);
+        callback(data);
+      };
+      
+      const urlParams = new URLSearchParams(params).toString();
+      script.src = apiUrl + '?' + urlParams + '&callback=' + callbackName;
+      document.body.appendChild(script);
     }
 
     async function loadPlayer() {
       try {
         if (!player.id) return;
         
-        // Вместо прямого fetch используем альтернативный метод
-        const payload = {
-          action: "getPlayer", 
-          id: player.id, 
+        const params = {
+          action: "getPlayer",
+          id: player.id,
           name: player.name
         };
         
-        // Для получения данных используем JSONP подход
-        getPlayerData(payload);
+        makeJSONPRequest(params, function(data) {
+          if (data && data.score !== undefined) {
+            player.score = data.score;
+            document.getElementById("user").innerText = `Привет, ${player.name}!`;
+            document.getElementById("score").innerText = player.score;
+          }
+        });
         
       } catch (error) {
         console.error('Ошибка загрузки:', error);
@@ -116,42 +114,53 @@
       }
     }
 
-    // Альтернативный метод для получения данных (JSONP-like)
-    function getPlayerData(payload) {
-      // Создаем iframe для отправки данных
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = `${apiUrl}?payload=${encodeURIComponent(JSON.stringify(payload))}`;
-      document.body.appendChild(iframe);
-      
-      // Удаляем iframe через секунду
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }
-
-    async function updateScore() {
+    function updateScore() {
       try {
         if (!player.id) return;
         
-        const payload = {
-          action: "updateScore", 
-          id: player.id, 
-          score: player.score 
+        const params = {
+          action: "updateScore",
+          id: player.id,
+          score: player.score
         };
         
-        await makeRequest(payload);
+        // Создаем изображение для отправки GET запроса (обход CORS)
+        const img = new Image();
+        const urlParams = new URLSearchParams(params).toString();
+        img.src = apiUrl + '?' + urlParams;
+        
         console.log('Счет обновлен:', player.score);
       } catch (error) {
-        console.log('Счет обновлен (оффлайн):', player.score);
+        console.log('Ошибка обновления счета:', error);
       }
+    }
+
+    // Альтернативный метод через iframe
+    function updateScoreWithIframe() {
+      if (!player.id) return;
+      
+      const params = {
+        action: "updateScore",
+        id: player.id,
+        score: player.score
+      };
+      
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      const urlParams = new URLSearchParams(params).toString();
+      iframe.src = apiUrl + '?' + urlParams;
+      document.body.appendChild(iframe);
+      
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
     }
 
     // Обработчик клика
     document.getElementById("clickBtn").addEventListener("click", () => {
       player.score++;
       document.getElementById("score").innerText = player.score;
-      updateScore();
+      updateScoreWithIframe(); // Используем iframe метод
     });
 
     // Инициализация при загрузке
