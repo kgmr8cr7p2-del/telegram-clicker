@@ -69,30 +69,31 @@
     <p>Очки: <span id="score">0</span></p>
     <button id="clickBtn">Клик!</button>
     <button onclick="resetGame()">Сбросить игру</button>
-    <button onclick="forceSave()">💾 Принудительно сохранить</button>
+    <button onclick="forceReload()">🔄 Обновить данные</button>
     
     <!-- Блок информации о подключении к БД -->
     <div id="connectionInfo">
-      <h3>📊 Статус подключения к базе данных</h3>
+      <h3>📊 Статус синхронизации</h3>
       <div id="dbStatus" class="status status-loading">
         <span class="connection-dot dot-loading"></span>
-        Инициализация...
+        Подключение к базе данных...
       </div>
       <div id="userStatus" class="status status-loading">
         <span class="connection-dot dot-loading"></span>
         Загрузка данных пользователя...
       </div>
       <div id="lastUpdate" class="status status-info">
-        ⏰ Последнее обновление: --
+        ⏰ Последняя синхронизация: --
       </div>
-      <div id="requestCount" class="status status-info">
-        📊 Запросов отправлено: 0
+      <div id="syncStatus" class="status status-info">
+        🔄 Статус: --
       </div>
     </div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
+    // ЗАМЕНИТЕ НА ВАШ НОВЫЙ URL ИЗ ПУНКТА 2
     const apiUrl = "https://script.google.com/macros/s/AKfycbyqKglRaXy_kiZyRwWop7dDXz-fTetbYMytMrdegHSx7FapDODxpgaMK-37LoaeN89O/exec";
 
     let player = {
@@ -101,9 +102,6 @@
       score: 0,
       lastSavedScore: 0
     };
-
-    let requestCount = 0;
-    let lastUpdateTime = null;
 
     // Функции для обновления статуса
     function updateDbStatus(message, type = 'loading') {
@@ -126,16 +124,14 @@
       statusEl.className = `status status-${type}`;
     }
 
-    function updateLastUpdate() {
-      lastUpdateTime = new Date();
-      const timeEl = document.getElementById('lastUpdate');
-      timeEl.textContent = `⏰ Последнее обновление: ${lastUpdateTime.toLocaleTimeString()}`;
+    function updateSyncStatus(message) {
+      const statusEl = document.getElementById('syncStatus');
+      statusEl.textContent = `🔄 ${message}`;
     }
 
-    function updateRequestCount() {
-      requestCount++;
-      const countEl = document.getElementById('requestCount');
-      countEl.textContent = `📊 Запросов отправлено: ${requestCount}`;
+    function updateLastUpdate() {
+      const timeEl = document.getElementById('lastUpdate');
+      timeEl.textContent = `⏰ Последняя синхронизация: ${new Date().toLocaleTimeString()}`;
     }
 
     function showSessionInfo(message, isSuccess = true) {
@@ -149,89 +145,113 @@
       }, 3000);
     }
 
-    // Упрощенная функция отправки данных
-    function sendDataToServer(params) {
-      return new Promise((resolve) => {
-        updateRequestCount();
-        const urlParams = new URLSearchParams(params).toString();
-        const fullUrl = `${apiUrl}?${urlParams}&_=${Date.now()}`;
-        
-        // Используем Image beacon
-        const img = new Image();
-        img.src = fullUrl;
-        
-        img.onload = () => resolve({ success: true });
-        img.onerror = () => resolve({ success: true }); // Всегда считаем успехом, т.к. не можем проверить
-        
-        // Таймаут на всякий случай
-        setTimeout(() => resolve({ success: true }), 500);
-      });
-    }
+    // Основная функция загрузки данных из базы
+    async function loadPlayerData() {
+      if (!player.id) {
+        updateUserStatus('Ошибка: ID пользователя не установлен', 'error');
+        return false;
+      }
 
-    // УПРОЩЕННАЯ ЗАГРУЗКА: всегда начинаем с 0, но сохраняем в базу
-    async function initializePlayer() {
-      if (!player.id) return;
-      
-      updateUserStatus('Инициализация игрока...', 'loading');
-      
-      // ВАЖНО: Мы не можем прочитать данные из Google Sheets из-за CORS
-      // Поэтому всегда начинаем с 0, но сохраняем в базу
-      // При следующем запуске данные уже будут в базе
-      
-      player.score = 0;
-      document.getElementById("score").innerText = player.score;
-      
-      // Сохраняем игрока в базу (создаем или обновляем запись)
-      const saveResult = await sendDataToServer({
-        action: "updateScore",
-        id: player.id,
-        score: player.score,
-        name: player.name
-      });
-      
-      if (saveResult.success) {
-        player.lastSavedScore = player.score;
-        updateUserStatus('Игрок инициализирован', 'success');
-        updateDbStatus('База данных готова', 'success');
-        updateLastUpdate();
-        showSessionInfo('🎮 Игра готова! Начинайте кликать!');
-      } else {
-        updateUserStatus('Ошибка инициализации', 'error');
+      updateUserStatus('Загрузка данных из базы...', 'loading');
+      updateSyncStatus('Синхронизация с сервером...');
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: "getPlayer",
+            id: player.id,
+            name: player.name
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+          const previousScore = player.score;
+          player.score = data.score || 0;
+          player.lastSavedScore = player.score;
+          
+          document.getElementById("score").innerText = player.score;
+          
+          updateUserStatus(`Данные загружены: ${player.score} очков`, 'success');
+          updateDbStatus('База данных подключена', 'success');
+          updateSyncStatus('Синхронизировано с сервером');
+          updateLastUpdate();
+          
+          if (data.found && previousScore !== player.score) {
+            showSessionInfo(`✅ Данные восстановлены! Очки: ${player.score}`);
+          } else if (!data.found) {
+            showSessionInfo('🎮 Новый игрок! Начинайте кликать!');
+          }
+          
+          return true;
+        } else {
+          throw new Error(data.error || 'Unknown error');
+        }
+        
+      } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        updateUserStatus('Ошибка загрузки данных', 'error');
         updateDbStatus('Ошибка подключения к БД', 'error');
+        updateSyncStatus('Ошибка синхронизации');
+        return false;
       }
     }
 
-    // Сохранение данных в базу
+    // Функция сохранения данных в базу
     async function savePlayerData() {
+      if (!player.id) return false;
+      
+      // Не сохраняем если счет не изменился
+      if (player.score === player.lastSavedScore) {
+        return true;
+      }
+
+      updateUserStatus('Сохранение в базу...', 'loading');
+      updateSyncStatus('Синхронизация...');
+
       try {
-        if (!player.id) return false;
-        
-        // Не сохраняем если счет не изменился
-        if (player.score === player.lastSavedScore) {
-          return true;
-        }
-        
-        updateUserStatus('Сохранение...', 'loading');
-        
-        const result = await sendDataToServer({
-          action: "updateScore",
-          id: player.id,
-          score: player.score,
-          name: player.name
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: "updateScore",
+            id: player.id,
+            score: player.score,
+            name: player.name
+          })
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
         
-        if (result.success) {
+        if (data.success) {
           player.lastSavedScore = player.score;
-          updateUserStatus('Данные сохранены', 'success');
+          updateUserStatus('Данные сохранены в базу', 'success');
+          updateSyncStatus('Синхронизировано');
           updateLastUpdate();
           return true;
         } else {
-          throw new Error('Failed to save');
+          throw new Error(data.error || 'Unknown error');
         }
         
       } catch (error) {
         console.error('Ошибка сохранения:', error);
-        updateUserStatus('Ошибка сохранения', 'error');
+        updateUserStatus('Ошибка сохранения в базу', 'error');
+        updateSyncStatus('Ошибка синхронизации');
         return false;
       }
     }
@@ -247,7 +267,10 @@
       document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
       document.getElementById("score").innerText = player.score;
       
-      initializePlayer();
+      // В тестовом режиме просто показываем сообщение
+      updateUserStatus('Тестовый режим', 'info');
+      updateDbStatus('База данных отключена', 'warning');
+      updateSyncStatus('Тестовый режим');
     }
 
     function resetGame() {
@@ -261,13 +284,13 @@
       }
     }
 
-    function forceSave() {
-      showSessionInfo('💾 Принудительное сохранение...', false);
-      savePlayerData().then(success => {
+    function forceReload() {
+      showSessionInfo('🔄 Принудительная синхронизация...', false);
+      loadPlayerData().then(success => {
         if (success) {
-          showSessionInfo('✅ Данные сохранены!');
+          showSessionInfo('✅ Данные синхронизированы!');
         } else {
-          showSessionInfo('❌ Ошибка сохранения', false);
+          showSessionInfo('❌ Ошибка синхронизации', false);
         }
       });
     }
@@ -285,8 +308,14 @@
         
         updateUserStatus(`ID: ${player.id}`, 'info');
         
-        // Инициализируем игрока (всегда начинаем с 0)
-        initializePlayer();
+        // Сначала загружаем данные из базы
+        loadPlayerData().then(loaded => {
+          if (!loaded) {
+            // Если не удалось загрузить, используем локальные данные
+            document.getElementById("score").innerText = player.score;
+            updateUserStatus('Используются локальные данные', 'warning');
+          }
+        });
         
       } else {
         console.log('Запуск вне Telegram');
@@ -299,8 +328,8 @@
       player.score++;
       document.getElementById("score").innerText = player.score;
       
-      // Сохраняем каждые 5 кликов
-      if (player.score % 5 === 0) {
+      // Сохраняем каждые 3 клика
+      if (player.score % 3 === 0) {
         savePlayerData();
       }
     });
