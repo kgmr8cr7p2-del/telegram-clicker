@@ -3,201 +3,966 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Clicker Test</title>
+    <title>Telegram Clicker</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f0f0f0;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .click-area {
-            background: #4CAF50;
-            color: white;
-            padding: 40px;
+        /* Ваши стили остаются без изменений */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 24px; margin-bottom: 15px; }
+        .stats { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
+        .stats div { margin: 5px 0; font-size: 16px; }
+        .game-area { text-align: center; margin: 20px 0; }
+        .click-button { background: linear-gradient(45deg, #FF6B6B, #FFE66D); border: none; border-radius: 50%; width: 150px; height: 150px; font-size: 18px; font-weight: bold; color: #333; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4); display: block; margin: 0 auto; touch-action: manipulation; user-select: none; }
+        .click-button:active { transform: scale(0.95); }
+        .click-button:disabled { background: #cccccc; cursor: not-allowed; }
+        .energy-bar { width: 100%; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        .energy-fill { height: 100%; background: linear-gradient(90deg, #00ff88, #00ccff); transition: width 0.3s; }
+        .upgrades { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
+        .upgrades h3 { margin-bottom: 10px; text-align: center; }
+        .upgrade-btn { width: 100%; padding: 10px; margin: 5px 0; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; font-size: 12px; transition: background 0.3s; }
+        .upgrade-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .upgrade-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.3); }
+        .leaderboard { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 15px; backdrop-filter: blur(10px); margin-bottom: 10px; }
+        .leaderboard h3 { margin-bottom: 10px; text-align: center; }
+        .leaderboard-item { padding: 10px 12px; margin: 5px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
+        .cooldown { pointer-events: none; opacity: 0.7; }
+        .tab-buttons { display: flex; margin-bottom: 10px; gap: 5px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer; }
+        .tab-btn.active { background: rgba(255, 255, 255, 0.4); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .autoclicker-info { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .leaderboard-stats { text-align: center; margin-top: 10px; font-size: 12px; opacity: 0.8; }
+        .server-status { text-align: center; font-size: 12px; margin-top: 5px; padding: 5px; border-radius: 5px; }
+        .status-online { background: rgba(76, 175, 80, 0.3); color: #90EE90; }
+        .status-offline { background: rgba(244, 67, 54, 0.3); color: #FF6B6B; }
+        .loading { text-align: center; padding: 20px; font-size: 16px; }
+        .refresh-btn { background: rgba(255, 255, 255, 0.2); border: none; border-radius: 8px; color: white; padding: 8px 15px; margin-top: 10px; cursor: pointer; font-size: 12px; }
+        .reset-btn { background: rgba(255, 100, 100, 0.3); border: none; border-radius: 8px; color: white; padding: 8px 15px; margin: 5px; cursor: pointer; font-size: 12px; }
+        
+        .offline-mode { 
+            background: rgba(255, 255, 255, 0.1); 
+            padding: 20px; 
+            border-radius: 15px; 
+            backdrop-filter: blur(10px); 
+            margin: 20px 0; 
             text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            margin: 20px 0;
-            font-size: 24px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
         }
-        .stats {
-            background: #2196F3;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
+        .offline-warning { 
+            color: #FF6B6B; 
+            font-size: 14px; 
             margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        .error {
-            background: #f44336;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
+        .retry-button { 
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53); 
+            border: none; 
+            border-radius: 8px; 
+            color: white; 
+            padding: 10px 20px; 
+            margin: 10px 0; 
+            cursor: pointer; 
+            font-size: 14px;
+            transition: all 0.3s;
         }
-        .success {
-            background: #4CAF50;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
+        .retry-button:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+        .energy-info { 
+            font-size: 11px; 
+            opacity: 0.7; 
+            margin-top: 3px;
+        }
+        .last-sync { 
+            font-size: 10px; 
+            opacity: 0.5; 
+            margin-top: 5px;
+        }
+        .dev-mode { 
+            background: rgba(255, 215, 0, 0.2); 
+            padding: 10px; 
+            border-radius: 10px; 
+            margin: 10px 0; 
+            text-align: center;
+            border: 1px solid rgba(255, 215, 0, 0.5);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎮 Тест Кликера</h1>
-        
-        <div id="testMode" class="success">
-            🔧 Тестовый режим
-        </div>
-        
-        <div class="click-area" id="clickButton">
-            <div id="clickCount">0</div>
-            <div>Нажми меня!</div>
-        </div>
-        
-        <div class="stats">
-            <h3>Статистика</h3>
-            <div>Игрок: <span id="userName">Тестовый пользователь</span></div>
-            <div>Клики: <span id="userClicks">0</span></div>
-            <div>Место в рейтинге: <span id="userRank">-</span></div>
-        </div>
-        
-        <div id="debug">
-            <h3>Отладка</h3>
-            <button onclick="testBackend()">Тест бэкенда</button>
-            <div id="debugOutput"></div>
-        </div>
+    <div id="app">
+        <div class="loading">Загрузка вашего прогресса... ⏳</div>
     </div>
 
     <script>
-        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxtLY4Hww5cB5WPedekWriCYmkiIRonIYU1ojM6HyDyokUiFgsG1RM0agOSM4wW6B1r/exec';
-        
-        let userData = { clicks: 0 };
-        const testUser = {
-            id: 'test_user_123',
-            first_name: 'Тестовый',
-            username: 'test_user'
-        };
+        // URL вашего Google Apps Script
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzGhuJLb5BlJwNxDTQw4dtQ17bCnYe-tWM_MUQn5oChUVEqGgUupv1CMnrUBAm8w93l/exec';
 
-        // Простой JSONP запрос
-        function makeRequest(action, params = {}) {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'cb_' + Math.random().toString(36).substr(2, 9);
-                const url = new URL(BACKEND_URL);
+        let gameState;
+        let autoclickerInterval;
+        let energyInterval;
+        let syncInterval;
+        let lastServerSync = 0;
+
+        function initTelegramApp() {
+            console.log('🚀 Инициализация Telegram Web App...');
+            if (window.Telegram && Telegram.WebApp) {
+                console.log('✅ В Telegram Web App');
+                Telegram.WebApp.expand();
+            }
+            initGame();
+        }
+
+        function initGame() {
+            console.log('🎮 Запуск игры...');
+            createGameInterface();
+            
+            // Базовое состояние игры
+            gameState = {
+                coins: 0,
+                level: 1,
+                energy: 650,
+                maxEnergy: 650,
+                energyPerClick: 5,
+                energyRegen: 1,
+                lastEnergyUpdate: Date.now(),
                 
-                url.searchParams.append('action', action);
-                Object.keys(params).forEach(key => {
-                    url.searchParams.append(key, params[key]);
+                upgrades: {
+                    clickPower: { level: 1, cost: 50 },
+                    energyRegen: { level: 1, cost: 100 },
+                    autoclicker: { level: 0, cost: 200 }
+                },
+                
+                lastClickTime: 0,
+                clickCooldown: 100,
+                leaderboard: [],
+                totalPlayers: 0,
+                serverOnline: false,
+                offlineMode: false
+            };
+
+            loadGameProgress();
+        }
+
+        function getUserId() {
+            if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe.user) {
+                return 'tg_' + Telegram.WebApp.initDataUnsafe.user.id;
+            }
+            return 'user_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function getPlayerName() {
+            return window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Игрок';
+        }
+
+        // 📥 ЗАГРУЗКА ПРОГРЕССА через XMLHttpRequest
+        async function loadGameProgress() {
+            try {
+                console.log('📥 Загрузка прогресса...');
+                showLoadingMessage('Подключение к серверу... 🌐');
+                
+                const userId = getUserId();
+                const playerName = getPlayerName();
+                
+                // Используем XMLHttpRequest для обхода CORS
+                const data = await loadViaXHR('getPlayerData', {
+                    userId: userId,
+                    playerName: playerName
                 });
-                url.searchParams.append('callback', callbackName);
-
-                console.log('Запрос:', action, params);
-
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
-                    console.log('Ответ:', data);
-                    resolve(data);
-                };
-
-                const script = document.createElement('script');
-                script.src = url.toString();
                 
-                script.onerror = function() {
-                    delete window[callbackName];
-                    reject(new Error('Ошибка загрузки скрипта'));
-                };
+                if (data && data.success) {
+                    processServerData(data);
+                    console.log('✅ Прогресс загружен с сервера');
+                } else {
+                    throw new Error(data ? data.error : 'No data from server');
+                }
+                
+            } catch (error) {
+                console.error('❌ Ошибка загрузки:', error);
+                handleServerError();
+            }
+            
+            updateUI();
+            startGameFeatures();
+        }
 
-                // Таймаут
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                        reject(new Error('Таймаут'));
+        // 🔄 XMLHttpRequest для обхода CORS
+        function loadViaXHR(action, params) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                let url = `${API_URL}?action=${action}&t=${Date.now()}`;
+                
+                // Добавляем параметры в URL
+                for (const key in params) {
+                    if (params[key]) {
+                        url += `&${key}=${encodeURIComponent(params[key])}`;
                     }
-                }, 10000);
-
-                document.body.appendChild(script);
+                }
+                
+                console.log('📡 XHR запрос:', url);
+                
+                xhr.open('GET', url, true);
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                // Пытаемся распарсить JSON ответ
+                                const response = JSON.parse(xhr.responseText);
+                                resolve(response);
+                            } catch (e) {
+                                // Если не JSON, пробуем eval (для текстовых ответов)
+                                try {
+                                    const response = eval(`(${xhr.responseText})`);
+                                    resolve(response);
+                                } catch (e2) {
+                                    reject(new Error('Invalid response format: ' + xhr.responseText));
+                                }
+                            }
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    reject(new Error('Network error'));
+                };
+                
+                xhr.timeout = 10000;
+                xhr.ontimeout = function() {
+                    reject(new Error('Request timeout'));
+                };
+                
+                xhr.send();
             });
         }
 
-        // Обработчик клика
-        document.getElementById('clickButton').addEventListener('click', async function() {
+        // 💾 СОХРАНЕНИЕ через XMLHttpRequest
+        function saveViaXHR(action, params) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                let url = `${API_URL}?action=${action}&t=${Date.now()}`;
+                
+                // Создаем FormData для POST запроса
+                const formData = new FormData();
+                formData.append('action', action);
+                
+                // Добавляем параметры
+                for (const key in params) {
+                    if (params[key] !== undefined && params[key] !== null) {
+                        if (typeof params[key] === 'object') {
+                            formData.append(key, JSON.stringify(params[key]));
+                        } else {
+                            formData.append(key, params[key]);
+                        }
+                    }
+                }
+                
+                console.log('📡 XHR сохранение:', action, params);
+                
+                xhr.open('POST', url, true);
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                resolve(response);
+                            } catch (e) {
+                                try {
+                                    const response = eval(`(${xhr.responseText})`);
+                                    resolve(response);
+                                } catch (e2) {
+                                    reject(new Error('Invalid response format: ' + xhr.responseText));
+                                }
+                            }
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    reject(new Error('Network error'));
+                };
+                
+                xhr.timeout = 10000;
+                xhr.ontimeout = function() {
+                    reject(new Error('Request timeout'));
+                };
+                
+                xhr.send(formData);
+            });
+        }
+
+        function processServerData(data) {
+            gameState.leaderboard = data.leaders || [];
+            gameState.totalPlayers = data.totalPlayers || 0;
+            gameState.serverOnline = true;
+            gameState.offlineMode = false;
+            
+            // Восстанавливаем прогресс игрока
+            if (data.playerData) {
+                const serverData = data.playerData;
+                const energyCalc = calculateCurrentEnergy(
+                    serverData.energy || 650,
+                    serverData.lastEnergyUpdate || Date.now(),
+                    serverData.energyRegen || 1,
+                    serverData.maxEnergy || 650
+                );
+                
+                gameState.coins = serverData.coins || 0;
+                gameState.level = serverData.level || 1;
+                gameState.energy = energyCalc.energy;
+                gameState.maxEnergy = serverData.maxEnergy || 650;
+                gameState.energyPerClick = serverData.energyPerClick || 5;
+                gameState.energyRegen = serverData.energyRegen || 1;
+                gameState.lastEnergyUpdate = energyCalc.lastUpdateTime;
+                
+                if (serverData.upgrades) {
+                    gameState.upgrades = serverData.upgrades;
+                }
+            } else {
+                // Новый игрок
+                createNewGame();
+            }
+            
+            lastServerSync = Date.now();
+            showNotification('Прогресс синхронизирован! ✅');
+        }
+
+        function calculateCurrentEnergy(savedEnergy, lastUpdateTime, energyRegen, maxEnergy) {
+            const now = Date.now();
+            const timeDiff = Math.floor((now - lastUpdateTime) / 1000);
+            const regeneratedEnergy = timeDiff * energyRegen;
+            const newEnergy = Math.min(maxEnergy, savedEnergy + regeneratedEnergy);
+            
+            console.log(`⚡ Расчет энергии: ${savedEnergy} + (${timeDiff}сек * ${energyRegen}/сек) = ${newEnergy}`);
+            return {
+                energy: newEnergy,
+                lastUpdateTime: now
+            };
+        }
+
+        function handleServerError() {
+            gameState.serverOnline = false;
+            gameState.offlineMode = true;
+            
+            const localData = localStorage.getItem('telegram_clicker_backup');
+            if (localData) {
+                try {
+                    const savedState = JSON.parse(localData);
+                    const energyCalc = calculateCurrentEnergy(
+                        savedState.energy || 650,
+                        savedState.lastEnergyUpdate || Date.now(),
+                        savedState.energyRegen || 1,
+                        savedState.maxEnergy || 650
+                    );
+                    
+                    gameState.coins = savedState.coins || 0;
+                    gameState.level = savedState.level || 1;
+                    gameState.energy = energyCalc.energy;
+                    gameState.maxEnergy = savedState.maxEnergy || 650;
+                    gameState.energyPerClick = savedState.energyPerClick || 5;
+                    gameState.energyRegen = savedState.energyRegen || 1;
+                    gameState.lastEnergyUpdate = energyCalc.lastUpdateTime;
+                    
+                    if (savedState.upgrades) {
+                        gameState.upgrades = savedState.upgrades;
+                    }
+                    
+                    console.log('📱 Прогресс восстановлен из localStorage');
+                    showNotification('Локальный режим: прогресс загружен 📱');
+                } catch (e) {
+                    console.error('Ошибка восстановления:', e);
+                    createNewGame();
+                }
+            } else {
+                createNewGame();
+            }
+        }
+
+        function createNewGame() {
+            gameState.coins = 100;
+            gameState.level = 1;
+            gameState.energy = 650;
+            gameState.maxEnergy = 650;
+            gameState.energyPerClick = 5;
+            gameState.energyRegen = 1;
+            gameState.lastEnergyUpdate = Date.now();
+            
+            console.log('🎮 Создана новая игра');
+            showNotification('Новая игра создана! 🎮');
+        }
+
+        // 💾 СОХРАНЕНИЕ ПРОГРЕССА
+        async function saveFullProgress() {
+            // Всегда сохраняем локально
+            const backupData = {
+                coins: gameState.coins,
+                level: gameState.level,
+                energy: gameState.energy,
+                maxEnergy: gameState.maxEnergy,
+                energyPerClick: gameState.energyPerClick,
+                energyRegen: gameState.energyRegen,
+                lastEnergyUpdate: gameState.lastEnergyUpdate,
+                upgrades: gameState.upgrades,
+                lastSave: Date.now()
+            };
+            
+            localStorage.setItem('telegram_clicker_backup', JSON.stringify(backupData));
+            
+            // Сохраняем на сервер только если онлайн
+            if (!gameState.serverOnline || gameState.offlineMode) {
+                return false;
+            }
+            
             try {
-                const response = await makeRequest('click', {
-                    userId: testUser.id,
-                    username: testUser.username
+                const playerData = {
+                    coins: gameState.coins,
+                    level: gameState.level,
+                    energy: gameState.energy,
+                    maxEnergy: gameState.maxEnergy,
+                    energyPerClick: gameState.energyPerClick,
+                    energyRegen: gameState.energyRegen,
+                    lastEnergyUpdate: gameState.lastEnergyUpdate,
+                    upgrades: gameState.upgrades
+                };
+                
+                const result = await saveViaXHR('savePlayerData', {
+                    userId: getUserId(),
+                    playerName: getPlayerName(),
+                    playerData: playerData,
+                    score: gameState.coins
                 });
                 
-                if (response.success) {
-                    userData.clicks = response.clicks;
-                    updateUI();
-                    showMessage('Клик добавлен!', 'success');
+                if (result && result.success) {
+                    // Обновляем лидерборд после сохранения
+                    if (result.leaders) {
+                        gameState.leaderboard = result.leaders;
+                    }
+                    if (result.totalPlayers) {
+                        gameState.totalPlayers = result.totalPlayers;
+                    }
+                    
+                    lastServerSync = Date.now();
+                    console.log('💾 Прогресс сохранен на сервер');
+                    return true;
                 } else {
-                    showMessage('Ошибка: ' + response.error, 'error');
+                    throw new Error(result ? result.error : 'Save failed');
                 }
+                
             } catch (error) {
-                showMessage('Ошибка соединения: ' + error.message, 'error');
+                console.error('❌ Ошибка сохранения:', error);
+                gameState.serverOnline = false;
+                return false;
             }
-        });
+        }
 
-        // Тест бэкенда
-        async function testBackend() {
-            const debugOutput = document.getElementById('debugOutput');
-            debugOutput.innerHTML = 'Тестируем бэкенд...';
+        // ⚡ СИСТЕМА ЭНЕРГИИ
+        function startEnergySystem() {
+            if (energyInterval) clearInterval(energyInterval);
             
-            try {
-                // Тест получения топа
-                const topResponse = await makeRequest('getTop');
-                debugOutput.innerHTML = 'Топ игроков: ' + JSON.stringify(topResponse);
+            energyInterval = setInterval(() => {
+                const now = Date.now();
+                const timeDiff = Math.floor((now - gameState.lastEnergyUpdate) / 1000);
                 
-                // Тест получения пользователя
-                const userResponse = await makeRequest('getUser', { userId: testUser.id });
-                debugOutput.innerHTML += '<br>Данные пользователя: ' + JSON.stringify(userResponse);
-                
-            } catch (error) {
-                debugOutput.innerHTML = 'Ошибка: ' + error.message;
+                if (timeDiff > 0 && gameState.energy < gameState.maxEnergy) {
+                    const regeneratedEnergy = timeDiff * gameState.energyRegen;
+                    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + regeneratedEnergy);
+                    gameState.lastEnergyUpdate = now;
+                    
+                    updateEnergyBar();
+                    updateUI();
+                    
+                    // Синхронизируем с сервером каждые 30 секунд
+                    if (now - lastServerSync > 30000 && gameState.serverOnline) {
+                        saveFullProgress();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateEnergyBar() {
+            const energyFill = document.getElementById('energy-fill');
+            if (energyFill) {
+                const percentage = (gameState.energy / gameState.maxEnergy) * 100;
+                energyFill.style.width = percentage + '%';
             }
         }
 
-        function updateUI() {
-            document.getElementById('clickCount').textContent = userData.clicks;
-            document.getElementById('userClicks').textContent = userData.clicks;
+        function canClick() {
+            return gameState.energy >= gameState.energyPerClick;
         }
 
-        function showMessage(message, type) {
-            const div = document.createElement('div');
-            div.className = type;
-            div.textContent = message;
-            document.querySelector('.container').appendChild(div);
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 10px;
+                z-index: 1000;
+                font-size: 14px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
             
             setTimeout(() => {
-                div.remove();
+                document.body.removeChild(notification);
             }, 3000);
         }
 
-        // Загрузка начальных данных
-        async function loadInitialData() {
-            try {
-                const response = await makeRequest('getUser', { userId: testUser.id });
-                if (response.success && response.user) {
-                    userData = response.user;
-                }
-                updateUI();
-            } catch (error) {
-                console.log('Ошибка загрузки данных:', error);
+        function showLoadingMessage(message) {
+            const loadingElement = document.querySelector('.loading');
+            if (loadingElement) {
+                loadingElement.innerHTML = message;
             }
         }
 
-        // Запуск при загрузке
-        document.addEventListener('DOMContentLoaded', loadInitialData);
+        function handleClick(event) {
+            if (!canClick()) return;
+            
+            const now = Date.now();
+            const timeSinceLastClick = now - gameState.lastClickTime;
+            if (timeSinceLastClick < gameState.clickCooldown) return;
+            
+            gameState.lastClickTime = now;
+            
+            // Тратим энергию
+            gameState.energy -= gameState.energyPerClick;
+            gameState.lastEnergyUpdate = now;
+            
+            // Получаем монеты
+            const coinsEarned = gameState.upgrades.clickPower.level;
+            gameState.coins += coinsEarned;
+            
+            if (gameState.coins >= gameState.level * 100) {
+                gameState.level++;
+                if (window.Telegram && Telegram.WebApp) {
+                    Telegram.WebApp.HapticFeedback.impactOccurred('heavy');
+                }
+            }
+            
+            // Сохраняем прогресс
+            saveFullProgress();
+            updateUI();
+            
+            const clickButton = document.getElementById('click-btn');
+            if (clickButton) {
+                clickButton.style.transform = 'scale(0.95)';
+                setTimeout(() => clickButton.style.transform = 'scale(1)', 100);
+                clickButton.classList.add('cooldown');
+                setTimeout(() => clickButton.classList.remove('cooldown'), gameState.clickCooldown);
+            }
+        }
+
+        function startAutoclicker() {
+            if (autoclickerInterval) clearInterval(autoclickerInterval);
+            
+            if (gameState.upgrades.autoclicker.level > 0) {
+                autoclickerInterval = setInterval(() => {
+                    if (canClick()) {
+                        const now = Date.now();
+                        
+                        // Тратим энергию
+                        gameState.energy -= gameState.energyPerClick;
+                        gameState.lastEnergyUpdate = now;
+                        
+                        // Получаем монеты
+                        const autoCoins = gameState.upgrades.autoclicker.level * gameState.upgrades.clickPower.level;
+                        gameState.coins += autoCoins;
+                        
+                        // Сохраняем каждые 10 секунд в авто-режиме
+                        if (now - lastServerSync > 10000 && gameState.serverOnline) {
+                            saveFullProgress();
+                        }
+                        
+                        updateUI();
+                    }
+                }, 1000);
+            }
+        }
+
+        function updateUpgradeButtons() {
+            const clickBtn = document.getElementById('upgrade-click-power');
+            if (clickBtn) {
+                const cost = gameState.upgrades.clickPower.cost;
+                clickBtn.disabled = gameState.coins < cost;
+                clickBtn.innerHTML = `💪 +1 монета за клик<br><small>Уровень: ${gameState.upgrades.clickPower.level} | Стоимость: ${cost}</small>`;
+            }
+            
+            const energyBtn = document.getElementById('upgrade-energy-regen');
+            if (energyBtn) {
+                const cost = gameState.upgrades.energyRegen.cost;
+                energyBtn.disabled = gameState.coins < cost;
+                energyBtn.innerHTML = `⚡ +1 энергия/сек<br><small>Уровень: ${gameState.upgrades.energyRegen.level} | Стоимость: ${cost}</small>`;
+            }
+            
+            const autoBtn = document.getElementById('upgrade-autoclicker');
+            if (autoBtn) {
+                const cost = gameState.upgrades.autoclicker.cost;
+                autoBtn.disabled = gameState.coins < cost;
+                autoBtn.innerHTML = `🤖 +1 авто-клик/сек<br><small>Уровень: ${gameState.upgrades.autoclicker.level} | Стоимость: ${cost}</small>`;
+            }
+        }
+
+        function setupUpgrades() {
+            document.getElementById('upgrade-click-power')?.addEventListener('click', function() {
+                const upgrade = gameState.upgrades.clickPower;
+                if (gameState.coins >= upgrade.cost) {
+                    gameState.coins -= upgrade.cost;
+                    upgrade.level += 1;
+                    upgrade.cost *= 2;
+                    
+                    saveFullProgress();
+                    if (window.Telegram && Telegram.WebApp) {
+                        Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                    }
+                    updateUI();
+                    showNotification(`💪 Улучшено! Теперь +${upgrade.level} монет за клик`);
+                }
+            });
+
+            document.getElementById('upgrade-energy-regen')?.addEventListener('click', function() {
+                const upgrade = gameState.upgrades.energyRegen;
+                if (gameState.coins >= upgrade.cost) {
+                    gameState.coins -= upgrade.cost;
+                    upgrade.level += 1;
+                    gameState.energyRegen = upgrade.level;
+                    upgrade.cost *= 2;
+                    
+                    saveFullProgress();
+                    if (window.Telegram && Telegram.WebApp) {
+                        Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                    }
+                    updateUI();
+                    showNotification(`⚡ Улучшено! Теперь +${upgrade.level} энергии/сек`);
+                }
+            });
+
+            document.getElementById('upgrade-autoclicker')?.addEventListener('click', function() {
+                const upgrade = gameState.upgrades.autoclicker;
+                if (gameState.coins >= upgrade.cost) {
+                    gameState.coins -= upgrade.cost;
+                    upgrade.level += 1;
+                    upgrade.cost *= 2;
+                    
+                    startAutoclicker();
+                    saveFullProgress();
+                    if (window.Telegram && Telegram.WebApp) {
+                        Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+                    }
+                    updateUI();
+                    showNotification(`🤖 Улучшено! Теперь +${upgrade.level} авто-клик/сек`);
+                }
+            });
+        }
+
+        function updateLeaderboard() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            
+            if (leaderboardList) {
+                const currentPlayerName = getPlayerName();
+                
+                if (gameState.offlineMode) {
+                    leaderboardList.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #FFE66D;">
+                            📱 Локальный режим<br>
+                            <small>Таблица лидеров недоступна</small>
+                        </div>
+                    `;
+                } else if (!gameState.serverOnline) {
+                    leaderboardList.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #FF6B6B;">
+                            🔴 Сервер недоступен<br>
+                            <small>Попытка подключения...</small>
+                        </div>
+                    `;
+                } else if (gameState.leaderboard.length === 0) {
+                    leaderboardList.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            🏆 Таблица лидеров пуста!<br>
+                            <small>Будьте первым игроком!</small>
+                        </div>
+                    `;
+                } else {
+                    leaderboardList.innerHTML = gameState.leaderboard.map((player, index) => {
+                        const isCurrentPlayer = (player.name === currentPlayerName);
+                        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                        const date = player.date ? new Date(player.date).toLocaleDateString('ru-RU') : '';
+                        
+                        return `
+                            <div class="leaderboard-item" style="${isCurrentPlayer ? 'background: linear-gradient(90deg, rgba(255,215,0,0.3) 0%, rgba(255,215,0,0.1) 100%); border-left: 4px solid gold;' : ''}">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: ${isCurrentPlayer ? 'bold' : 'normal'}; font-size: 14px;">
+                                            ${medal} ${player.name} 
+                                            ${isCurrentPlayer ? ' <span style="color: gold;">(Вы) 👑</span>' : ''}
+                                        </div>
+                                        <div style="font-size: 10px; opacity: 0.7; margin-top: 2px;">${date}</div>
+                                    </div>
+                                    <div style="font-weight: bold; font-size: 16px; color: #FFE66D; margin-left: 10px;">
+                                        ${player.score.toLocaleString()}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            const statsElement = document.getElementById('leaderboard-stats');
+            if (statsElement) {
+                if (gameState.serverOnline) {
+                    statsElement.innerHTML = `Всего игроков: ${gameState.totalPlayers} 🎮`;
+                } else if (gameState.offlineMode) {
+                    statsElement.innerHTML = `Локальный режим 📱`;
+                } else {
+                    statsElement.innerHTML = `Подключение к серверу... 🔄`;
+                }
+            }
+        }
+
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    button.classList.add('active');
+                    const tabName = button.getAttribute('data-tab');
+                    document.getElementById(`${tabName}-tab`).classList.add('active');
+                });
+            });
+        }
+
+        function resetGame() {
+            if (confirm('🔄 Сбросить игру?\nВсе ваши монеты и улучшения будут потеряны.')) {
+                gameState = {
+                    coins: 0,
+                    level: 1,
+                    energy: 650,
+                    maxEnergy: 650,
+                    energyPerClick: 5,
+                    energyRegen: 1,
+                    lastEnergyUpdate: Date.now(),
+                    upgrades: {
+                        clickPower: { level: 1, cost: 50 },
+                        energyRegen: { level: 1, cost: 100 },
+                        autoclicker: { level: 0, cost: 200 }
+                    },
+                    lastClickTime: 0,
+                    clickCooldown: 100,
+                    leaderboard: [],
+                    totalPlayers: 0,
+                    serverOnline: false,
+                    offlineMode: false
+                };
+                
+                if (autoclickerInterval) clearInterval(autoclickerInterval);
+                if (energyInterval) clearInterval(energyInterval);
+                if (syncInterval) clearInterval(syncInterval);
+                
+                localStorage.removeItem('telegram_clicker_backup');
+                updateUI();
+                loadGameProgress();
+                startEnergySystem();
+                showNotification('Игра сброшена! ✅');
+            }
+        }
+
+        function retryConnection() {
+            gameState.offlineMode = false;
+            showLoadingMessage('Повторное подключение к серверу... 🔄');
+            loadGameProgress();
+        }
+
+        function createGameInterface() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="container">
+                    <div class="header">
+                        <h1>🎮 Энерго-Кликер</h1>
+                        <div class="stats">
+                            <div>Монеты: <span id="coins">0</span></div>
+                            <div>Уровень: <span id="level">1</span></div>
+                            <div>Энергия: <span id="energy">650/650</span></div>
+                            <div>За клик: <span id="click-power">+1 монет</span></div>
+                            <div id="autoclicker-info" class="autoclicker-info">Автокликер: +0 монет/сек</div>
+                            <div class="energy-info">⚡ Регенерация: <span id="energy-regen">1</span>/сек</div>
+                            <div id="server-status" class="server-status">Подключение к серверу...</div>
+                            <div id="last-sync" class="last-sync"></div>
+                        </div>
+                    </div>
+
+                    <div id="offline-mode" class="offline-mode" style="display: none;">
+                        <div class="offline-warning">
+                            ⚠️ ЛОКАЛЬНЫЙ РЕЖИМ
+                        </div>
+                        <div style="font-size: 14px; margin: 10px 0;">
+                            Сервер временно недоступен
+                        </div>
+                        <button class="retry-button" onclick="retryConnection()">
+                            🔄 Повторить подключение
+                        </button>
+                        <div style="font-size: 12px; margin-top: 10px; opacity: 0.7;">
+                            Энергия восстанавливается даже офлайн!
+                        </div>
+                    </div>
+
+                    <div class="game-area">
+                        <button id="click-btn" class="click-button">⚡ КЛИК!<br><small>(-5 энергии)</small></button>
+                        <div class="energy-bar">
+                            <div id="energy-fill" class="energy-fill"></div>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <button class="reset-btn" onclick="resetGame()">🔄 Сбросить игру</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="upgrades">Улучшения</button>
+                        <button class="tab-btn" data-tab="leaderboard">Лидеры</button>
+                    </div>
+
+                    <div id="upgrades-tab" class="tab-content active">
+                        <div class="upgrades">
+                            <h3>⚡ Улучшения</h3>
+                            <button class="upgrade-btn" id="upgrade-click-power">
+                                💪 +1 монета за клик<br>
+                                <small>Уровень: 1 | Стоимость: 50</small>
+                            </button>
+                            <button class="upgrade-btn" id="upgrade-energy-regen">
+                                ⚡ +1 энергия/сек<br>
+                                <small>Уровень: 1 | Стоимость: 100</small>
+                            </button>
+                            <button class="upgrade-btn" id="upgrade-autoclicker">
+                                🤖 +1 авто-клик/сек<br>
+                                <small>Уровень: 0 | Стоимость: 200</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="leaderboard-tab" class="tab-content">
+                        <div class="leaderboard">
+                            <h3>🏆 Топ игроков</h3>
+                            <div id="leaderboard-list">Загрузка таблицы... ⏳</div>
+                            <div id="leaderboard-stats" class="leaderboard-stats"></div>
+                            <button class="refresh-btn" onclick="loadGameProgress()">🔄 Обновить</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateUI() {
+            const coinsElement = document.getElementById('coins');
+            const levelElement = document.getElementById('level');
+            const energyElement = document.getElementById('energy');
+            const clickPowerElement = document.getElementById('click-power');
+            const energyRegenElement = document.getElementById('energy-regen');
+            const autoclickerInfo = document.getElementById('autoclicker-info');
+            const serverStatus = document.getElementById('server-status');
+            const offlineModeElement = document.getElementById('offline-mode');
+            const lastSyncElement = document.getElementById('last-sync');
+            
+            if (coinsElement) coinsElement.textContent = gameState.coins.toLocaleString();
+            if (levelElement) levelElement.textContent = gameState.level;
+            if (energyElement) energyElement.textContent = `${Math.floor(gameState.energy)}/${gameState.maxEnergy}`;
+            if (clickPowerElement) clickPowerElement.textContent = `+${gameState.upgrades.clickPower.level} монет`;
+            if (energyRegenElement) energyRegenElement.textContent = `${gameState.energyRegen}/сек`;
+            
+            if (autoclickerInfo) {
+                const autoCoins = gameState.upgrades.autoclicker.level * gameState.upgrades.clickPower.level;
+                autoclickerInfo.textContent = `Автокликер: +${autoCoins} монет/сек`;
+            }
+            
+            if (serverStatus) {
+                if (gameState.serverOnline) {
+                    serverStatus.textContent = '🟢 Сервер онлайн';
+                    serverStatus.className = 'server-status status-online';
+                } else if (gameState.offlineMode) {
+                    serverStatus.textContent = '🟡 Локальный режим';
+                    serverStatus.className = 'server-status status-offline';
+                } else {
+                    serverStatus.textContent = '🔴 Подключение...';
+                    serverStatus.className = 'server-status status-offline';
+                }
+            }
+            
+            if (lastSyncElement) {
+                if (gameState.serverOnline && lastServerSync > 0) {
+                    const syncAgo = Math.floor((Date.now() - lastServerSync) / 1000);
+                    lastSyncElement.textContent = `Синхронизировано ${syncAgo} сек назад`;
+                } else if (gameState.offlineMode) {
+                    lastSyncElement.textContent = 'Локальное сохранение';
+                } else {
+                    lastSyncElement.textContent = 'Ожидание синхронизации...';
+                }
+            }
+            
+            // Показываем/скрываем офлайн режим
+            if (offlineModeElement) {
+                offlineModeElement.style.display = gameState.offlineMode ? 'block' : 'none';
+            }
+            
+            updateUpgradeButtons();
+            updateEnergyBar();
+            updateLeaderboard();
+            
+            const clickButton = document.getElementById('click-btn');
+            if (clickButton) {
+                clickButton.disabled = !canClick();
+            }
+        }
+
+        function startGameFeatures() {
+            startEnergySystem();
+            startAutoclicker();
+            setupUpgrades();
+            setupTabs();
+            
+            const clickButton = document.getElementById('click-btn');
+            if (clickButton) {
+                clickButton.addEventListener('click', handleClick);
+                clickButton.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    handleClick(e);
+                });
+            }
+            
+            // Запускаем периодическую синхронизацию
+            syncInterval = setInterval(() => {
+                if (gameState.serverOnline) {
+                    saveFullProgress();
+                }
+            }, 60000);
+            
+            // Сделаем функции глобальными
+            window.loadGameProgress = loadGameProgress;
+            window.resetGame = resetGame;
+            window.retryConnection = retryConnection;
+            
+            console.log('✅ Игра полностью запущена');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Страница загружена');
+            initTelegramApp();
+        });
     </script>
 </body>
 </html>
