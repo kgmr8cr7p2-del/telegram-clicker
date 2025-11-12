@@ -7,7 +7,7 @@
   <style>
     body { font-family: sans-serif; text-align: center; margin-top: 30px; background: #f7f9fc; }
     h1 { color: #222; }
-    button { padding: 10px 15px; font-size: 16px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; margin: 8px; }
+    button { padding: 10px 15px; font-size: 16px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; margin: 6px; }
     #authMessage { color: #d63031; margin: 20px; padding: 20px; background: #ffeaa7; border-radius: 10px; }
     #game { display: none; }
     .status { margin: 8px; padding: 8px; border-radius: 5px; font-size: 13px; }
@@ -51,15 +51,16 @@
     <button id="clickBtn">Клик! (–5 ⚡)</button>
     <br>
     <button onclick="buyEnergyRegen()">🔋 +1 энергии/сек (Цена: <span id="regenCost">10</span>)</button>
-    <button onclick="buyAutoClicker()">🤖 +1 автоклик/сек (Цена: <span id="autoClickerCost">50</span>)</button>
+    <button onclick="buyAutoClicker()">🤖 +1 автоклик/сек (без ⚡, Цена: <span id="autoClickerCost">50</span>)</button>
+    <button onclick="buyClickPower()">💪 +1 сила клика (Цена: <span id="clickPowerCost">50</span>)</button>
     <br>
-    <p>Автокликер: <span id="autoClickerLevel">0</span> уровней</p>
+    <p>Автокликер: <span id="autoClickerLevel">0</span> | Сила клика: <span id="clickPower">1</span></p>
     <button onclick="forceSave()">💾 Сохранить</button>
   </div>
 
   <script>
     // === ВСТАВЬТЕ СЮДА ВАШ РАБОЧИЙ URL ИЗ GAS ===
-    const apiUrl = "https://script.google.com/macros/s/AKfycbxWpGypJLFCjzYrpa0H3-NLh6qCZp3gFgrsZ4zmvErBu23k0Ux5BENda7Fdykc1dQbI/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbx_mQ5ligrZlwcpC-pNy4lHhHu9D8yduSibxHswW1wxw-1wISexMvv2H_0xm_Nl_PO1/exec";
 
     const tg = window.Telegram.WebApp;
 
@@ -72,6 +73,7 @@
       energyRegen: 1,
       energyUpgrades: 0,
       autoClickerLevel: 0,
+      clickPower: 1, // 👈 НОВОЕ
       lastSavedScore: 0,
       isInitialized: false
     };
@@ -95,12 +97,20 @@
       return Math.round(base * Math.pow(1.8, level));
     }
 
+    // Сила клика — такая же стоимость, как у автокликера
+    function getClickPowerCost(level) {
+      const base = 50;
+      return Math.round(base * Math.pow(1.8, level));
+    }
+
     function updateUI() {
       document.getElementById("score").innerText = player.score;
       document.getElementById("energy").innerText = Math.floor(player.energy);
       document.getElementById("regenCost").innerText = getEnergyRegenCost(player.energyUpgrades);
       document.getElementById("autoClickerCost").innerText = getAutoClickerCost(player.autoClickerLevel);
+      document.getElementById("clickPowerCost").innerText = getClickPowerCost(player.clickPower - 1); // уровень = clickPower - 1
       document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
+      document.getElementById("clickPower").innerText = player.clickPower;
       const percent = (player.energy / player.maxEnergy) * 100;
       document.getElementById("energyFill").style.width = percent + "%";
     }
@@ -124,7 +134,8 @@
           energy: player.energy,
           energyRegen: player.energyRegen,
           energyUpgrades: player.energyUpgrades,
-          autoClickerLevel: player.autoClickerLevel
+          autoClickerLevel: player.autoClickerLevel,
+          clickPower: player.clickPower // 👈 НОВОЕ
         });
         const url = `${apiUrl}?${params}&_=${Date.now()}`;
         const img = new Image();
@@ -150,6 +161,7 @@
           player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
           player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
           player.autoClickerLevel = data.found ? (parseInt(data.autoClickerLevel) || 0) : 0;
+          player.clickPower = data.found ? (parseInt(data.clickPower) || 1) : 1;
 
           // Офлайн-восстановление
           if (data.found && data.lastOnline) {
@@ -194,6 +206,18 @@
       }
     }
 
+    function buyClickPower() {
+      const cost = getClickPowerCost(player.clickPower - 1); // текущий уровень = clickPower - 1
+      if (player.score >= cost) {
+        player.score -= cost;
+        player.clickPower++;
+        updateUI();
+        savePlayerData();
+      } else {
+        showMessage("❌ Недостаточно очков для силы клика!", false);
+      }
+    }
+
     function simulateTelegram() {
       player.id = Math.floor(Math.random() * 1000000);
       player.name = "Тест";
@@ -224,7 +248,7 @@
     document.getElementById("clickBtn").addEventListener("click", () => {
       if (player.energy >= 5) {
         player.energy -= 5;
-        player.score++;
+        player.score += player.clickPower; // 👈 Используем силу клика
         updateUI();
         if (player.score % 5 === 0) savePlayerData();
       } else {
@@ -240,15 +264,14 @@
       }
     }, 1000);
 
-// Автокликер (без траты энергии)
-setInterval(() => {
-  if (player.isInitialized && player.autoClickerLevel > 0) {
-    // Просто добавляем очки — энергия НЕ тратится
-    player.score += player.autoClickerLevel;
-    updateUI();
-    if (player.score % 10 === 0) savePlayerData();
-  }
-}, 1000);
+    // Автокликер (без траты энергии, НЕ зависит от силы клика)
+    setInterval(() => {
+      if (player.isInitialized && player.autoClickerLevel > 0) {
+        player.score += player.autoClickerLevel;
+        updateUI();
+        if (player.score % 10 === 0) savePlayerData();
+      }
+    }, 1000);
 
     // Автосохранение
     setInterval(() => {
