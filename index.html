@@ -44,6 +44,13 @@
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
+    #sessionInfo {
+      margin: 10px;
+      padding: 10px;
+      background: #e8f5e8;
+      border-radius: 5px;
+      border: 1px solid #c3e6cb;
+    }
   </style>
 </head>
 <body>
@@ -56,10 +63,14 @@
   </div>
   
   <div id="game">
+    <div id="sessionInfo" class="status status-success">
+      🔄 Сессия восстановлена из базы данных
+    </div>
     <p id="user"></p>
     <p>Очки: <span id="score">0</span></p>
     <button id="clickBtn">Клик!</button>
     <button onclick="resetGame()">Сбросить игру</button>
+    <button onclick="forceReload()">♻️ Обновить данные</button>
     
     <!-- Блок информации о подключении к БД -->
     <div id="connectionInfo">
@@ -85,6 +96,9 @@
       <div id="connectionMethod" class="status status-info">
         🔧 Метод подключения: --
       </div>
+      <div id="sessionStatus" class="status status-info">
+        💾 Сохранение сессии: --
+      </div>
     </div>
   </div>
 
@@ -101,6 +115,7 @@
     let requestCount = 0;
     let lastUpdateTime = null;
     let connectionMethod = 'none';
+    let isSessionRestored = false;
 
     // Функции для обновления статуса
     function updateDbStatus(message, type = 'loading') {
@@ -133,6 +148,12 @@
       statusEl.className = `status status-${type}`;
     }
 
+    function updateSessionStatus(message, type = 'info') {
+      const statusEl = document.getElementById('sessionStatus');
+      statusEl.textContent = `💾 ${message}`;
+      statusEl.className = `status status-${type}`;
+    }
+
     function updateConnectionMethod(method) {
       connectionMethod = method;
       const methodEl = document.getElementById('connectionMethod');
@@ -149,6 +170,18 @@
       requestCount++;
       const countEl = document.getElementById('requestCount');
       countEl.textContent = `📊 Запросов отправлено: ${requestCount}`;
+    }
+
+    function showSessionInfo(message, isSuccess = true) {
+      const sessionEl = document.getElementById('sessionInfo');
+      sessionEl.textContent = message;
+      sessionEl.style.display = 'block';
+      sessionEl.className = isSuccess ? 'status status-success' : 'status status-error';
+      
+      // Скрываем сообщение через 3 секунды
+      setTimeout(() => {
+        sessionEl.style.display = 'none';
+      }, 3000);
     }
 
     // Метод 1: JSONP для получения данных
@@ -206,7 +239,6 @@
       try {
         updateApiStatus('Тестирование подключения к API...', 'loading');
         
-        // Пробуем разные методы
         const testParams = { action: "test", timestamp: Date.now() };
         
         // Метод 1: Image beacon
@@ -236,99 +268,59 @@
       }
     }
 
-    function simulateTelegram() {
-      player.id = Math.floor(Math.random() * 1000000);
-      player.name = 'Тестовый пользователь';
-      player.score = 0;
-      
-      document.getElementById('authMessage').style.display = 'none';
-      document.getElementById('game').style.display = 'block';
-      document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
-      document.getElementById("score").innerText = player.score;
-      
-      // Тестируем подключение
-      testApiConnection();
-      updateUserStatus('Тестовый пользователь создан', 'success');
-      updateDbStatus('Тестовый режим - данные сохраняются локально', 'warning');
-    }
-
-    function resetGame() {
-      if (confirm('Сбросить все очки?')) {
-        player.score = 0;
-        document.getElementById("score").innerText = player.score;
-        updateUserStatus('Сброс очков...', 'loading');
-        updateScore();
-      }
-    }
-
-    function initTelegramGame() {
-      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-        const user = tg.initDataUnsafe.user;
-        player.id = user.id;
-        player.name = user.first_name || 'Игрок';
-        
-        tg.expand();
-        document.getElementById('authMessage').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
-        
-        // Показываем информацию о пользователе
-        updateUserStatus(`ID: ${player.id}, Имя: ${player.name}`, 'info');
-        
-        // Тестируем подключение и загружаем данные
-        testApiConnection().then(success => {
-          if (success) {
-            loadPlayer();
-          } else {
-            updateUserStatus('Работа в оффлайн режиме', 'warning');
-          }
-        });
-        
-      } else {
-        console.log('Запуск вне Telegram');
-        updateDbStatus('Запуск вне Telegram - используйте тестовый режим', 'error');
-      }
-    }
-
-    async function loadPlayer() {
+    // Загрузка данных игрока из базы
+    async function loadPlayerData() {
       try {
-        if (!player.id) return;
+        if (!player.id) return false;
         
-        updateUserStatus('Загрузка данных пользователя...', 'loading');
+        updateUserStatus('Восстановление данных из базы...', 'loading');
         updateRequestCount();
         
-        // Пробуем JSONP для загрузки данных
         const params = {
           action: "getPlayer",
           id: player.id,
           name: player.name
         };
         
-        await jsonpRequest(params, function(data) {
-          if (data && data.score !== undefined) {
-            player.score = data.score;
-            document.getElementById("user").innerText = `Привет, ${player.name}!`;
-            document.getElementById("score").innerText = player.score;
-            
-            updateUserStatus('Данные пользователя загружены', 'success');
-            updateDbStatus('Подключение к базе данных установлено', 'success');
-            updateLastUpdate();
-          } else {
-            throw new Error('Invalid response data');
-          }
+        return new Promise((resolve) => {
+          jsonpRequest(params, function(data) {
+            if (data && data.score !== undefined) {
+              const previousScore = player.score;
+              player.score = parseInt(data.score) || 0;
+              
+              document.getElementById("score").innerText = player.score;
+              
+              updateUserStatus(`Данные восстановлены: ${player.score} очков`, 'success');
+              updateDbStatus('Подключение к базе данных установлено', 'success');
+              updateLastUpdate();
+              updateSessionStatus('Сессия восстановлена из базы данных');
+              
+              // Показываем сообщение о восстановлении
+              if (!isSessionRestored && previousScore !== player.score) {
+                showSessionInfo(`✅ Сессия восстановлена! Очки: ${player.score}`);
+                isSessionRestored = true;
+              }
+              
+              resolve(true);
+            } else {
+              throw new Error('Invalid response data');
+            }
+          });
         });
         
       } catch (error) {
         console.error('Ошибка загрузки:', error);
-        document.getElementById("user").innerText = `Привет, ${player.name}!`;
-        document.getElementById("score").innerText = player.score;
-        updateUserStatus('Ошибка загрузки данных', 'error');
+        updateUserStatus('Ошибка восстановления данных', 'error');
         updateDbStatus('Ошибка подключения к БД', 'error');
+        updateSessionStatus('Не удалось восстановить сессию', 'error');
+        return false;
       }
     }
 
-    async function updateScore() {
+    // Сохранение данных в базу
+    async function savePlayerData() {
       try {
-        if (!player.id) return;
+        if (!player.id) return false;
         
         updateUserStatus('Сохранение очков...', 'loading');
         updateRequestCount();
@@ -342,20 +334,19 @@
         
         let result;
         
-        // Пробуем разные методы отправки
         if (connectionMethod.includes('Image')) {
           result = await sendViaImageBeacon(params);
         } else if (connectionMethod.includes('Iframe')) {
           result = await sendViaIframe(params);
         } else {
-          // Пробуем оба метода
           result = await sendViaImageBeacon(params) || await sendViaIframe(params);
         }
         
         if (result && result.success) {
-          console.log('Счет обновлен:', player.score);
           updateUserStatus('Очки сохранены в БД', 'success');
           updateLastUpdate();
+          updateSessionStatus('Данные синхронизированы с базой');
+          return true;
         } else {
           throw new Error('Failed to save');
         }
@@ -363,6 +354,85 @@
       } catch (error) {
         console.error('Ошибка сохранения:', error);
         updateUserStatus('Ошибка сохранения в БД', 'error');
+        updateSessionStatus('Ошибка синхронизации', 'error');
+        return false;
+      }
+    }
+
+    function simulateTelegram() {
+      player.id = Math.floor(Math.random() * 1000000);
+      player.name = 'Тестовый пользователь';
+      player.score = 0;
+      
+      document.getElementById('authMessage').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+      document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
+      document.getElementById("score").innerText = player.score;
+      
+      // Тестируем подключение и загружаем данные
+      testApiConnection().then(success => {
+        if (success) {
+          loadPlayerData();
+        }
+      });
+      
+      updateSessionStatus('Тестовый режим активен', 'warning');
+    }
+
+    function resetGame() {
+      if (confirm('Сбросить все очки? Это сохранится в базе данных.')) {
+        player.score = 0;
+        document.getElementById("score").innerText = player.score;
+        updateUserStatus('Сброс очков...', 'loading');
+        savePlayerData();
+        showSessionInfo('🎯 Очки сброшены!');
+      }
+    }
+
+    function forceReload() {
+      showSessionInfo('🔄 Обновление данных...', false);
+      loadPlayerData().then(success => {
+        if (success) {
+          showSessionInfo('✅ Данные обновлены!');
+        } else {
+          showSessionInfo('❌ Ошибка обновления', false);
+        }
+      });
+    }
+
+    function initTelegramGame() {
+      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+        const user = tg.initDataUnsafe.user;
+        player.id = user.id;
+        player.name = user.first_name || 'Игрок';
+        
+        tg.expand();
+        document.getElementById('authMessage').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        document.getElementById("user").innerText = `Привет, ${player.name}!`;
+        
+        // Показываем информацию о пользователе
+        updateUserStatus(`ID: ${player.id}, Имя: ${player.name}`, 'info');
+        
+        // Тестируем подключение и загружаем данные
+        testApiConnection().then(success => {
+          if (success) {
+            // Загружаем данные из базы при старте
+            loadPlayerData().then(loaded => {
+              if (!loaded) {
+                // Если не удалось загрузить, показываем текущие очки
+                document.getElementById("score").innerText = player.score;
+              }
+            });
+          } else {
+            updateUserStatus('Работа в оффлайн режиме', 'warning');
+            document.getElementById("score").innerText = player.score;
+          }
+        });
+        
+      } else {
+        console.log('Запуск вне Telegram');
+        updateDbStatus('Запуск вне Telegram - используйте тестовый режим', 'error');
       }
     }
 
@@ -370,8 +440,18 @@
     document.getElementById("clickBtn").addEventListener("click", () => {
       player.score++;
       document.getElementById("score").innerText = player.score;
-      updateScore();
+      savePlayerData();
     });
+
+    // Сохраняем данные перед закрытием приложения
+    if (tg && tg.close) {
+      tg.onEvent('viewportChanged', function(e) {
+        if (e.isStateStable && !e.isExpanded) {
+          // Приложение сворачивается - сохраняем данные
+          savePlayerData();
+        }
+      });
+    }
 
     // Инициализация при загрузке
     document.addEventListener('DOMContentLoaded', function() {
