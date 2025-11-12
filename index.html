@@ -1,266 +1,188 @@
-﻿<!DOCTYPE html>
+﻿
+
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>Clicker Game</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: sans-serif; text-align: center; margin-top: 50px; background: #f7f9fc; }
+    body { font-family: sans-serif; text-align: center; margin-top: 30px; background: #f7f9fc; }
     h1 { color: #222; }
-    button { padding: 10px 20px; font-size: 18px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; margin: 10px; }
+    button { padding: 10px 15px; font-size: 16px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; margin: 8px; }
     #authMessage { color: #d63031; margin: 20px; padding: 20px; background: #ffeaa7; border-radius: 10px; }
     #game { display: none; }
-    .status { 
-      margin: 10px; 
-      padding: 10px; 
-      border-radius: 5px; 
-      font-size: 14px; 
-    }
+    .status { margin: 8px; padding: 8px; border-radius: 5px; font-size: 13px; }
     .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     .status-loading { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
     .status-info { background: #cce7ff; color: #004085; border: 1px solid #b3d7ff; }
-    .status-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
-    #connectionInfo { 
-      margin: 20px auto; 
-      padding: 15px; 
-      max-width: 500px; 
-      background: white; 
-      border-radius: 10px; 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+    .energy-bar {
+      width: 80%;
+      height: 20px;
+      background: #e0e0e0;
+      border-radius: 10px;
+      margin: 10px auto;
+      overflow: hidden;
     }
-    .connection-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-    .dot-online { background: #28a745; }
-    .dot-offline { background: #dc3545; }
-    .dot-loading { background: #ffc107; animation: pulse 1.5s infinite; }
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
-    #sessionInfo {
-      margin: 10px;
-      padding: 10px;
-      background: #e8f5e8;
-      border-radius: 5px;
-      border: 1px solid #c3e6cb;
-      display: none;
+    .energy-fill {
+      height: 100%;
+      background: #4CAF50;
+      transition: width 0.3s;
     }
   </style>
 </head>
 <body>
-  <h1>🎮 Кликер игра</h1>
+  <h1>🎮 Энерго-Кликер</h1>
   
   <div id="authMessage">
     <h3>Запускайте игру через Telegram бота!</h3>
     <p>Эта игра работает только внутри Telegram.</p>
-    <button onclick="simulateTelegram()">Тестовый режим (для разработки)</button>
+    <button onclick="simulateTelegram()">Тестовый режим</button>
   </div>
   
   <div id="game">
-    <div id="sessionInfo"></div>
     <p id="user"></p>
     <p>Очки: <span id="score">0</span></p>
-    <button id="clickBtn">Клик!</button>
-    <button onclick="resetGame()">Сбросить игру</button>
-    <button onclick="forceSave()">💾 Принудительно сохранить</button>
     
-    <!-- Блок информации о подключении к БД -->
-    <div id="connectionInfo">
-      <h3>📊 Статус синхронизации</h3>
-      <div id="dbStatus" class="status status-loading">
-        <span class="connection-dot dot-loading"></span>
-        Подключение к базе данных...
-      </div>
-      <div id="userStatus" class="status status-loading">
-        <span class="connection-dot dot-loading"></span>
-        Инициализация игрока...
-      </div>
-      <div id="lastUpdate" class="status status-info">
-        ⏰ Последняя синхронизация: --
-      </div>
-      <div id="syncStatus" class="status status-info">
-        🔄 Статус: --
-      </div>
+    <div class="energy-bar">
+      <div class="energy-fill" id="energyFill" style="width: 100%;"></div>
     </div>
+    <p>Энергия: <span id="energy">100</span> / 650</p>
+    
+    <button id="clickBtn">Клик! (–5 ⚡)</button>
+    <br>
+    <button onclick="buyEnergyRegen()">🔋 +1 энергии/сек (Цена: <span id="regenCost">10</span>)</button>
+    <button onclick="forceSave()">💾 Сохранить</button>
   </div>
 
   <script>
+    // === ВСТАВЬТЕ СЮДА ВАШ РАБОЧИЙ URL ИЗ GAS ===
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxy1tEkMpfAbYh3CRA2g19lGdsjJdQ7KrEMcD_lCyBxFkPV_IPRrLr9FUbOuRxziL8y/exec";
+
     const tg = window.Telegram.WebApp;
-    const apiUrl = "https://script.google.com/macros/s/AKfycbzhyF6cYGHTHd10-ewzXJYLWr2U_N-0jVUPRhmZxhjZ5P9piPpaHuzLOoBm8NgiJf0b/exec";
 
     let player = {
       id: null,
       name: 'Гость',
       score: 0,
+      energy: 100,
+      maxEnergy: 650,
+      energyRegen: 1,
+      energyUpgrades: 0,
       lastSavedScore: 0,
       isInitialized: false
     };
 
-    function updateDbStatus(message, type = 'loading') {
-      const statusEl = document.getElementById('dbStatus');
-      const dot = statusEl.querySelector('.connection-dot');
-      dot.className = `connection-dot dot-${type}`;
-      statusEl.textContent = '';
-      statusEl.appendChild(dot);
-      statusEl.appendChild(document.createTextNode(message));
-      statusEl.className = `status status-${type}`;
-    }
-
-    function updateUserStatus(message, type = 'loading') {
-      const statusEl = document.getElementById('userStatus');
-      const dot = statusEl.querySelector('.connection-dot');
-      dot.className = `connection-dot dot-${type}`;
-      statusEl.textContent = '';
-      statusEl.appendChild(dot);
-      statusEl.appendChild(document.createTextNode(message));
-      statusEl.className = `status status-${type}`;
-    }
-
-    function updateSyncStatus(message) {
-      const statusEl = document.getElementById('syncStatus');
-      statusEl.textContent = `🔄 ${message}`;
-    }
-
-    function updateLastUpdate() {
-      const timeEl = document.getElementById('lastUpdate');
-      timeEl.textContent = `⏰ Последняя синхронизация: ${new Date().toLocaleTimeString()}`;
-    }
-
-    function showSessionInfo(message, isSuccess = true) {
-      const sessionEl = document.getElementById('sessionInfo');
-      sessionEl.textContent = message;
-      sessionEl.style.display = 'block';
-      sessionEl.className = isSuccess ? 'status status-success' : 'status status-error';
-      setTimeout(() => {
-        sessionEl.style.display = 'none';
-      }, 3000);
-    }
-
-    // Отправка данных (beacon-style, без ответа)
-    function sendToGoogleSheets(params) {
-      return new Promise((resolve) => {
-        const urlParams = new URLSearchParams(params).toString();
-        const fullUrl = `${apiUrl}?${urlParams}&_=${Date.now()}`;
-        const img = new Image();
-        img.src = fullUrl;
-        img.onload = () => resolve({ success: true });
-        img.onerror = () => resolve({ success: false });
-        setTimeout(() => resolve({ success: true }), 1000);
-      });
-    }
-
-    // 🔑 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Загрузка данных игрока при старте
-    async function loadPlayerData() {
-      if (!player.id) return;
-
-      updateUserStatus('Загрузка данных...', 'loading');
-      updateDbStatus('Подключение к базе...', 'loading');
-
-      try {
-        const url = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.success) {
-          player.score = data.found ? (parseInt(data.score) || 0) : 0;
-          player.lastSavedScore = player.score;
-          player.isInitialized = true;
-
-          document.getElementById("score").innerText = player.score;
-          updateUserStatus(`Игрок загружен (ID: ${player.id})`, 'success');
-          updateDbStatus('База данных подключена', 'success');
-          updateSyncStatus('Готов к синхронизации');
-          updateLastUpdate();
-          showSessionInfo(data.found ? '✅ С возвращением!' : '🆕 Добро пожаловать!');
-        } else {
-          throw new Error('Ошибка API');
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки:', error);
-        // Режим офлайн — позволяем играть, но предупреждаем
-        player.score = 0;
-        player.isInitialized = true;
-        document.getElementById("score").innerText = player.score;
-        updateUserStatus('Ошибка загрузки (офлайн)', 'error');
-        updateDbStatus('Нет связи с базой', 'error');
-        showSessionInfo('⚠️ Данные не загружены. Игра в офлайн-режиме.', false);
+    function getEnergyRegenCost(upgrades) {
+      const base = 10;
+      if (upgrades < 3) {
+        return Math.round(base * Math.pow(2, upgrades));
+      } else if (upgrades < 6) {
+        return Math.round(base * 8 * Math.pow(2.5, upgrades - 3));
+      } else if (upgrades < 9) {
+        return Math.round(base * 8 * 15.625 * Math.pow(4, upgrades - 6));
+      } else {
+        const costAt9 = base * 8 * 15.625 * 64; // 80000
+        return Math.round(costAt9 * Math.pow(3, upgrades - 9));
       }
+    }
+
+    function updateUI() {
+      document.getElementById("score").innerText = player.score;
+      document.getElementById("energy").innerText = Math.floor(player.energy);
+      document.getElementById("regenCost").innerText = getEnergyRegenCost(player.energyUpgrades);
+      const percent = (player.energy / player.maxEnergy) * 100;
+      document.getElementById("energyFill").style.width = percent + "%";
+    }
+
+    function showMessage(msg, success = true) {
+      const div = document.createElement("div");
+      div.className = `status status-${success ? 'success' : 'error'}`;
+      div.innerText = msg;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
     }
 
     async function savePlayerData() {
       if (!player.id || !player.isInitialized) return false;
-      if (player.score === player.lastSavedScore) return true;
-
-      updateUserStatus('Сохранение...', 'loading');
-      updateSyncStatus('Синхронизация...');
-
       try {
-        const result = await sendToGoogleSheets({
+        const params = new URLSearchParams({
           action: "updateScore",
           id: player.id,
+          name: player.name,
           score: player.score,
-          name: player.name
+          energy: player.energy,
+          energyRegen: player.energyRegen,
+          energyUpgrades: player.energyUpgrades
         });
-
-        if (result.success) {
-          player.lastSavedScore = player.score;
-          updateUserStatus('Сохранено', 'success');
-          updateSyncStatus('Синхронизировано');
-          updateLastUpdate();
-          return true;
-        } else {
-          throw new Error('Beacon failed');
-        }
-      } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        updateUserStatus('Ошибка сохранения', 'error');
-        updateSyncStatus('Ошибка');
+        const url = `${apiUrl}?${params}&_=${Date.now()}`;
+        const img = new Image();
+        img.src = url;
+        return true;
+      } catch (e) {
+        console.error("Save failed", e);
         return false;
+      }
+    }
+
+    async function loadPlayerData() {
+      if (!player.id) return;
+
+      try {
+        const url = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.success) {
+          player.score = data.found ? (parseInt(data.score) || 0) : 0;
+          player.energy = data.found ? (parseFloat(data.energy) || 100) : 100;
+          player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
+          player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
+
+          // Офлайн-восстановление
+          if (data.found && data.lastOnline) {
+            const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
+            player.energy = Math.min(650, player.energy + offlineSec * player.energyRegen);
+          }
+
+          player.isInitialized = true;
+          updateUI();
+          showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
+        }
+      } catch (e) {
+        console.error("Load error", e);
+        player.isInitialized = true;
+        updateUI();
+        showMessage("⚠️ Офлайн-режим", false);
+      }
+    }
+
+    function buyEnergyRegen() {
+      const cost = getEnergyRegenCost(player.energyUpgrades);
+      if (player.score >= cost) {
+        player.score -= cost;
+        player.energyUpgrades++;
+        player.energyRegen++;
+        updateUI();
+        savePlayerData();
+      } else {
+        showMessage("❌ Недостаточно очков!", false);
       }
     }
 
     function simulateTelegram() {
       player.id = Math.floor(Math.random() * 1000000);
-      player.name = 'Тестовый пользователь';
-      player.score = 0;
-      player.lastSavedScore = 0;
-      player.isInitialized = true;
-
+      player.name = "Тест";
       document.getElementById('authMessage').style.display = 'none';
       document.getElementById('game').style.display = 'block';
-      document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
-      document.getElementById("score").innerText = player.score;
-
-      updateUserStatus('Тестовый режим', 'info');
-      updateDbStatus('База отключена', 'warning');
-      updateSyncStatus('Тест');
-    }
-
-    function resetGame() {
-      if (confirm('Сбросить все очки? Это сохранится в базе данных.')) {
-        player.score = 0;
-        player.lastSavedScore = -1; // гарантированно сохранить
-        document.getElementById("score").innerText = player.score;
-        savePlayerData();
-        showSessionInfo('🎯 Очки сброшены!');
-      }
-    }
-
-    function forceSave() {
-      savePlayerData().then(success => {
-        showSessionInfo(success ? '✅ Сохранено!' : '❌ Ошибка сохранения', success);
-      });
+      document.getElementById("user").innerText = `Привет, ${player.name}! (Тест)`;
+      player.isInitialized = true;
+      updateUI();
     }
 
     function initTelegramGame() {
-      if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      if (tg?.initDataUnsafe?.user) {
         const user = tg.initDataUnsafe.user;
         player.id = user.id;
         player.name = user.first_name || 'Игрок';
@@ -270,37 +192,38 @@
         document.getElementById('game').style.display = 'block';
         document.getElementById("user").innerText = `Привет, ${player.name}!`;
 
-        loadPlayerData(); // <-- ЗАГРУЖАЕМ, а не сбрасываем!
+        loadPlayerData();
       } else {
-        console.log('Запуск вне Telegram');
-        updateDbStatus('Требуется запуск из Telegram', 'error');
+        showMessage("Запустите из Telegram!", false);
       }
     }
 
-    // Клик
     document.getElementById("clickBtn").addEventListener("click", () => {
-      player.score++;
-      document.getElementById("score").innerText = player.score;
-      if (player.score % 5 === 0) savePlayerData();
+      if (player.energy >= 5) {
+        player.energy -= 5;
+        player.score++;
+        updateUI();
+        if (player.score % 5 === 0) savePlayerData();
+      } else {
+        showMessage("⚡ Нет энергии!", false);
+      }
     });
 
-    // Сохранение при сворачивании
-    if (tg) {
-      tg.onEvent('viewportChanged', (e) => {
-        if (e.isStateStable && !e.isExpanded) {
-          savePlayerData();
-        }
-      });
-    }
-
-    // Автосохранение каждые 30 сек
+    // Восстановление энергии каждую секунду
     setInterval(() => {
-      if (player.id && player.isInitialized && player.score !== player.lastSavedScore) {
-        savePlayerData();
+      if (player.energy < 650 && player.isInitialized) {
+        player.energy = Math.min(650, player.energy + player.energyRegen);
+        updateUI();
       }
+    }, 1000);
+
+    // Автосохранение
+    setInterval(() => {
+      if (player.isInitialized) savePlayerData();
     }, 30000);
 
-    // Старт
+    window.forceSave = () => savePlayerData().then(ok => showMessage(ok ? "✅ Сохранено!" : "❌ Ошибка", ok));
+
     document.addEventListener('DOMContentLoaded', initTelegramGame);
   </script>
 </body>
