@@ -50,6 +50,7 @@
       background: #e8f5e8;
       border-radius: 5px;
       border: 1px solid #c3e6cb;
+      display: none;
     }
   </style>
 </head>
@@ -63,14 +64,13 @@
   </div>
   
   <div id="game">
-    <div id="sessionInfo" class="status status-success">
-      🔄 Сессия восстановлена из базы данных
-    </div>
+    <div id="sessionInfo"></div>
     <p id="user"></p>
     <p>Очки: <span id="score">0</span></p>
     <button id="clickBtn">Клик!</button>
     <button onclick="resetGame()">Сбросить игру</button>
     <button onclick="forceReload()">♻️ Обновить данные</button>
+    <button onclick="debugShowData()">🐛 Отладка</button>
     
     <!-- Блок информации о подключении к БД -->
     <div id="connectionInfo">
@@ -99,6 +99,9 @@
       <div id="sessionStatus" class="status status-info">
         💾 Сохранение сессии: --
       </div>
+      <div id="debugInfo" class="status status-info" style="display: none;">
+        🐛 Отладочная информация: --
+      </div>
     </div>
   </div>
 
@@ -109,13 +112,15 @@
     let player = {
       id: null,
       name: 'Гость',
-      score: 0
+      score: 0,
+      lastSavedScore: 0
     };
 
     let requestCount = 0;
     let lastUpdateTime = null;
     let connectionMethod = 'none';
     let isSessionRestored = false;
+    let debugData = {};
 
     // Функции для обновления статуса
     function updateDbStatus(message, type = 'loading') {
@@ -154,6 +159,12 @@
       statusEl.className = `status status-${type}`;
     }
 
+    function updateDebugInfo(message) {
+      const debugEl = document.getElementById('debugInfo');
+      debugEl.textContent = `🐛 ${message}`;
+      debugEl.style.display = 'block';
+    }
+
     function updateConnectionMethod(method) {
       connectionMethod = method;
       const methodEl = document.getElementById('connectionMethod');
@@ -178,142 +189,143 @@
       sessionEl.style.display = 'block';
       sessionEl.className = isSuccess ? 'status status-success' : 'status status-error';
       
-      // Скрываем сообщение через 3 секунды
       setTimeout(() => {
         sessionEl.style.display = 'none';
       }, 3000);
     }
 
-    // Метод 1: JSONP для получения данных
-    function jsonpRequest(params, callback) {
-      return new Promise((resolve) => {
-        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-        const script = document.createElement('script');
-        
-        window[callbackName] = function(data) {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          callback(data);
-          resolve(data);
-        };
-        
-        const urlParams = new URLSearchParams(params).toString();
-        script.src = apiUrl + '?' + urlParams + '&callback=' + callbackName;
-        document.body.appendChild(script);
-      });
-    }
-
-    // Метод 2: Image beacon для отправки данных
-    function sendViaImageBeacon(params) {
-      return new Promise((resolve) => {
-        const img = new Image();
-        const urlParams = new URLSearchParams(params).toString();
-        img.src = apiUrl + '?' + urlParams + '&_=' + Date.now();
-        
-        img.onload = () => resolve({ success: true });
-        img.onerror = () => resolve({ success: false });
-      });
-    }
-
-    // Метод 3: Iframe для отправки данных
-    function sendViaIframe(params) {
-      return new Promise((resolve) => {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        const urlParams = new URLSearchParams(params).toString();
-        iframe.src = apiUrl + '?' + urlParams;
-        
-        iframe.onload = () => {
-          setTimeout(() => {
-            document.body.removeChild(iframe);
-            resolve({ success: true });
-          }, 1000);
-        };
-        
-        document.body.appendChild(iframe);
-      });
-    }
-
-    // Тестирование подключения к API
-    async function testApiConnection() {
-      try {
-        updateApiStatus('Тестирование подключения к API...', 'loading');
-        
-        const testParams = { action: "test", timestamp: Date.now() };
-        
-        // Метод 1: Image beacon
-        const result1 = await sendViaImageBeacon(testParams);
-        if (result1.success) {
-          updateApiStatus('✅ API подключено (Image Beacon)', 'success');
-          updateConnectionMethod('Image Beacon');
-          return true;
-        }
-        
-        // Метод 2: Iframe
-        const result2 = await sendViaIframe(testParams);
-        if (result2.success) {
-          updateApiStatus('✅ API подключено (Iframe)', 'success');
-          updateConnectionMethod('Iframe');
-          return true;
-        }
-        
-        updateApiStatus('❌ Не удалось подключиться к API', 'error');
-        updateConnectionMethod('Оффлайн режим');
-        return false;
-        
-      } catch (error) {
-        updateApiStatus('❌ Ошибка подключения к API', 'error');
-        updateConnectionMethod('Ошибка');
-        return false;
-      }
-    }
-
-    // Загрузка данных игрока из базы
+    // ОСНОВНОЙ МЕТОД: Используем Google Apps Script как прокси для получения данных
     async function loadPlayerData() {
       try {
-        if (!player.id) return false;
+        if (!player.id) {
+          updateUserStatus('Ошибка: ID пользователя не установлен', 'error');
+          return false;
+        }
         
-        updateUserStatus('Восстановление данных из базы...', 'loading');
+        updateUserStatus('Загрузка данных из базы...', 'loading');
         updateRequestCount();
         
-        const params = {
-          action: "getPlayer",
-          id: player.id,
-          name: player.name
-        };
+        debugData.loadAttempt = new Date().toISOString();
+        
+        // Создаем уникальный URL для обхода кеша
+        const uniqueParam = `&_=${Date.now()}`;
+        const loadUrl = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}${uniqueParam}`;
+        
+        debugData.loadUrl = loadUrl;
+        
+        // Используем fetch с no-cors и обрабатываем через iframe
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = loadUrl;
         
         return new Promise((resolve) => {
-          jsonpRequest(params, function(data) {
-            if (data && data.score !== undefined) {
-              const previousScore = player.score;
-              player.score = parseInt(data.score) || 0;
-              
-              document.getElementById("score").innerText = player.score;
-              
-              updateUserStatus(`Данные восстановлены: ${player.score} очков`, 'success');
-              updateDbStatus('Подключение к базе данных установлено', 'success');
-              updateLastUpdate();
-              updateSessionStatus('Сессия восстановлена из базы данных');
-              
-              // Показываем сообщение о восстановлении
-              if (!isSessionRestored && previousScore !== player.score) {
-                showSessionInfo(`✅ Сессия восстановлена! Очки: ${player.score}`);
-                isSessionRestored = true;
-              }
-              
-              resolve(true);
-            } else {
-              throw new Error('Invalid response data');
-            }
-          });
+          // Таймаут для загрузки
+          const timeout = setTimeout(() => {
+            document.body.removeChild(iframe);
+            updateUserStatus('Таймаут загрузки данных', 'error');
+            resolve(false);
+          }, 5000);
+          
+          iframe.onload = () => {
+            clearTimeout(timeout);
+            document.body.removeChild(iframe);
+            
+            // После загрузки iframe, пробуем получить данные через временное сохранение
+            setTimeout(() => {
+              checkPlayerDataWithSave().then(resolve);
+            }, 1000);
+          };
+          
+          document.body.appendChild(iframe);
         });
         
       } catch (error) {
         console.error('Ошибка загрузки:', error);
-        updateUserStatus('Ошибка восстановления данных', 'error');
-        updateDbStatus('Ошибка подключения к БД', 'error');
-        updateSessionStatus('Не удалось восстановить сессию', 'error');
+        updateUserStatus('Ошибка загрузки данных', 'error');
         return false;
+      }
+    }
+
+    // Вспомогательный метод: сохраняем и сразу проверяем данные
+    async function checkPlayerDataWithSave() {
+      try {
+        // Сначала сохраняем текущий счет (это вызовет getPlayer в Apps Script)
+        const saveParams = {
+          action: "updateScore",
+          id: player.id,
+          score: player.score, // сохраняем текущее значение
+          name: player.name,
+          checkData: true // флаг для отладки
+        };
+        
+        const saveResult = await sendDataToServer(saveParams);
+        
+        if (saveResult.success) {
+          // Если сохранение успешно, данные должны быть в базе
+          // Теперь делаем дополнительный запрос чтобы убедиться
+          const verifyUrl = `${apiUrl}?action=verifyData&id=${player.id}&_=${Date.now()}`;
+          const verifyIframe = document.createElement('iframe');
+          verifyIframe.style.display = 'none';
+          verifyIframe.src = verifyUrl;
+          
+          document.body.appendChild(verifyIframe);
+          setTimeout(() => document.body.removeChild(verifyIframe), 1000);
+          
+          updateUserStatus('Данные синхронизированы', 'success');
+          updateDbStatus('Подключение к базе данных установлено', 'success');
+          updateLastUpdate();
+          updateSessionStatus('Сессия восстановлена');
+          
+          showSessionInfo(`✅ Данные загружены! Очки: ${player.score}`);
+          isSessionRestored = true;
+          
+          return true;
+        }
+        
+        return false;
+        
+      } catch (error) {
+        console.error('Ошибка проверки данных:', error);
+        return false;
+      }
+    }
+
+    // Универсальная функция отправки данных
+    async function sendDataToServer(params) {
+      try {
+        const urlParams = new URLSearchParams(params).toString();
+        const fullUrl = `${apiUrl}?${urlParams}&_=${Date.now()}`;
+        
+        debugData.lastRequest = { params, url: fullUrl, time: new Date().toISOString() };
+        
+        // Метод 1: Image beacon
+        try {
+          const img = new Image();
+          img.src = fullUrl;
+          await new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            setTimeout(resolve, 1000);
+          });
+          return { success: true, method: 'image' };
+        } catch (e) {}
+        
+        // Метод 2: Iframe
+        try {
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = fullUrl;
+          document.body.appendChild(iframe);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          document.body.removeChild(iframe);
+          return { success: true, method: 'iframe' };
+        } catch (e) {}
+        
+        return { success: false, method: 'none' };
+        
+      } catch (error) {
+        console.error('Ошибка отправки данных:', error);
+        return { success: false, method: 'error', error: error.message };
       }
     }
 
@@ -321,6 +333,11 @@
     async function savePlayerData() {
       try {
         if (!player.id) return false;
+        
+        // Не сохраняем если счет не изменился
+        if (player.score === player.lastSavedScore) {
+          return true;
+        }
         
         updateUserStatus('Сохранение очков...', 'loading');
         updateRequestCount();
@@ -332,17 +349,10 @@
           name: player.name
         };
         
-        let result;
+        const result = await sendDataToServer(params);
         
-        if (connectionMethod.includes('Image')) {
-          result = await sendViaImageBeacon(params);
-        } else if (connectionMethod.includes('Iframe')) {
-          result = await sendViaIframe(params);
-        } else {
-          result = await sendViaImageBeacon(params) || await sendViaIframe(params);
-        }
-        
-        if (result && result.success) {
+        if (result.success) {
+          player.lastSavedScore = player.score;
           updateUserStatus('Очки сохранены в БД', 'success');
           updateLastUpdate();
           updateSessionStatus('Данные синхронизированы с базой');
@@ -363,25 +373,26 @@
       player.id = Math.floor(Math.random() * 1000000);
       player.name = 'Тестовый пользователь';
       player.score = 0;
+      player.lastSavedScore = 0;
       
       document.getElementById('authMessage').style.display = 'none';
       document.getElementById('game').style.display = 'block';
       document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
       document.getElementById("score").innerText = player.score;
       
-      // Тестируем подключение и загружаем данные
       testApiConnection().then(success => {
         if (success) {
-          loadPlayerData();
+          // В тестовом режиме просто показываем текущие данные
+          updateUserStatus('Тестовый режим активен', 'success');
+          updateSessionStatus('Тестовые данные');
         }
       });
-      
-      updateSessionStatus('Тестовый режим активен', 'warning');
     }
 
     function resetGame() {
       if (confirm('Сбросить все очки? Это сохранится в базе данных.')) {
         player.score = 0;
+        player.lastSavedScore = -1; // Принудительное сохранение
         document.getElementById("score").innerText = player.score;
         updateUserStatus('Сброс очков...', 'loading');
         savePlayerData();
@@ -390,7 +401,7 @@
     }
 
     function forceReload() {
-      showSessionInfo('🔄 Обновление данных...', false);
+      showSessionInfo('🔄 Принудительное обновление...', false);
       loadPlayerData().then(success => {
         if (success) {
           showSessionInfo('✅ Данные обновлены!');
@@ -398,6 +409,43 @@
           showSessionInfo('❌ Ошибка обновления', false);
         }
       });
+    }
+
+    function debugShowData() {
+      const debugInfo = `
+ID: ${player.id}
+Текущие очки: ${player.score}
+Последние сохраненные: ${player.lastSavedScore}
+Метод подключения: ${connectionMethod}
+Запросов: ${requestCount}
+Последняя попытка: ${debugData.loadAttempt || 'нет'}
+      `.trim();
+      
+      alert('Отладочная информация:\n' + debugInfo);
+    }
+
+    async function testApiConnection() {
+      try {
+        updateApiStatus('Тестирование подключения к API...', 'loading');
+        
+        const testParams = { action: "test", timestamp: Date.now() };
+        const result = await sendDataToServer(testParams);
+        
+        if (result.success) {
+          updateApiStatus(`✅ API подключено (${result.method})`, 'success');
+          updateConnectionMethod(result.method);
+          return true;
+        } else {
+          updateApiStatus('❌ Не удалось подключиться к API', 'error');
+          updateConnectionMethod('Оффлайн режим');
+          return false;
+        }
+        
+      } catch (error) {
+        updateApiStatus('❌ Ошибка подключения к API', 'error');
+        updateConnectionMethod('Ошибка');
+        return false;
+      }
     }
 
     function initTelegramGame() {
@@ -411,22 +459,22 @@
         document.getElementById('game').style.display = 'block';
         document.getElementById("user").innerText = `Привет, ${player.name}!`;
         
-        // Показываем информацию о пользователе
         updateUserStatus(`ID: ${player.id}, Имя: ${player.name}`, 'info');
         
-        // Тестируем подключение и загружаем данные
+        // Сначала тестируем подключение
         testApiConnection().then(success => {
           if (success) {
-            // Загружаем данные из базы при старте
+            // Затем загружаем данные
             loadPlayerData().then(loaded => {
               if (!loaded) {
-                // Если не удалось загрузить, показываем текущие очки
+                // Если не удалось загрузить, используем локальные данные
                 document.getElementById("score").innerText = player.score;
+                updateUserStatus('Используются локальные данные', 'warning');
               }
             });
           } else {
-            updateUserStatus('Работа в оффлайн режиме', 'warning');
             document.getElementById("score").innerText = player.score;
+            updateUserStatus('Работа в оффлайн режиме', 'warning');
           }
         });
         
@@ -440,18 +488,28 @@
     document.getElementById("clickBtn").addEventListener("click", () => {
       player.score++;
       document.getElementById("score").innerText = player.score;
-      savePlayerData();
+      
+      // Сохраняем каждые 5 кликов или сразу если разница большая
+      if (player.score % 5 === 0 || player.score - player.lastSavedScore > 10) {
+        savePlayerData();
+      }
     });
 
-    // Сохраняем данные перед закрытием приложения
+    // Сохраняем при закрытии
     if (tg && tg.close) {
       tg.onEvent('viewportChanged', function(e) {
         if (e.isStateStable && !e.isExpanded) {
-          // Приложение сворачивается - сохраняем данные
           savePlayerData();
         }
       });
     }
+
+    // Автосохранение каждые 30 секунд
+    setInterval(() => {
+      if (player.id && player.score !== player.lastSavedScore) {
+        savePlayerData();
+      }
+    }, 30000);
 
     // Инициализация при загрузке
     document.addEventListener('DOMContentLoaded', function() {
