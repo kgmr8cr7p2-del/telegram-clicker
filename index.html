@@ -1,6 +1,4 @@
-﻿
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -53,12 +51,15 @@
     <button id="clickBtn">Клик! (–5 ⚡)</button>
     <br>
     <button onclick="buyEnergyRegen()">🔋 +1 энергии/сек (Цена: <span id="regenCost">10</span>)</button>
+    <button onclick="buyAutoClicker()">🤖 +1 автоклик/сек (Цена: <span id="autoClickerCost">50</span>)</button>
+    <br>
+    <p>Автокликер: <span id="autoClickerLevel">0</span> уровней</p>
     <button onclick="forceSave()">💾 Сохранить</button>
   </div>
 
   <script>
     // === ВСТАВЬТЕ СЮДА ВАШ РАБОЧИЙ URL ИЗ GAS ===
-    const apiUrl = "https://script.google.com/macros/s/AKfycbxy1tEkMpfAbYh3CRA2g19lGdsjJdQ7KrEMcD_lCyBxFkPV_IPRrLr9FUbOuRxziL8y/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxWpGypJLFCjzYrpa0H3-NLh6qCZp3gFgrsZ4zmvErBu23k0Ux5BENda7Fdykc1dQbI/exec";
 
     const tg = window.Telegram.WebApp;
 
@@ -70,6 +71,7 @@
       maxEnergy: 650,
       energyRegen: 1,
       energyUpgrades: 0,
+      autoClickerLevel: 0,
       lastSavedScore: 0,
       isInitialized: false
     };
@@ -88,10 +90,17 @@
       }
     }
 
+    function getAutoClickerCost(level) {
+      const base = 50;
+      return Math.round(base * Math.pow(1.8, level));
+    }
+
     function updateUI() {
       document.getElementById("score").innerText = player.score;
       document.getElementById("energy").innerText = Math.floor(player.energy);
       document.getElementById("regenCost").innerText = getEnergyRegenCost(player.energyUpgrades);
+      document.getElementById("autoClickerCost").innerText = getAutoClickerCost(player.autoClickerLevel);
+      document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
       const percent = (player.energy / player.maxEnergy) * 100;
       document.getElementById("energyFill").style.width = percent + "%";
     }
@@ -114,7 +123,8 @@
           score: player.score,
           energy: player.energy,
           energyRegen: player.energyRegen,
-          energyUpgrades: player.energyUpgrades
+          energyUpgrades: player.energyUpgrades,
+          autoClickerLevel: player.autoClickerLevel
         });
         const url = `${apiUrl}?${params}&_=${Date.now()}`;
         const img = new Image();
@@ -139,6 +149,7 @@
           player.energy = data.found ? (parseFloat(data.energy) || 100) : 100;
           player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
           player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
+          player.autoClickerLevel = data.found ? (parseInt(data.autoClickerLevel) || 0) : 0;
 
           // Офлайн-восстановление
           if (data.found && data.lastOnline) {
@@ -168,6 +179,18 @@
         savePlayerData();
       } else {
         showMessage("❌ Недостаточно очков!", false);
+      }
+    }
+
+    function buyAutoClicker() {
+      const cost = getAutoClickerCost(player.autoClickerLevel);
+      if (player.score >= cost) {
+        player.score -= cost;
+        player.autoClickerLevel++;
+        updateUI();
+        savePlayerData();
+      } else {
+        showMessage("❌ Недостаточно очков для автокликера!", false);
       }
     }
 
@@ -214,6 +237,26 @@
       if (player.energy < 650 && player.isInitialized) {
         player.energy = Math.min(650, player.energy + player.energyRegen);
         updateUI();
+      }
+    }, 1000);
+
+    // Автокликер
+    setInterval(() => {
+      if (player.isInitialized && player.autoClickerLevel > 0) {
+        let clicksDone = 0;
+        for (let i = 0; i < player.autoClickerLevel; i++) {
+          if (player.energy >= 5) {
+            player.energy -= 5;
+            player.score++;
+            clicksDone++;
+          } else {
+            break;
+          }
+        }
+        if (clicksDone > 0) {
+          updateUI();
+          if (player.score % 10 === 0) savePlayerData();
+        }
       }
     }, 1000);
 
