@@ -10,7 +10,40 @@
     button { padding: 10px 20px; font-size: 18px; border-radius: 8px; border: none; background: #3390ec; color: white; cursor: pointer; margin: 10px; }
     #authMessage { color: #d63031; margin: 20px; padding: 20px; background: #ffeaa7; border-radius: 10px; }
     #game { display: none; }
-    #status { color: #666; font-size: 14px; margin-top: 10px; }
+    .status { 
+      margin: 10px; 
+      padding: 10px; 
+      border-radius: 5px; 
+      font-size: 14px; 
+    }
+    .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status-loading { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .status-info { background: #cce7ff; color: #004085; border: 1px solid #b3d7ff; }
+    .status-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    #connectionInfo { 
+      margin: 20px auto; 
+      padding: 15px; 
+      max-width: 500px; 
+      background: white; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+    }
+    .connection-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .dot-online { background: #28a745; }
+    .dot-offline { background: #dc3545; }
+    .dot-loading { background: #ffc107; animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -27,12 +60,36 @@
     <p>Очки: <span id="score">0</span></p>
     <button id="clickBtn">Клик!</button>
     <button onclick="resetGame()">Сбросить игру</button>
-    <div id="status"></div>
+    
+    <!-- Блок информации о подключении к БД -->
+    <div id="connectionInfo">
+      <h3>📊 Статус подключения к базе данных</h3>
+      <div id="dbStatus" class="status status-loading">
+        <span class="connection-dot dot-loading"></span>
+        Проверка подключения к Google Sheets...
+      </div>
+      <div id="apiStatus" class="status status-loading">
+        <span class="connection-dot dot-loading"></span>
+        Проверка Google Apps Script API...
+      </div>
+      <div id="userStatus" class="status status-loading">
+        <span class="connection-dot dot-loading"></span>
+        Загрузка данных пользователя...
+      </div>
+      <div id="lastUpdate" class="status status-info">
+        ⏰ Последнее обновление: --
+      </div>
+      <div id="requestCount" class="status status-info">
+        📊 Запросов отправлено: 0
+      </div>
+      <div id="connectionMethod" class="status status-info">
+        🔧 Метод подключения: --
+      </div>
+    </div>
   </div>
 
   <script>
     const tg = window.Telegram.WebApp;
-    // ЗАМЕНИТЕ НА НОВЫЙ URL ПОСЛЕ ПЕРЕПУБЛИКАЦИИ
     const apiUrl = "https://script.google.com/macros/s/AKfycbyqKglRaXy_kiZyRwWop7dDXz-fTetbYMytMrdegHSx7FapDODxpgaMK-37LoaeN89O/exec";
 
     let player = {
@@ -41,11 +98,142 @@
       score: 0
     };
 
-    function showStatus(message, isError = false) {
-      const statusEl = document.getElementById('status');
-      statusEl.textContent = message;
-      statusEl.style.color = isError ? '#d63031' : '#00b894';
-      setTimeout(() => statusEl.textContent = '', 3000);
+    let requestCount = 0;
+    let lastUpdateTime = null;
+    let connectionMethod = 'none';
+
+    // Функции для обновления статуса
+    function updateDbStatus(message, type = 'loading') {
+      const statusEl = document.getElementById('dbStatus');
+      const dot = statusEl.querySelector('.connection-dot');
+      dot.className = `connection-dot dot-${type}`;
+      statusEl.textContent = '';
+      statusEl.appendChild(dot);
+      statusEl.appendChild(document.createTextNode(message));
+      statusEl.className = `status status-${type}`;
+    }
+
+    function updateApiStatus(message, type = 'loading') {
+      const statusEl = document.getElementById('apiStatus');
+      const dot = statusEl.querySelector('.connection-dot');
+      dot.className = `connection-dot dot-${type}`;
+      statusEl.textContent = '';
+      statusEl.appendChild(dot);
+      statusEl.appendChild(document.createTextNode(message));
+      statusEl.className = `status status-${type}`;
+    }
+
+    function updateUserStatus(message, type = 'loading') {
+      const statusEl = document.getElementById('userStatus');
+      const dot = statusEl.querySelector('.connection-dot');
+      dot.className = `connection-dot dot-${type}`;
+      statusEl.textContent = '';
+      statusEl.appendChild(dot);
+      statusEl.appendChild(document.createTextNode(message));
+      statusEl.className = `status status-${type}`;
+    }
+
+    function updateConnectionMethod(method) {
+      connectionMethod = method;
+      const methodEl = document.getElementById('connectionMethod');
+      methodEl.textContent = `🔧 Метод подключения: ${method}`;
+    }
+
+    function updateLastUpdate() {
+      lastUpdateTime = new Date();
+      const timeEl = document.getElementById('lastUpdate');
+      timeEl.textContent = `⏰ Последнее обновление: ${lastUpdateTime.toLocaleTimeString()}`;
+    }
+
+    function updateRequestCount() {
+      requestCount++;
+      const countEl = document.getElementById('requestCount');
+      countEl.textContent = `📊 Запросов отправлено: ${requestCount}`;
+    }
+
+    // Метод 1: JSONP для получения данных
+    function jsonpRequest(params, callback) {
+      return new Promise((resolve) => {
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        const script = document.createElement('script');
+        
+        window[callbackName] = function(data) {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          callback(data);
+          resolve(data);
+        };
+        
+        const urlParams = new URLSearchParams(params).toString();
+        script.src = apiUrl + '?' + urlParams + '&callback=' + callbackName;
+        document.body.appendChild(script);
+      });
+    }
+
+    // Метод 2: Image beacon для отправки данных
+    function sendViaImageBeacon(params) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const urlParams = new URLSearchParams(params).toString();
+        img.src = apiUrl + '?' + urlParams + '&_=' + Date.now();
+        
+        img.onload = () => resolve({ success: true });
+        img.onerror = () => resolve({ success: false });
+      });
+    }
+
+    // Метод 3: Iframe для отправки данных
+    function sendViaIframe(params) {
+      return new Promise((resolve) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        const urlParams = new URLSearchParams(params).toString();
+        iframe.src = apiUrl + '?' + urlParams;
+        
+        iframe.onload = () => {
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            resolve({ success: true });
+          }, 1000);
+        };
+        
+        document.body.appendChild(iframe);
+      });
+    }
+
+    // Тестирование подключения к API
+    async function testApiConnection() {
+      try {
+        updateApiStatus('Тестирование подключения к API...', 'loading');
+        
+        // Пробуем разные методы
+        const testParams = { action: "test", timestamp: Date.now() };
+        
+        // Метод 1: Image beacon
+        const result1 = await sendViaImageBeacon(testParams);
+        if (result1.success) {
+          updateApiStatus('✅ API подключено (Image Beacon)', 'success');
+          updateConnectionMethod('Image Beacon');
+          return true;
+        }
+        
+        // Метод 2: Iframe
+        const result2 = await sendViaIframe(testParams);
+        if (result2.success) {
+          updateApiStatus('✅ API подключено (Iframe)', 'success');
+          updateConnectionMethod('Iframe');
+          return true;
+        }
+        
+        updateApiStatus('❌ Не удалось подключиться к API', 'error');
+        updateConnectionMethod('Оффлайн режим');
+        return false;
+        
+      } catch (error) {
+        updateApiStatus('❌ Ошибка подключения к API', 'error');
+        updateConnectionMethod('Ошибка');
+        return false;
+      }
     }
 
     function simulateTelegram() {
@@ -57,12 +245,18 @@
       document.getElementById('game').style.display = 'block';
       document.getElementById("user").innerText = `Привет, ${player.name}! (Тестовый режим)`;
       document.getElementById("score").innerText = player.score;
+      
+      // Тестируем подключение
+      testApiConnection();
+      updateUserStatus('Тестовый пользователь создан', 'success');
+      updateDbStatus('Тестовый режим - данные сохраняются локально', 'warning');
     }
 
     function resetGame() {
       if (confirm('Сбросить все очки?')) {
         player.score = 0;
         document.getElementById("score").innerText = player.score;
+        updateUserStatus('Сброс очков...', 'loading');
         updateScore();
       }
     }
@@ -77,9 +271,21 @@
         document.getElementById('authMessage').style.display = 'none';
         document.getElementById('game').style.display = 'block';
         
-        loadPlayer();
+        // Показываем информацию о пользователе
+        updateUserStatus(`ID: ${player.id}, Имя: ${player.name}`, 'info');
+        
+        // Тестируем подключение и загружаем данные
+        testApiConnection().then(success => {
+          if (success) {
+            loadPlayer();
+          } else {
+            updateUserStatus('Работа в оффлайн режиме', 'warning');
+          }
+        });
+        
       } else {
         console.log('Запуск вне Telegram');
+        updateDbStatus('Запуск вне Telegram - используйте тестовый режим', 'error');
       }
     }
 
@@ -87,35 +293,36 @@
       try {
         if (!player.id) return;
         
-        showStatus('Загрузка данных...');
+        updateUserStatus('Загрузка данных пользователя...', 'loading');
+        updateRequestCount();
         
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: "getPlayer",
-            id: player.id,
-            name: player.name
-          })
+        // Пробуем JSONP для загрузки данных
+        const params = {
+          action: "getPlayer",
+          id: player.id,
+          name: player.name
+        };
+        
+        await jsonpRequest(params, function(data) {
+          if (data && data.score !== undefined) {
+            player.score = data.score;
+            document.getElementById("user").innerText = `Привет, ${player.name}!`;
+            document.getElementById("score").innerText = player.score;
+            
+            updateUserStatus('Данные пользователя загружены', 'success');
+            updateDbStatus('Подключение к базе данных установлено', 'success');
+            updateLastUpdate();
+          } else {
+            throw new Error('Invalid response data');
+          }
         });
-        
-        if (response.ok) {
-          const data = await response.json();
-          player.score = data.score || 0;
-          document.getElementById("user").innerText = `Привет, ${player.name}!`;
-          document.getElementById("score").innerText = player.score;
-          showStatus('Данные загружены!');
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
         
       } catch (error) {
         console.error('Ошибка загрузки:', error);
         document.getElementById("user").innerText = `Привет, ${player.name}!`;
         document.getElementById("score").innerText = player.score;
-        showStatus('Оффлайн режим', true);
+        updateUserStatus('Ошибка загрузки данных', 'error');
+        updateDbStatus('Ошибка подключения к БД', 'error');
       }
     }
 
@@ -123,30 +330,39 @@
       try {
         if (!player.id) return;
         
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: "updateScore",
-            id: player.id,
-            score: player.score,
-            name: player.name
-          })
-        });
+        updateUserStatus('Сохранение очков...', 'loading');
+        updateRequestCount();
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Счет обновлен:', player.score);
-          showStatus('Счет сохранен!');
+        const params = {
+          action: "updateScore",
+          id: player.id,
+          score: player.score,
+          name: player.name
+        };
+        
+        let result;
+        
+        // Пробуем разные методы отправки
+        if (connectionMethod.includes('Image')) {
+          result = await sendViaImageBeacon(params);
+        } else if (connectionMethod.includes('Iframe')) {
+          result = await sendViaIframe(params);
         } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // Пробуем оба метода
+          result = await sendViaImageBeacon(params) || await sendViaIframe(params);
+        }
+        
+        if (result && result.success) {
+          console.log('Счет обновлен:', player.score);
+          updateUserStatus('Очки сохранены в БД', 'success');
+          updateLastUpdate();
+        } else {
+          throw new Error('Failed to save');
         }
         
       } catch (error) {
         console.error('Ошибка сохранения:', error);
-        showStatus('Ошибка сохранения', true);
+        updateUserStatus('Ошибка сохранения в БД', 'error');
       }
     }
 
