@@ -1,16 +1,16 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Обновлённый viewport для отключения масштабирования -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🎮 Энерго-Кликер</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-  
-	* {
-		touch-action: manipulation;
-	}
+    /* Отключаем масштабирование жестами именно на корневых элементах */
+    html, body {
+      touch-action: manipulation;
+    }
 
     * {
       box-sizing: border-box;
@@ -490,6 +490,12 @@
     }, 30000);
 
     window.forceSave = () => savePlayerData().then(ok => showMessage(ok ? "✅ Сохранено!" : "❌ Ошибка", ok));
+
+    // 🔒 Запрещаем двойной клик по всей странице (дополнительная защита от zoom)
+    document.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }, { passive: false });
 
     document.addEventListener('DOMContentLoaded', initTelegramGame);
   </script>
