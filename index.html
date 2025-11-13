@@ -459,67 +459,66 @@
 
 function renderShop() {
   const shop = document.getElementById('skinsList');
-  let html = '';
+  // Очищаем старые обработчики
+  shop.innerHTML = '';
 
   SKINS.forEach(skin => {
     const isOwned = player.ownedSkins.includes(skin.id);
     const isActive = skin.id === player.skin;
     const isDisabled = !isOwned;
 
-    html += `
-      <div class="skin-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}"
-           data-skin-id="${skin.id}">
-        <div class="skin-preview" style="background: ${skin.gradient};"></div>
-        <div class="skin-info">
-          <b>${skin.name}</b>
-          <small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>
-        </div>
-      </div>
-    `;
-  });
+    const item = document.createElement('div');
+    item.className = `skin-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}`;
+    item.dataset.skinId = skin.id;
 
-  shop.innerHTML = html;
+    const preview = document.createElement('div');
+    preview.className = 'skin-preview';
+    preview.style.background = skin.gradient;
 
-  // Удаляем старые обработчики (на всякий)
-  shop.querySelectorAll('.skin-item').forEach(el => {
-    el.removeEventListener('click', handleSkinClick);
-  });
+    const info = document.createElement('div');
+    info.className = 'skin-info';
+    info.innerHTML = `<b>${skin.name}</b><small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>`;
 
-  // Новые обработчики
-  shop.querySelectorAll('.skin-item:not(.disabled)').forEach(el => {
-    el.addEventListener('click', handleSkinClick);
-  });
-}
+    item.appendChild(preview);
+    item.appendChild(info);
 
-function handleSkinClick(e) {
-  const skinId = this.dataset.skinId;
-  console.log("Клик по скину:", skinId);
-  selectSkin(skinId);
-}
-
-    // ✅ ГЛОБАЛЬНАЯ ФУНКЦИЯ (работает в Telegram)
-    function selectSkin(skinId) {
-      const skin = SKINS.find(s => s.id === skinId);
-      if (!skin || skinId === player.skin) return;
-
-      const isOwned = player.ownedSkins.includes(skinId);
-      if (!isOwned) {
-        if (player.score >= skin.price) {
-          player.score -= skin.price;
-          player.ownedSkins.push(skinId);
-          showMessage(`✅ Куплен скин: ${skin.name}`, true);
-          savePlayerData();
-        } else {
-          showMessage("❌ Недостаточно очков!", false);
-          return;
-        }
-      }
-
-      player.skin = skinId;
-      applySkin();
-      renderShop();
-      updateUI();
+    if (!isDisabled) {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => {
+        selectSkin(skin.id);
+      });
     }
+
+    shop.appendChild(item);
+  });
+}
+
+function selectSkin(skinId) {
+  const skin = SKINS.find(s => s.id === skinId);
+  if (!skin || skinId === player.skin) return;
+
+  if (player.ownedSkins.includes(skinId)) {
+    // Уже куплен — просто применяем
+    player.skin = skinId;
+    applySkin();
+    renderShop();
+    return;
+  }
+
+  // Покупка
+  if (player.score >= skin.price) {
+    player.score -= skin.price;
+    player.ownedSkins.push(skinId);
+    player.skin = skinId;
+    applySkin();
+    renderShop();
+    updateUI();
+    savePlayerData();
+    showMessage(`✅ Куплен скин: ${skin.name}`, true);
+  } else {
+    showMessage("❌ Недостаточно очков!", false);
+  }
+}
 
     function updateUI() {
       const effectivePower = getEffectiveClickPower();
