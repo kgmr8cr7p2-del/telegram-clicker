@@ -457,38 +457,45 @@
       }
     }
 
-    // ✅ РАБОЧАЯ ВЕРСИЯ БЕЗ onclick
-    function renderShop() {
-      const shop = document.getElementById('skinsList');
-      let html = '';
+function renderShop() {
+  const shop = document.getElementById('skinsList');
+  let html = '';
 
-      SKINS.forEach(skin => {
-        const isOwned = player.ownedSkins.includes(skin.id);
-        const isActive = skin.id === player.skin;
-        const isDisabled = !isOwned;
+  SKINS.forEach(skin => {
+    const isOwned = player.ownedSkins.includes(skin.id);
+    const isActive = skin.id === player.skin;
+    const isDisabled = !isOwned;
 
-        html += `
-          <div class="skin-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}"
-               data-skin-id="${skin.id}">
-            <div class="skin-preview" style="background: ${skin.gradient};"></div>
-            <div class="skin-info">
-              <b>${skin.name}</b>
-              <small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>
-            </div>
-          </div>
-        `;
-      });
+    html += `
+      <div class="skin-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}"
+           data-skin-id="${skin.id}">
+        <div class="skin-preview" style="background: ${skin.gradient};"></div>
+        <div class="skin-info">
+          <b>${skin.name}</b>
+          <small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>
+        </div>
+      </div>
+    `;
+  });
 
-      shop.innerHTML = html;
+  shop.innerHTML = html;
 
-      // Добавляем обработчики кликов
-      shop.querySelectorAll('.skin-item:not(.disabled)').forEach(item => {
-        item.addEventListener('click', () => {
-          const skinId = item.dataset.skinId;
-          selectSkin(skinId);
-        });
-      });
-    }
+  // Удаляем старые обработчики (на всякий)
+  shop.querySelectorAll('.skin-item').forEach(el => {
+    el.removeEventListener('click', handleSkinClick);
+  });
+
+  // Новые обработчики
+  shop.querySelectorAll('.skin-item:not(.disabled)').forEach(el => {
+    el.addEventListener('click', handleSkinClick);
+  });
+}
+
+function handleSkinClick(e) {
+  const skinId = this.dataset.skinId;
+  console.log("Клик по скину:", skinId);
+  selectSkin(skinId);
+}
 
     // ✅ ГЛОБАЛЬНАЯ ФУНКЦИЯ (работает в Telegram)
     function selectSkin(skinId) {
