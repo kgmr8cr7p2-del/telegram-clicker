@@ -160,11 +160,6 @@
       animation: pulseRed 1s infinite alternate;
     }
 
-    @keyframes pulseRed {
-      from { box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); }
-      to { box-shadow: 0 0 30px rgba(255, 80, 80, 0.9), 0 0 40px rgba(255, 0, 0, 0.7); }
-    }
-
     .click-btn.star-skin {
       animation: shimmer-button 3s infinite alternate;
     }
@@ -174,14 +169,14 @@
       100% { filter: brightness(1.4) hue-rotate(20deg); }
     }
 
-    .upgrades, .skins-list {
+    .upgrades, .skins-list, .buy-section {
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin: 15px 0;
     }
 
-    .upgrades button, .skin-item {
+    .upgrades button, .skin-item, .buy-btn {
       padding: 12px;
       font-size: 15px;
       border: none;
@@ -192,7 +187,7 @@
       transition: background 0.2s;
     }
 
-    .upgrades button:hover, .skin-item:not(.disabled):hover {
+    .upgrades button:hover, .skin-item:not(.disabled):hover, .buy-btn:hover {
       background: rgba(255, 255, 255, 0.25);
     }
 
@@ -320,17 +315,6 @@
       margin-bottom: 8px;
       font-weight: 600;
     }
-
-    /* Стиль для кнопки покупки звёзд */
-    #buyStarsBtn {
-      background: linear-gradient(135deg, #ffd700, #ff8c00);
-      color: #000;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-    #buyStarsBtn:hover {
-      opacity: 0.9;
-    }
   </style>
 </head>
 <body>
@@ -395,10 +379,13 @@
         <div id="skinsList" class="skins-list"></div>
 
         <!-- 💎 КНОПКА ПОКУПКИ ЗВЁЗД -->
-        <div style="margin-top:20px;">
-          <button id="buyStarsBtn" class="upgrades button">
-            💎 Купить 50 звёзд за $0.99
-          </button>
+        <div class="buy-section">
+          <h3 style="margin:15px 0 8px; font-size:18px;">💎 Купить звёзды</h3>
+          <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
+          <small style="display:block; margin-top:6px; color:#bbdefb;">
+            После оплаты на Tribute мы вручную выдадим звёзды.
+            <br>Ваш ID для покупки: <b id="displayedId"></b>
+          </small>
         </div>
       </div>
     </div>
@@ -595,6 +582,9 @@
 
         shop.appendChild(item);
       });
+
+      // Обновляем отображение ID
+      document.getElementById('displayedId').innerText = player.id || '—';
     }
 
     function selectSkin(skinId) {
@@ -643,6 +633,7 @@
       document.getElementById("score").innerText = player.score.toLocaleString();
       document.getElementById("stars").innerText = player.stars;
       document.getElementById("energy").innerText = `${Math.floor(player.energy)}/${Math.floor(effectiveMaxEnergy)}`;
+      document.getElementById("user").innerText = `Привет, ${player.name}! (ID: ${player.id})`;
 
       const regenCost = getEnergyRegenCost(player.energyUpgrades);
       const autoCost = getAutoClickerCost(player.autoClickerLevel);
@@ -750,7 +741,6 @@
 
           player.isInitialized = true;
           showGame();
-          document.getElementById("user").innerText = `Привет, ${player.name}!`;
           applySkin();
           updateUI();
           loadLeaderboard();
@@ -760,7 +750,6 @@
         console.error("Load error", e);
         player.isInitialized = true;
         showGame();
-        document.getElementById("user").innerText = `Привет, ${player.name}!`;
         applySkin();
         updateUI();
         showMessage("⚠️ Офлайн-режим", false);
@@ -837,6 +826,25 @@
         showMessage("❌ Недостаточно очков для силы клика!", false);
       }
     }
+
+    function buyStarsManual() {
+  if (!window.Telegram?.WebApp) {
+    showMessage("Откройте игру в Telegram!", false);
+    return;
+  }
+
+  const playerId = player.id;
+  if (!playerId) {
+    showMessage("Ошибка: неизвестный ID", false);
+    return;
+  }
+
+  // Передаём ID через параметр ref — Tribute его сохранит в заказе
+  const tributeUrl = `https://t.me/tribute/app?startapp=pmQi&ref=${encodeURIComponent(playerId)}`;
+
+  window.Telegram.WebApp.openLink(tributeUrl, { try_instant_view: false });
+  showMessage("Открываем Tribute...", true);
+}
 
     function createFlyingBonus() {
       if (currentTab !== 'tab-game') return;
@@ -926,16 +934,6 @@
       }
     });
 
-    // 💎 КНОПКА ПОКУПКИ ЗВЁЗД
-    document.getElementById('buyStarsBtn').addEventListener('click', () => {
-      if (!window.Telegram?.WebApp) {
-        alert("Откройте игру в Telegram!");
-        return;
-      }
-      const url = "https://t.me/tribute/app?startapp=pmPV";
-      window.Telegram.WebApp.openLink(url, { try_instant_view: false });
-    });
-
     setInterval(() => {
       if (player.energy < getEffectiveMaxEnergy() && player.isInitialized) {
         player.energy = Math.min(getEffectiveMaxEnergy(), player.energy + getEffectiveEnergyRegen());
@@ -986,7 +984,6 @@
       player.isInitialized = true;
 
       showGame();
-      document.getElementById("user").innerText = `Привет, ${player.name}!`;
       applySkin();
       updateUI();
       loadLeaderboard();
