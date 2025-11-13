@@ -534,43 +534,38 @@
       }
     }
 
-    function updateUI() {
-      const effectivePower = getEffectiveClickPower();
-      document.getElementById("score").innerText = player.score.toLocaleString();
-      document.getElementById("energy").innerText = Math.floor(player.energy);
+function updateUI() {
+  const effectivePower = getEffectiveClickPower();
+  document.getElementById("score").innerText = player.score.toLocaleString();
+  document.getElementById("energy").innerText = Math.floor(player.energy);
 
-      const regenCost = getEnergyRegenCost(player.energyUpgrades);
-      const autoCost = getAutoClickerCost(player.autoClickerLevel);
-      const powerCost = getClickPowerCost(player.clickPower - 1);
+  const regenCost = getEnergyRegenCost(player.energyUpgrades);
+  const autoCost = getAutoClickerCost(player.autoClickerLevel);
+  const powerCost = getClickPowerCost(player.clickPower - 1);
 
-      document.getElementById("regenCost").innerText = regenCost.toLocaleString();
-      document.getElementById("autoClickerCost").innerText = autoCost.toLocaleString();
-      document.getElementById("clickPowerCost").innerText = powerCost.toLocaleString();
+  document.getElementById("regenCost").innerText = regenCost.toLocaleString();
+  document.getElementById("autoClickerCost").innerText = autoCost.toLocaleString();
+  document.getElementById("clickPowerCost").innerText = powerCost.toLocaleString();
 
-      document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
-      document.getElementById("clickPower").innerText = effectivePower;
+  document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
+  document.getElementById("clickPower").innerText = effectivePower;
 
-      const percent = (player.energy / player.maxEnergy) * 100;
-      document.getElementById("energyFill").style.width = percent + "%";
+  const percent = (player.energy / player.maxEnergy) * 100;
+  document.getElementById("energyFill").style.width = percent + "%";
 
-      const btnRegen = document.getElementById("btnRegen");
-      const btnAuto = document.getElementById("btnAuto");
-      const btnPower = document.getElementById("btnPower");
+  const btnRegen = document.getElementById("btnRegen");
+  const btnAuto = document.getElementById("btnAuto");
+  const btnPower = document.getElementById("btnPower");
 
-      btnRegen.classList.toggle("upgrade-disabled", player.score < regenCost);
-      btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
-      btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
-    }
+  btnRegen.classList.toggle("upgrade-disabled", player.score < regenCost);
+  btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
+  btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
 
-    function showMessage(msg, success = true) {
-      const div = document.createElement("div");
-      div.className = `status status-${success ? 'success' : 'error'}`;
-      div.innerText = msg;
-      document.body.appendChild(div);
-      setTimeout(() => {
-        if (div.parentNode) div.parentNode.removeChild(div);
-      }, 3000);
-    }
+  // 🔥 Обновляем магазин, чтобы скины реагировали на изменение очков
+  if (currentTab === 'tab-shop') {
+    renderShop();
+  }
+}
 
     async function savePlayerData() {
       if (!player.id || !player.isInitialized) return false;
