@@ -2,22 +2,20 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <!-- Отключаем масштабирование на мобильных -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🎮 Энерго-Кликер</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    /* Полное отключение выделения текста и масштабирования */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      -webkit-user-select: none; /* Safari */
-      -moz-user-select: none;    /* Firefox */
-      -ms-user-select: none;     /* IE/Edge */
-      user-select: none;         /* Standard */
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
       cursor: default;
-      touch-action: manipulation; /* Отключает двойной тап → zoom */
+      touch-action: manipulation;
     }
 
     html, body {
@@ -145,6 +143,13 @@
       background: rgba(255, 255, 255, 0.25);
     }
 
+    /* Затемнение кнопок при недостатке очков */
+    .upgrades button.upgrade-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     .info-line {
       margin: 12px 0;
       font-size: 15px;
@@ -228,10 +233,11 @@
 
       <button class="click-btn" id="clickBtn">КЛИК!</button>
 
+      <!-- КНОПКИ УЛУЧШЕНИЙ С ID -->
       <div class="upgrades">
-        <button onclick="buyEnergyRegen()">🔋 Энергия/сек<br><small>(Цена: <span id="regenCost">10</span>)</small></button>
-        <button onclick="buyAutoClicker()">🤖 Автоклик/сек<br><small>(Цена: <span id="autoClickerCost">50</span>)</small></button>
-        <button onclick="buyClickPower()">💪 Сила клика<br><small>(Цена: <span id="clickPowerCost">50</span>)</small></button>
+        <button id="btnRegen" onclick="buyEnergyRegen()">🔋 Энергия/сек<br><small>(Цена: <span id="regenCost">10</span>)</small></button>
+        <button id="btnAuto" onclick="buyAutoClicker()">🤖 Автоклик/сек<br><small>(Цена: <span id="autoClickerCost">50</span>)</small></button>
+        <button id="btnPower" onclick="buyClickPower()">💪 Сила клика<br><small>(Цена: <span id="clickPowerCost">50</span>)</small></button>
       </div>
 
       <div class="info-line">
@@ -240,7 +246,6 @@
 
       <button onclick="forceSave()" style="margin-top:10px; background: rgba(255,255,255,0.2);">💾 Сохранить</button>
 
-      <!-- ЛИДЕРБОРД -->
       <div class="leaderboard-box">
         <h3>🏆 Топ игроков</h3>
         <div id="leaderboard">Загрузка...</div>
@@ -250,7 +255,6 @@
   </div>
 
   <script>
-    // === ВСТАВЬТЕ СЮДА ВАШ РАБОЧИЙ URL ИЗ GAS ===
     const apiUrl = "https://script.google.com/macros/s/AKfycbzTMsCO8MuaO37ewPEw5TeihcTyJI1nzz7aSwIq27lzOFtDezWpxulyh2MeKI1YNcF2/exec";
 
     const tg = window.Telegram.WebApp;
@@ -285,17 +289,33 @@
     const getAutoClickerCost = getUpgradeCost;
     const getClickPowerCost = getUpgradeCost;
 
+    // ✅ Обновлённая функция с затемнением кнопок
     function updateUI() {
       document.getElementById("score").innerText = player.score.toLocaleString();
       document.getElementById("energy").innerText = Math.floor(player.energy);
-      document.getElementById("regenCost").innerText = getEnergyRegenCost(player.energyUpgrades).toLocaleString();
-      document.getElementById("autoClickerCost").innerText = getAutoClickerCost(player.autoClickerLevel).toLocaleString();
-      document.getElementById("clickPowerCost").innerText = getClickPowerCost(player.clickPower - 1).toLocaleString();
+      
+      const regenCost = getEnergyRegenCost(player.energyUpgrades);
+      const autoCost = getAutoClickerCost(player.autoClickerLevel);
+      const powerCost = getClickPowerCost(player.clickPower - 1);
+
+      document.getElementById("regenCost").innerText = regenCost.toLocaleString();
+      document.getElementById("autoClickerCost").innerText = autoCost.toLocaleString();
+      document.getElementById("clickPowerCost").innerText = powerCost.toLocaleString();
+
       document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
       document.getElementById("clickPower").innerText = player.clickPower;
 
       const percent = (player.energy / player.maxEnergy) * 100;
       document.getElementById("energyFill").style.width = percent + "%";
+
+      // Затемнение кнопок при недостатке очков
+      const btnRegen = document.getElementById("btnRegen");
+      const btnAuto = document.getElementById("btnAuto");
+      const btnPower = document.getElementById("btnPower");
+
+      btnRegen.classList.toggle("upgrade-disabled", player.score < regenCost);
+      btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
+      btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
     }
 
     function showMessage(msg, success = true) {
@@ -493,7 +513,6 @@
 
     window.forceSave = () => savePlayerData().then(ok => showMessage(ok ? "✅ Сохранено!" : "❌ Ошибка", ok));
 
-    // Защита от двойного клика → зум
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
       e.stopPropagation();
