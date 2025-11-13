@@ -570,59 +570,74 @@
     }
 
     async function loadPlayerData() {
-      if (!player.id) {
-        showAuth();
-        return;
-      }
-      try {
-        const url = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.success) {
-          player.score = data.found ? (parseInt(data.score) || 0) : 0;
-          player.energy = data.found ? (parseFloat(data.energy) || 100) : 100;
-          player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
-          player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
-          player.autoClickerLevel = data.found ? (parseInt(data.autoClickerLevel) || 0) : 0;
-          player.clickPower = data.found ? (parseInt(data.clickPower) || 1) : 1;
-          player.skin = data.found ? (data.skin || 'default') : 'default';
-          
-          let ownedSkins = ['default'];
-          if (data.found && data.ownedSkins) {
-            try {
-              ownedSkins = JSON.parse(data.ownedSkins);
-              if (!Array.isArray(ownedSkins)) ownedSkins = ['default'];
-            } catch (e) {
-              ownedSkins = ['default'];
-            }
-          }
-          player.ownedSkins = ownedSkins;
+  if (!player.id) {
+    showAuth();
+    return;
+  }
+  try {
+    const url = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-          if (data.found && data.lastOnline) {
-            const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
-            player.energy = Math.min(650, player.energy + offlineSec * player.energyRegen);
-          }
+    if (data.success) {
+      player.score = data.found ? (parseInt(data.score) || 0) : 0;
+      player.energy = data.found ? (parseFloat(data.energy) || 100) : 100;
+      player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
+      player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
+      player.autoClickerLevel = data.found ? (parseInt(data.autoClickerLevel) || 0) : 0;
+      player.clickPower = data.found ? (parseInt(data.clickPower) || 1) : 1;
+      player.skin = data.found ? (data.skin || 'default') : 'default';
 
-          player.isInitialized = true;
-          showGame();
-          document.getElementById("user").innerText = `Привет, ${player.name}!`;
-          applySkin();
-          updateUI();
-          loadLeaderboard();
-          showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
-        } else {
-          throw new Error("Server error");
+      // === НАДЁЖНАЯ ЗАГРУЗКА ownedSkins ===
+      let ownedSkins = ['default'];
+      if (data.found && data.ownedSkins) {
+        try {
+          let raw = data.ownedSkins;
+          // Убираем двойное экранирование: \" → "
+          raw = raw.replace(/\\"/g, '"');
+          // Если строка обёрнута во внешние кавычки — убираем их
+          if (raw.startsWith('"') && raw.endsWith('"')) {
+            raw = raw.slice(1, -1);
+            raw = raw.replace(/\\"/g, '"');
+          }
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            ownedSkins = parsed;
+          } else {
+            throw new Error('Not an array');
+          }
+        } catch (e) {
+          console.warn('Ошибка парсинга ownedSkins, используем default:', data.ownedSkins, e);
+          ownedSkins = ['default'];
         }
-      } catch (e) {
-        console.error("Load error", e);
-        player.isInitialized = true;
-        showGame();
-        document.getElementById("user").innerText = `Привет, ${player.name}!`;
-        applySkin();
-        updateUI();
-        showMessage("⚠️ Офлайн-режим", false);
       }
+      player.ownedSkins = ownedSkins;
+
+      if (data.found && data.lastOnline) {
+        const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
+        player.energy = Math.min(650, player.energy + offlineSec * player.energyRegen);
+      }
+
+      player.isInitialized = true;
+      showGame();
+      document.getElementById("user").innerText = `Привет, ${player.name}!`;
+      applySkin();
+      updateUI();
+      loadLeaderboard();
+      showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
+    } else {
+      throw new Error("Server error");
     }
+  } catch (e) {
+    console.error("Load error", e);
+    player.isInitialized = true;
+    showGame();
+    document.getElementById("user").innerText = `Привет, ${player.name}!`;
+    applySkin();
+    updateUI();
+    showMessage("⚠️ Офлайн-режим", false);
+  }
+}
 
     async function loadLeaderboard() {
       try {
