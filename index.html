@@ -2,20 +2,26 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <!-- Обновлённый viewport для отключения масштабирования -->
+  <!-- Отключаем масштабирование на мобильных -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🎮 Энерго-Кликер</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    /* Отключаем масштабирование жестами именно на корневых элементах */
-    html, body {
-      touch-action: manipulation;
-    }
-
+    /* Полное отключение выделения текста и масштабирования */
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-user-select: none; /* Safari */
+      -moz-user-select: none;    /* Firefox */
+      -ms-user-select: none;     /* IE/Edge */
+      user-select: none;         /* Standard */
+      cursor: default;
+      touch-action: manipulation; /* Отключает двойной тап → zoom */
+    }
+
+    html, body {
+      touch-action: manipulation;
     }
 
     body {
@@ -108,7 +114,6 @@
       align-items: center;
       justify-content: center;
       transition: transform 0.1s ease, box-shadow 0.2s ease;
-      user-select: none;
     }
 
     .click-btn:active {
@@ -263,9 +268,6 @@
       isInitialized: false
     };
 
-    // Для сравнения в лидерборде
-    const playerState = player;
-
     function getEnergyRegenCost(upgrades) {
       const base = 10;
       if (upgrades < 3) return Math.round(base * Math.pow(2, upgrades));
@@ -350,7 +352,7 @@
 
           player.isInitialized = true;
           updateUI();
-          loadLeaderboard(); // Загружаем лидерборд при старте
+          loadLeaderboard();
           showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
         }
       } catch (e) {
@@ -491,7 +493,7 @@
 
     window.forceSave = () => savePlayerData().then(ok => showMessage(ok ? "✅ Сохранено!" : "❌ Ошибка", ok));
 
-    // 🔒 Запрещаем двойной клик по всей странице (дополнительная защита от zoom)
+    // Защита от двойного клика → зум
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
       e.stopPropagation();
