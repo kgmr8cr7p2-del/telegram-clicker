@@ -31,7 +31,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
     }
 
     .container {
@@ -43,7 +43,6 @@
       padding: 20px;
       text-align: center;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      margin-top: 10px;
     }
 
     h1 {
@@ -52,24 +51,28 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    #authMessage {
-      background: rgba(255, 255, 255, 0.9);
-      color: #222;
-      padding: 25px;
-      border-radius: 18px;
-      margin: 20px 0;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    /* === ЗАГРУЗОЧНЫЙ ЭКРАН === */
+    #loadingScreen {
+      display: none;
+      padding: 30px;
     }
 
-    #authMessage h3 {
-      margin-bottom: 10px;
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
     }
 
-    #authMessage button {
-      margin-top: 15px;
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
-    #game {
+    #authMessage, #game {
       display: none;
     }
 
@@ -143,7 +146,6 @@
       background: rgba(255, 255, 255, 0.25);
     }
 
-    /* Затемнение кнопок при недостатке очков */
     .upgrades button.upgrade-disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -213,12 +215,20 @@
   <div class="container">
     <h1>🎮 Энерго-Кликер</h1>
 
+    <!-- ЗАГРУЗОЧНЫЙ ЭКРАН -->
+    <div id="loadingScreen">
+      <div class="spinner"></div>
+      <p>Подключение к серверу...</p>
+    </div>
+
+    <!-- АВТОРИЗАЦИЯ (если не в Telegram) -->
     <div id="authMessage">
       <h3>Запускайте игру через Telegram бота!</h3>
       <p>Эта игра работает только внутри Telegram.</p>
       <button onclick="simulateTelegram()">Тестовый режим</button>
     </div>
 
+    <!-- ИГРОВОЕ ПОЛЕ -->
     <div id="game">
       <p id="user"></p>
 
@@ -233,7 +243,6 @@
 
       <button class="click-btn" id="clickBtn">КЛИК!</button>
 
-      <!-- КНОПКИ УЛУЧШЕНИЙ С ID -->
       <div class="upgrades">
         <button id="btnRegen" onclick="buyEnergyRegen()">🔋 Энергия/сек<br><small>(Цена: <span id="regenCost">10</span>)</small></button>
         <button id="btnAuto" onclick="buyAutoClicker()">🤖 Автоклик/сек<br><small>(Цена: <span id="autoClickerCost">50</span>)</small></button>
@@ -258,7 +267,6 @@
     const apiUrl = "https://script.google.com/macros/s/AKfycbzTMsCO8MuaO37ewPEw5TeihcTyJI1nzz7aSwIq27lzOFtDezWpxulyh2MeKI1YNcF2/exec";
 
     const tg = window.Telegram.WebApp;
-
     let player = {
       id: null,
       name: 'Гость',
@@ -271,6 +279,27 @@
       clickPower: 1,
       isInitialized: false
     };
+
+    // Показать загрузку
+    function showLoading() {
+      document.getElementById('loadingScreen').style.display = 'block';
+      document.getElementById('authMessage').style.display = 'none';
+      document.getElementById('game').style.display = 'none';
+    }
+
+    // Показать игру
+    function showGame() {
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('authMessage').style.display = 'none';
+      document.getElementById('game').style.display = 'block';
+    }
+
+    // Показать ошибку авторизации
+    function showAuth() {
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('authMessage').style.display = 'block';
+      document.getElementById('game').style.display = 'none';
+    }
 
     function getEnergyRegenCost(upgrades) {
       const base = 10;
@@ -289,7 +318,6 @@
     const getAutoClickerCost = getUpgradeCost;
     const getClickPowerCost = getUpgradeCost;
 
-    // ✅ Обновлённая функция с затемнением кнопок
     function updateUI() {
       document.getElementById("score").innerText = player.score.toLocaleString();
       document.getElementById("energy").innerText = Math.floor(player.energy);
@@ -308,7 +336,6 @@
       const percent = (player.energy / player.maxEnergy) * 100;
       document.getElementById("energyFill").style.width = percent + "%";
 
-      // Затемнение кнопок при недостатке очков
       const btnRegen = document.getElementById("btnRegen");
       const btnAuto = document.getElementById("btnAuto");
       const btnPower = document.getElementById("btnPower");
@@ -352,7 +379,10 @@
     }
 
     async function loadPlayerData() {
-      if (!player.id) return;
+      if (!player.id) {
+        showAuth();
+        return;
+      }
       try {
         const url = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
         const res = await fetch(url);
@@ -371,13 +401,19 @@
           }
 
           player.isInitialized = true;
+          showGame();
+          document.getElementById("user").innerText = `Привет, ${player.name}!`;
           updateUI();
           loadLeaderboard();
           showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
+        } else {
+          throw new Error("Server error");
         }
       } catch (e) {
         console.error("Load error", e);
         player.isInitialized = true;
+        showGame();
+        document.getElementById("user").innerText = `Привет, ${player.name}!`;
         updateUI();
         showMessage("⚠️ Офлайн-режим", false);
       }
@@ -458,26 +494,25 @@
     function simulateTelegram() {
       player.id = Math.floor(Math.random() * 1000000);
       player.name = "Тест";
-      document.getElementById('authMessage').style.display = 'none';
-      document.getElementById('game').style.display = 'block';
-      document.getElementById("user").innerText = `Привет, ${player.name}!`;
       player.isInitialized = true;
+      showGame();
+      document.getElementById("user").innerText = `Привет, ${player.name}!`;
       updateUI();
       loadLeaderboard();
     }
 
     function initTelegramGame() {
+      showLoading(); // 💡 Показываем загрузку сразу
+
       if (tg?.initDataUnsafe?.user) {
         const user = tg.initDataUnsafe.user;
         player.id = user.id;
         player.name = user.first_name || 'Игрок';
         tg.expand();
-        document.getElementById('authMessage').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
-        document.getElementById("user").innerText = `Привет, ${player.name}!`;
-        loadPlayerData();
+        loadPlayerData(); // Загружаем данные → дальше логика внутри
       } else {
-        showMessage("Запустите из Telegram!", false);
+        // Не в Telegram → показываем инструкцию
+        setTimeout(() => showAuth(), 800); // небольшая задержка для плавности
       }
     }
 
