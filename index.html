@@ -218,6 +218,8 @@
 
     .skin-item.disabled {
       opacity: 0.6;
+      cursor: not-allowed;
+      pointer-events: none;
     }
 
     .skin-item.active .skin-preview {
@@ -364,7 +366,6 @@
   </div>
 
   <script>
-    // ✅ Используется ваш рабочий GAS URL
     const apiUrl = "https://script.google.com/macros/s/AKfycbz93-bV0w_P1YUJNeU0BQSfjJ8yYWLX7m0ZMHN52dl-drdpPunFFUJsVLy-Qwl0Cw/exec";
 
     const tg = window.Telegram?.WebApp;
@@ -454,21 +455,25 @@
       if (skin) {
         btn.style.background = skin.gradient;
       }
-      // визуально отметить бонус активность
       btn.classList.toggle('bonus-active', bonusActive);
     }
 
     function renderShop() {
       const shop = document.getElementById('skinsList');
-      // Очищаем старые обработчики
       shop.innerHTML = '';
 
       SKINS.forEach(skin => {
         const isOwned = player.ownedSkins.includes(skin.id);
         const isActive = skin.id === player.skin;
+        const canAfford = player.score >= skin.price;
 
         const item = document.createElement('div');
-        item.className = `skin-item ${isOwned ? '' : 'disabled'} ${isActive ? 'active' : ''}`;
+        // Если не куплен и не хватает очков — disabled
+        if (!isOwned && !canAfford) {
+          item.className = 'skin-item disabled';
+        } else {
+          item.className = `skin-item ${isActive ? 'active' : ''}`;
+        }
         item.dataset.skinId = skin.id;
 
         const preview = document.createElement('div');
@@ -477,16 +482,22 @@
 
         const info = document.createElement('div');
         info.className = 'skin-info';
-        info.innerHTML = `<b>${skin.name}</b><small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>`;
+        if (isOwned) {
+          info.innerHTML = `<b>${skin.name}</b><small>✅ Куплено</small>`;
+        } else {
+          info.innerHTML = `<b>${skin.name}</b><small>Цена: ${skin.price.toLocaleString()}</small>`;
+        }
 
         item.appendChild(preview);
         item.appendChild(info);
 
-        // Навешиваем обработчик клика на все элементы (купленные и некупленные)
-        item.style.cursor = 'pointer';
-        item.addEventListener('click', () => {
-          selectSkin(skin.id);
-        });
+        item.style.cursor = isOwned || canAfford ? 'pointer' : 'not-allowed';
+
+        if (isOwned || canAfford) {
+          item.addEventListener('click', () => {
+            selectSkin(skin.id);
+          });
+        }
 
         shop.appendChild(item);
       });
@@ -501,7 +512,6 @@
       }
 
       if (player.ownedSkins.includes(skinId)) {
-        // Уже куплен — просто применяем
         player.skin = skinId;
         applySkin();
         renderShop();
@@ -510,7 +520,6 @@
         return;
       }
 
-      // Покупка
       if (player.score >= skin.price) {
         player.score -= skin.price;
         player.ownedSkins.push(skinId);
@@ -607,7 +616,6 @@
           player.clickPower = data.found ? (parseInt(data.clickPower) || 1) : 1;
           player.skin = data.found ? (data.skin || 'default') : 'default';
 
-          // ✅ Надёжная загрузка ownedSkins
           let ownedSkins = ['default'];
           if (data.found && data.ownedSkins) {
             try {
@@ -766,14 +774,12 @@
         bonus.style.top = y + '%';
       }, 50);
 
-      // Сохраняем как свойства, не в dataset (чтобы можно было clearInterval/clearTimeout корректно)
       bonus._moveInterval = moveInterval;
       bonus._disappearTimeout = disappearTimeout;
     }
 
     function activateBonus(bonusEl) {
       if (bonusActive) return;
-      // clear timers safely
       if (bonusEl._moveInterval) clearInterval(bonusEl._moveInterval);
       if (bonusEl._disappearTimeout) clearTimeout(bonusEl._disappearTimeout);
       if (bonusEl.parentNode) bonusEl.parentNode.removeChild(bonusEl);
