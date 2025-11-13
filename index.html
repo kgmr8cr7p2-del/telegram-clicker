@@ -329,7 +329,7 @@
 
       <div id="tab-game" class="tab-content active">
         <div class="stats">
-          <div>⚡ Энергия: <span id="energy">100</span>/650</div>
+          <div>⚡ Энергия: <span id="energy">100</span></div>
           <div>🏆 Очки: <span id="score">0</span></div>
         </div>
 
@@ -374,7 +374,6 @@
       name: 'Гость',
       score: 0,
       energy: 100,
-      maxEnergy: 650,
       energyRegen: 1,
       energyUpgrades: 0,
       autoClickerLevel: 0,
@@ -385,12 +384,12 @@
     };
 
     const SKINS = [
-      { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0 },
-      { id: 'red', name: 'Красный', gradient: 'linear-gradient(135deg, #ff0000, #b30000)', price: 2 },
-      { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 5 },
-      { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 1000 },
-      { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 2000 },
-      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5000 }
+      { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0, bonus: {} },
+      { id: 'red', name: 'Красный', gradient: 'linear-gradient(135deg, #ff0000, #b30000)', price: 2, bonus: { clickPower: 1 } },
+      { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 5, bonus: { energyRegen: 1 } },
+      { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 1000, bonus: { maxEnergy: 100 } },
+      { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 2000, bonus: { clickPower: 2, energyRegen: 1 } },
+      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } }
     ];
 
     let bonusActive = false;
@@ -406,6 +405,9 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         button.classList.add('active');
         document.getElementById(tabId).classList.add('active');
+        if (tabId === 'tab-shop') {
+          renderShop();
+        }
       });
     });
 
@@ -445,8 +447,23 @@
     const getAutoClickerCost = getUpgradeCost;
     const getClickPowerCost = getUpgradeCost;
 
+    function getSkinBonus(type) {
+      const skin = SKINS.find(s => s.id === player.skin);
+      if (!skin || !skin.bonus) return 0;
+      return skin.bonus[type] || 0;
+    }
+
     function getEffectiveClickPower() {
-      return bonusActive ? player.clickPower * 2 : player.clickPower;
+      const base = player.clickPower + getSkinBonus('clickPower');
+      return bonusActive ? base * 2 : base;
+    }
+
+    function getEffectiveEnergyRegen() {
+      return player.energyRegen + getSkinBonus('energyRegen');
+    }
+
+    function getEffectiveMaxEnergy() {
+      return 650 + getSkinBonus('maxEnergy');
     }
 
     function applySkin() {
@@ -468,7 +485,6 @@
         const canAfford = player.score >= skin.price;
 
         const item = document.createElement('div');
-        // Если не куплен и не хватает очков — disabled
         if (!isOwned && !canAfford) {
           item.className = 'skin-item disabled';
         } else {
@@ -482,21 +498,25 @@
 
         const info = document.createElement('div');
         info.className = 'skin-info';
+        let bonusText = '';
+        if (Object.keys(skin.bonus).length > 0) {
+          const parts = [];
+          if (skin.bonus.clickPower) parts.push(`+${skin.bonus.clickPower} клик`);
+          if (skin.bonus.energyRegen) parts.push(`+${skin.bonus.energyRegen} энергия/сек`);
+          if (skin.bonus.maxEnergy) parts.push(`+${skin.bonus.maxEnergy} макс.энергия`);
+          bonusText = `<br><small style="color:#a7ffeb">${parts.join(', ')}</small>`;
+        }
         if (isOwned) {
-          info.innerHTML = `<b>${skin.name}</b><small>✅ Куплено</small>`;
+          info.innerHTML = `<b>${skin.name}</b><small>✅ Куплено</small>${bonusText}`;
         } else {
-          info.innerHTML = `<b>${skin.name}</b><small>Цена: ${skin.price.toLocaleString()}</small>`;
+          info.innerHTML = `<b>${skin.name}</b><small>Цена: ${skin.price.toLocaleString()}</small>${bonusText}`;
         }
 
         item.appendChild(preview);
         item.appendChild(info);
 
-        item.style.cursor = isOwned || canAfford ? 'pointer' : 'not-allowed';
-
         if (isOwned || canAfford) {
-          item.addEventListener('click', () => {
-            selectSkin(skin.id);
-          });
+          item.addEventListener('click', () => selectSkin(skin.id));
         }
 
         shop.appendChild(item);
@@ -514,7 +534,7 @@
       if (player.ownedSkins.includes(skinId)) {
         player.skin = skinId;
         applySkin();
-        renderShop();
+        updateUI();
         savePlayerData();
         showMessage(`✨ Скин применён: ${skin.name}`, true);
         return;
@@ -525,7 +545,6 @@
         player.ownedSkins.push(skinId);
         player.skin = skinId;
         applySkin();
-        renderShop();
         updateUI();
         savePlayerData();
         showMessage(`✅ Куплен скин: ${skin.name}`, true);
@@ -534,38 +553,47 @@
       }
     }
 
-function updateUI() {
-  const effectivePower = getEffectiveClickPower();
-  document.getElementById("score").innerText = player.score.toLocaleString();
-  document.getElementById("energy").innerText = Math.floor(player.energy);
+    function updateUI() {
+      const effectivePower = getEffectiveClickPower();
+      const effectiveMaxEnergy = getEffectiveMaxEnergy();
+      document.getElementById("score").innerText = player.score.toLocaleString();
+      document.getElementById("energy").innerText = `${Math.floor(player.energy)}/${Math.floor(effectiveMaxEnergy)}`;
 
-  const regenCost = getEnergyRegenCost(player.energyUpgrades);
-  const autoCost = getAutoClickerCost(player.autoClickerLevel);
-  const powerCost = getClickPowerCost(player.clickPower - 1);
+      const regenCost = getEnergyRegenCost(player.energyUpgrades);
+      const autoCost = getAutoClickerCost(player.autoClickerLevel);
+      const powerCost = getClickPowerCost(player.clickPower - 1);
 
-  document.getElementById("regenCost").innerText = regenCost.toLocaleString();
-  document.getElementById("autoClickerCost").innerText = autoCost.toLocaleString();
-  document.getElementById("clickPowerCost").innerText = powerCost.toLocaleString();
+      document.getElementById("regenCost").innerText = regenCost.toLocaleString();
+      document.getElementById("autoClickerCost").innerText = autoCost.toLocaleString();
+      document.getElementById("clickPowerCost").innerText = powerCost.toLocaleString();
 
-  document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
-  document.getElementById("clickPower").innerText = effectivePower;
+      document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
+      document.getElementById("clickPower").innerText = effectivePower;
 
-  const percent = (player.energy / player.maxEnergy) * 100;
-  document.getElementById("energyFill").style.width = percent + "%";
+      const percent = (player.energy / effectiveMaxEnergy) * 100;
+      document.getElementById("energyFill").style.width = percent + "%";
 
-  const btnRegen = document.getElementById("btnRegen");
-  const btnAuto = document.getElementById("btnAuto");
-  const btnPower = document.getElementById("btnPower");
+      const btnRegen = document.getElementById("btnRegen");
+      const btnAuto = document.getElementById("btnAuto");
+      const btnPower = document.getElementById("btnPower");
 
-  btnRegen.classList.toggle("upgrade-disabled", player.score < regenCost);
-  btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
-  btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
+      btnRegen.classList.toggle("upgrade-disabled", player.score < regenCost);
+      btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
+      btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
 
-  // 🔥 Обновляем магазин, чтобы скины реагировали на изменение очков
-  if (currentTab === 'tab-shop') {
-    renderShop();
-  }
-}
+      // 🔥 Обязательно обновляем магазин при любом изменении состояния
+      renderShop();
+    }
+
+    function showMessage(msg, success = true) {
+      const div = document.createElement("div");
+      div.className = `status status-${success ? 'success' : 'error'}`;
+      div.innerText = msg;
+      document.body.appendChild(div);
+      setTimeout(() => {
+        if (div.parentNode) div.parentNode.removeChild(div);
+      }, 3000);
+    }
 
     async function savePlayerData() {
       if (!player.id || !player.isInitialized) return false;
@@ -630,7 +658,8 @@ function updateUI() {
 
           if (data.found && data.lastOnline) {
             const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
-            player.energy = Math.min(player.maxEnergy, player.energy + offlineSec * player.energyRegen);
+            const offlineEnergy = offlineSec * getEffectiveEnergyRegen();
+            player.energy = Math.min(getEffectiveMaxEnergy(), player.energy + offlineEnergy);
           }
 
           player.isInitialized = true;
@@ -808,8 +837,8 @@ function updateUI() {
     });
 
     setInterval(() => {
-      if (player.energy < player.maxEnergy && player.isInitialized) {
-        player.energy = Math.min(player.maxEnergy, player.energy + player.energyRegen);
+      if (player.energy < getEffectiveMaxEnergy() && player.isInitialized) {
+        player.energy = Math.min(getEffectiveMaxEnergy(), player.energy + getEffectiveEnergyRegen());
         updateUI();
       }
     }, 1000);
