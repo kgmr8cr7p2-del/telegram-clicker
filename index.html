@@ -166,15 +166,15 @@
       to { box-shadow: 0 0 30px rgba(255, 80, 80, 0.9), 0 0 40px rgba(255, 0, 0, 0.7); }
     }
 
-    /* УЛУЧШЕНИЯ */
-    .upgrades {
+    /* УЛУЧШЕНИЯ и МАГАЗИН */
+    .upgrades, .skins-list {
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin: 15px 0;
     }
 
-    .upgrades button {
+    .upgrades button, .skin-item {
       padding: 12px;
       font-size: 15px;
       border: none;
@@ -186,7 +186,7 @@
       text-align: center;
     }
 
-    .upgrades button:hover {
+    .upgrades button:hover, .skin-item:not(.disabled):hover {
       background: rgba(255, 255, 255, 0.25);
     }
 
@@ -194,6 +194,41 @@
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
+    }
+
+    /* МАГАЗИН СКИНОВ */
+    .skin-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .skin-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+      border: 2px solid white;
+    }
+
+    .skin-info {
+      flex: 1;
+    }
+
+    .skin-info b {
+      display: block;
+    }
+
+    .skin-item.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .skin-item.active .skin-preview {
+      box-shadow: 0 0 0 2px gold;
     }
 
     .info-line {
@@ -297,6 +332,7 @@
         <button class="tab-btn active" data-tab="tab-game">Игра</button>
         <button class="tab-btn" data-tab="tab-upgrades">Улучшения</button>
         <button class="tab-btn" data-tab="tab-leaderboard">Лидерборд</button>
+        <button class="tab-btn" data-tab="tab-shop">Магазин</button>
       </div>
 
       <div id="tab-game" class="tab-content active">
@@ -329,11 +365,16 @@
         <div id="leaderboard">Загрузка...</div>
         <button onclick="loadLeaderboard()" style="margin-top:10px; background: rgba(255,255,255,0.2);">🔄 Обновить</button>
       </div>
+
+      <div id="tab-shop" class="tab-content">
+        <h3 style="margin:10px 0;">🎨 Скины кнопки</h3>
+        <div id="skinsList" class="skins-list"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbzTMsCO8MuaO37ewPEw5TeihcTyJI1nzz7aSwIq27lzOFtDezWpxulyh2MeKI1YNcF2/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbz1JbtXX-ASpOoiz299stsMBRrRXvlTAl1BbNthBfvazW2Ai_QTkariINxaKMF9C4e5/exec";
 
     const tg = window.Telegram.WebApp;
     let player = {
@@ -346,13 +387,24 @@
       energyUpgrades: 0,
       autoClickerLevel: 0,
       clickPower: 1,
+      skin: 'default',
+      ownedSkins: ['default'],
       isInitialized: false
     };
+
+    const SKINS = [
+      { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0 },
+      { id: 'red', name: 'Красный', gradient: 'linear-gradient(135deg, #ff0000, #b30000)', price: 200 },
+      { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 500 },
+      { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 1000 },
+      { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 2000 },
+      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5000 }
+    ];
 
     let bonusActive = false;
     let activeBonusElement = null;
     let nextBonusTimer = null;
-    let currentTab = 'tab-game'; // ← активная вкладка
+    let currentTab = 'tab-game';
 
     // ВКЛАДКИ
     document.querySelectorAll('.tab-btn').forEach(button => {
@@ -376,6 +428,7 @@
       document.getElementById('loadingScreen').style.display = 'none';
       document.getElementById('authMessage').style.display = 'none';
       document.getElementById('game').style.display = 'block';
+      renderShop();
     }
 
     function showAuth() {
@@ -405,6 +458,61 @@
       return bonusActive ? player.clickPower * 2 : player.clickPower;
     }
 
+    function applySkin() {
+      const btn = document.getElementById('clickBtn');
+      const skin = SKINS.find(s => s.id === player.skin);
+      if (skin) {
+        btn.style.background = skin.gradient;
+      }
+    }
+
+    function renderShop() {
+      const shop = document.getElementById('skinsList');
+      let html = '';
+
+      SKINS.forEach(skin => {
+        const isOwned = player.ownedSkins.includes(skin.id);
+        const isActive = skin.id === player.skin;
+        const isDisabled = !isOwned;
+
+        html += `
+          <div class="skin-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}"
+               ${isDisabled ? '' : 'onclick="selectSkin(\'' + skin.id + '\')"'}>
+            <div class="skin-preview" style="background: ${skin.gradient};"></div>
+            <div class="skin-info">
+              <b>${skin.name}</b>
+              <small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>
+            </div>
+          </div>
+        `;
+      });
+
+      shop.innerHTML = html;
+    }
+
+    function selectSkin(skinId) {
+      const skin = SKINS.find(s => s.id === skinId);
+      if (!skin || skinId === player.skin) return;
+
+      const isOwned = player.ownedSkins.includes(skinId);
+      if (!isOwned) {
+        if (player.score >= skin.price) {
+          player.score -= skin.price;
+          player.ownedSkins.push(skinId);
+          showMessage(`✅ Куплен скин: ${skin.name}`, true);
+          savePlayerData();
+        } else {
+          showMessage("❌ Недостаточно очков!", false);
+          return;
+        }
+      }
+
+      player.skin = skinId;
+      applySkin();
+      renderShop();
+      updateUI();
+    }
+
     function updateUI() {
       const effectivePower = getEffectiveClickPower();
       document.getElementById("score").innerText = player.score.toLocaleString();
@@ -431,13 +539,6 @@
       btnRegen.classList.toggle("upgrade-disabled", player.score < regenCost);
       btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
       btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
-
-      const clickBtn = document.getElementById("clickBtn");
-      if (bonusActive) {
-        clickBtn.classList.add("bonus-active");
-      } else {
-        clickBtn.classList.remove("bonus-active");
-      }
     }
 
     function showMessage(msg, success = true) {
@@ -462,7 +563,9 @@
           energyRegen: player.energyRegen,
           energyUpgrades: player.energyUpgrades,
           autoClickerLevel: player.autoClickerLevel,
-          clickPower: player.clickPower
+          clickPower: player.clickPower,
+          skin: player.skin,
+          ownedSkins: JSON.stringify(player.ownedSkins)
         });
         const img = new Image();
         img.src = `${apiUrl}?${params}&_=${Date.now()}`;
@@ -489,6 +592,12 @@
           player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
           player.autoClickerLevel = data.found ? (parseInt(data.autoClickerLevel) || 0) : 0;
           player.clickPower = data.found ? (parseInt(data.clickPower) || 1) : 1;
+          player.skin = data.found ? (data.skin || 'default') : 'default';
+          try {
+            player.ownedSkins = data.found && data.ownedSkins ? JSON.parse(data.ownedSkins) : ['default'];
+          } catch (e) {
+            player.ownedSkins = ['default'];
+          }
 
           if (data.found && data.lastOnline) {
             const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
@@ -498,6 +607,7 @@
           player.isInitialized = true;
           showGame();
           document.getElementById("user").innerText = `Привет, ${player.name}!`;
+          applySkin();
           updateUI();
           loadLeaderboard();
           showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
@@ -509,6 +619,7 @@
         player.isInitialized = true;
         showGame();
         document.getElementById("user").innerText = `Привет, ${player.name}!`;
+        applySkin();
         updateUI();
         showMessage("⚠️ Офлайн-режим", false);
       }
@@ -585,9 +696,8 @@
       }
     }
 
-    // === ✨ БОНУС x2 (ТОЛЬКО НА ВКЛАДКЕ "ИГРА", БЫСТРЫЙ) ===
+    // === БОНУС x2 ===
     function createFlyingBonus() {
-      // ✅ Только если открыта вкладка "Игра"
       if (currentTab !== 'tab-game') {
         nextBonusTimer = setTimeout(createFlyingBonus, 1000);
         return;
@@ -608,9 +718,8 @@
 
       let x = parseFloat(bonus.style.left);
       let y = parseFloat(bonus.style.top);
-      // 💨 Увеличена скорость в 2 раза
-      let dx = (Math.random() - 0.5) * 2.6; // было 0.3 → стало 0.6
-      let dy = (Math.random() - 0.5) * 2.6;
+      let dx = (Math.random() - 0.5) * 0.6;
+      let dy = (Math.random() - 0.5) * 0.6;
 
       bonus.addEventListener('click', () => {
         activateBonus(bonus);
@@ -639,7 +748,7 @@
         if (y <= 5 || y >= 85) dy = -dy;
         bonus.style.left = x + '%';
         bonus.style.top = y + '%';
-      }, 50); // обновление каждые 50 мс для плавности
+      }, 50);
 
       bonus.dataset.moveInterval = moveInterval;
       bonus.dataset.disappearTimeout = disappearTimeout;
@@ -666,8 +775,7 @@
     }
 
     function scheduleNextBonus() {
-      // 🕒 10–15 секунд для тестов
-      const delay = (5 + Math.random() * 5) * 1000;
+      const delay = (10 + Math.random() * 5) * 1000;
       nextBonusTimer = setTimeout(createFlyingBonus, delay);
     }
 
@@ -724,8 +832,11 @@
       player.id = Math.floor(Math.random() * 1000000);
       player.name = "Тест";
       player.isInitialized = true;
+      player.ownedSkins = ['default'];
+      player.skin = 'default';
       showGame();
       document.getElementById("user").innerText = `Привет, ${player.name}!`;
+      applySkin();
       updateUI();
       loadLeaderboard();
       scheduleNextBonus();
