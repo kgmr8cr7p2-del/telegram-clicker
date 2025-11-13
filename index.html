@@ -218,7 +218,6 @@
 
     .skin-item.disabled {
       opacity: 0.6;
-      cursor: not-allowed;
     }
 
     .skin-item.active .skin-preview {
@@ -286,9 +285,9 @@
       100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
     }
 
-    .status-success { background: rgba(40, 167, 69, 0.9); }
-    .status-error { background: rgba(220, 53, 69, 0.9); }
-    .status-info { background: rgba(23, 162, 184, 0.9); }
+    .status-success { background: rgba(40, 167, 69, 0.9); color: #fff; }
+    .status-error { background: rgba(220, 53, 69, 0.9); color: #fff; }
+    .status-info { background: rgba(23, 162, 184, 0.9); color: #fff; }
 
     button {
       outline: none;
@@ -365,10 +364,10 @@
   </div>
 
   <script>
-    // ✅ Используется ваш новый рабочий GAS URL
+    // ✅ Используется ваш рабочий GAS URL
     const apiUrl = "https://script.google.com/macros/s/AKfycbz93-bV0w_P1YUJNeU0BQSfjJ8yYWLX7m0ZMHN52dl-drdpPunFFUJsVLy-Qwl0Cw/exec";
 
-    const tg = window.Telegram.WebApp;
+    const tg = window.Telegram?.WebApp;
     let player = {
       id: null,
       name: 'Гость',
@@ -455,76 +454,82 @@
       if (skin) {
         btn.style.background = skin.gradient;
       }
+      // визуально отметить бонус активность
+      btn.classList.toggle('bonus-active', bonusActive);
     }
 
-function renderShop() {
-  const shop = document.getElementById('skinsList');
-  // Очищаем старые обработчики
-  shop.innerHTML = '';
+    function renderShop() {
+      const shop = document.getElementById('skinsList');
+      // Очищаем старые обработчики
+      shop.innerHTML = '';
 
-  SKINS.forEach(skin => {
-    const isOwned = player.ownedSkins.includes(skin.id);
-    const isActive = skin.id === player.skin;
-    const isDisabled = !isOwned;
+      SKINS.forEach(skin => {
+        const isOwned = player.ownedSkins.includes(skin.id);
+        const isActive = skin.id === player.skin;
 
-    const item = document.createElement('div');
-    item.className = `skin-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}`;
-    item.dataset.skinId = skin.id;
+        const item = document.createElement('div');
+        item.className = `skin-item ${isOwned ? '' : 'disabled'} ${isActive ? 'active' : ''}`;
+        item.dataset.skinId = skin.id;
 
-    const preview = document.createElement('div');
-    preview.className = 'skin-preview';
-    preview.style.background = skin.gradient;
+        const preview = document.createElement('div');
+        preview.className = 'skin-preview';
+        preview.style.background = skin.gradient;
 
-    const info = document.createElement('div');
-    info.className = 'skin-info';
-    info.innerHTML = `<b>${skin.name}</b><small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>`;
+        const info = document.createElement('div');
+        info.className = 'skin-info';
+        info.innerHTML = `<b>${skin.name}</b><small>${isOwned ? '✅ Куплено' : `Цена: ${skin.price.toLocaleString()}`}</small>`;
 
-    item.appendChild(preview);
-    item.appendChild(info);
+        item.appendChild(preview);
+        item.appendChild(info);
 
-    if (!isDisabled) {
-      item.style.cursor = 'pointer';
-      item.addEventListener('click', () => {
-        selectSkin(skin.id);
+        // Навешиваем обработчик клика на все элементы (купленные и некупленные)
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', () => {
+          selectSkin(skin.id);
+        });
+
+        shop.appendChild(item);
       });
     }
 
-    shop.appendChild(item);
-  });
-}
+    function selectSkin(skinId) {
+      const skin = SKINS.find(s => s.id === skinId);
+      if (!skin) return;
+      if (skinId === player.skin) {
+        showMessage('✅ Скин уже активен', true);
+        return;
+      }
 
-function selectSkin(skinId) {
-  const skin = SKINS.find(s => s.id === skinId);
-  if (!skin || skinId === player.skin) return;
+      if (player.ownedSkins.includes(skinId)) {
+        // Уже куплен — просто применяем
+        player.skin = skinId;
+        applySkin();
+        renderShop();
+        savePlayerData();
+        showMessage(`✨ Скин применён: ${skin.name}`, true);
+        return;
+      }
 
-  if (player.ownedSkins.includes(skinId)) {
-    // Уже куплен — просто применяем
-    player.skin = skinId;
-    applySkin();
-    renderShop();
-    return;
-  }
-
-  // Покупка
-  if (player.score >= skin.price) {
-    player.score -= skin.price;
-    player.ownedSkins.push(skinId);
-    player.skin = skinId;
-    applySkin();
-    renderShop();
-    updateUI();
-    savePlayerData();
-    showMessage(`✅ Куплен скин: ${skin.name}`, true);
-  } else {
-    showMessage("❌ Недостаточно очков!", false);
-  }
-}
+      // Покупка
+      if (player.score >= skin.price) {
+        player.score -= skin.price;
+        player.ownedSkins.push(skinId);
+        player.skin = skinId;
+        applySkin();
+        renderShop();
+        updateUI();
+        savePlayerData();
+        showMessage(`✅ Куплен скин: ${skin.name}`, true);
+      } else {
+        showMessage("❌ Недостаточно очков!", false);
+      }
+    }
 
     function updateUI() {
       const effectivePower = getEffectiveClickPower();
       document.getElementById("score").innerText = player.score.toLocaleString();
       document.getElementById("energy").innerText = Math.floor(player.energy);
-      
+
       const regenCost = getEnergyRegenCost(player.energyUpgrades);
       const autoCost = getAutoClickerCost(player.autoClickerLevel);
       const powerCost = getClickPowerCost(player.clickPower - 1);
@@ -622,7 +627,7 @@ function selectSkin(skinId) {
 
           if (data.found && data.lastOnline) {
             const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
-            player.energy = Math.min(650, player.energy + offlineSec * player.energyRegen);
+            player.energy = Math.min(player.maxEnergy, player.energy + offlineSec * player.energyRegen);
           }
 
           player.isInitialized = true;
@@ -761,14 +766,16 @@ function selectSkin(skinId) {
         bonus.style.top = y + '%';
       }, 50);
 
-      bonus.dataset.moveInterval = moveInterval;
-      bonus.dataset.disappearTimeout = disappearTimeout;
+      // Сохраняем как свойства, не в dataset (чтобы можно было clearInterval/clearTimeout корректно)
+      bonus._moveInterval = moveInterval;
+      bonus._disappearTimeout = disappearTimeout;
     }
 
     function activateBonus(bonusEl) {
       if (bonusActive) return;
-      clearInterval(bonusEl.dataset.moveInterval);
-      clearTimeout(bonusEl.dataset.disappearTimeout);
+      // clear timers safely
+      if (bonusEl._moveInterval) clearInterval(bonusEl._moveInterval);
+      if (bonusEl._disappearTimeout) clearTimeout(bonusEl._disappearTimeout);
       if (bonusEl.parentNode) bonusEl.parentNode.removeChild(bonusEl);
       activeBonusElement = null;
       bonusActive = true;
@@ -784,6 +791,7 @@ function selectSkin(skinId) {
 
     function scheduleNextBonus() {
       const delay = (10 + Math.random() * 5) * 1000;
+      if (nextBonusTimer) clearTimeout(nextBonusTimer);
       nextBonusTimer = setTimeout(createFlyingBonus, delay);
     }
 
@@ -799,8 +807,8 @@ function selectSkin(skinId) {
     });
 
     setInterval(() => {
-      if (player.energy < 650 && player.isInitialized) {
-        player.energy = Math.min(650, player.energy + player.energyRegen);
+      if (player.energy < player.maxEnergy && player.isInitialized) {
+        player.energy = Math.min(player.maxEnergy, player.energy + player.energyRegen);
         updateUI();
       }
     }, 1000);
@@ -825,7 +833,7 @@ function selectSkin(skinId) {
         const user = tg.initDataUnsafe.user;
         player.id = user.id;
         player.name = user.first_name || 'Игрок';
-        tg.expand();
+        try { tg.expand(); } catch(e){}
         await loadPlayerData();
         scheduleNextBonus();
       } else {
