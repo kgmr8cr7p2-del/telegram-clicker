@@ -78,15 +78,13 @@
       display: flex;
       justify-content: space-around;
       margin: 10px 0;
-      gap: 6px;
-      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .tab-btn {
       flex: 1;
-      min-width: 80px;
       padding: 8px;
-      font-size: 13px;
+      font-size: 14px;
       background: rgba(255,255,255,0.15);
       border: none;
       border-radius: 10px;
@@ -337,14 +335,12 @@
     <div id="game">
       <p id="user"></p>
 
-      <!-- 🔥 6 НЕЗАВИСИМЫХ ВКЛАДОК -->
+      <!-- ОСНОВНЫЕ ВКЛАДКИ -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="tab-game">Игра</button>
         <button class="tab-btn" data-tab="tab-upgrades">Улучшения</button>
         <button class="tab-btn" data-tab="tab-leaderboard">Лидерборд</button>
-        <button class="tab-btn" data-tab="tab-shop-score">🏷️ За очки</button>
-        <button class="tab-btn" data-tab="tab-shop-stars">✨ За звёзды</button>
-        <button class="tab-btn" data-tab="tab-shop-donate">💎 Донат</button>
+        <button class="tab-btn" data-tab="tab-shop">Магазин</button>
       </div>
 
       <!-- Игра -->
@@ -382,27 +378,37 @@
         <button onclick="loadLeaderboard()" style="margin-top:10px; background: rgba(255,255,255,0.2);">🔄 Обновить</button>
       </div>
 
-      <!-- Магазин: за очки -->
-      <div id="tab-shop-score" class="tab-content">
-        <h3>🎨 Скины за очки</h3>
-        <div id="skinsScoreList" class="skins-list"></div>
-      </div>
+      <!-- МАГАЗИН (с подвкладками) -->
+      <div id="tab-shop" class="tab-content">
+        <!-- Подвкладки внутри магазина -->
+        <div class="tabs" style="margin-top:10px;">
+          <button class="shop-tab-btn active" data-shop-tab="shop-score">🏷️ За очки</button>
+          <button class="shop-tab-btn" data-shop-tab="shop-stars">✨ За звёзды</button>
+          <button class="shop-tab-btn" data-shop-tab="shop-donate">💎 Донат</button>
+        </div>
 
-      <!-- Магазин: за звёзды -->
-      <div id="tab-shop-stars" class="tab-content">
-        <h3>🌟 Эксклюзивные скины</h3>
-        <div id="skinsStarsList" class="skins-list"></div>
-      </div>
+        <!-- Скины за очки -->
+        <div id="shop-score" class="shop-tab-content active">
+          <h3>🎨 Скины за очки</h3>
+          <div id="skinsScoreList" class="skins-list"></div>
+        </div>
 
-      <!-- Донат -->
-      <div id="tab-shop-donate" class="tab-content">
-        <h3>💎 Покупка звёзд</h3>
-        <div class="buy-section">
-          <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
-          <small style="display:block; margin-top:6px; color:#bbdefb;">
-            После оплаты на Tribute мы вручную выдадим звёзды.<br>
-            Ваш ID для покупки: <b id="displayedId"></b>
-          </small>
+        <!-- Скины за звёзды -->
+        <div id="shop-stars" class="shop-tab-content">
+          <h3>🌟 Эксклюзивные скины</h3>
+          <div id="skinsStarsList" class="skins-list"></div>
+        </div>
+
+        <!-- Донат -->
+        <div id="shop-donate" class="shop-tab-content">
+          <h3>💎 Покупка звёзд</h3>
+          <div class="buy-section">
+            <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
+            <small style="display:block; margin-top:6px; color:#bbdefb;">
+              После оплаты на Tribute мы вручную выдадим звёзды.<br>
+              Ваш ID для покупки: <b id="displayedId"></b>
+            </small>
+          </div>
         </div>
       </div>
     </div>
@@ -427,52 +433,75 @@
       isInitialized: false
     };
 
-    // 🔥 Скины с ВЫСОКИМИ ценами
     const SKINS = [
       // За ОЧКИ
       { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0, bonus: {} },
       { id: 'red', name: 'Красный', gradient: 'linear-gradient(135deg, #ff0000, #b30000)', price: 1_000, bonus: { clickPower: 1 } },
       { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 5_000, bonus: { energyRegen: 1 } },
-      { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 25_000, bonus: { maxEnergy: 100 } },
-      { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 50_000, bonus: { clickPower: 2, energyRegen: 1 } },
-      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 100_000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } },
-      { id: 'lava', name: 'Лава', gradient: 'linear-gradient(135deg, #ff416c, #ff4b2b)', price: 200_000, bonus: { clickPower: 10, energyRegen: 3 } },
-      { id: 'forest', name: 'Лес', gradient: 'linear-gradient(135deg, #23074d, #cc5333)', price: 250_000, bonus: { maxEnergy: 300, energyRegen: 5 } },
-      { id: 'cyber', name: 'Кибер', gradient: 'linear-gradient(135deg, #00c9ff, #92fe9d)', price: 500_000, bonus: { clickPower: 20, maxEnergy: 500 } },
+      { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 250_000, bonus: { maxEnergy: 100 } },
+      { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 1_000_000, bonus: { clickPower: 2, energyRegen: 1 } },
+      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5_000_000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } },
+      { id: 'lava', name: 'Лава', gradient: 'linear-gradient(135deg, #ff416c, #ff4b2b)', price: 25_000_000, bonus: { clickPower: 10, energyRegen: 3 } },
+      { id: 'forest', name: 'Лес', gradient: 'linear-gradient(135deg, #23074d, #cc5333)', price: 100_000_000, bonus: { maxEnergy: 300, energyRegen: 5 } },
+      { id: 'cyber', name: 'Кибер', gradient: 'linear-gradient(135deg, #00c9ff, #92fe9d)', price: 500_000_000, bonus: { clickPower: 20, maxEnergy: 500 } },
 
       // За ЗВЁЗДЫ
-      { id: 'cosmic', name: 'Космос', gradient: 'linear-gradient(135deg, #4b0082, #000080, #191970)', price: 10, currency: 'stars', bonus: { clickPower: 3, energyRegen: 2 } },
-      { id: 'galaxy', name: 'Галактика', gradient: 'radial-gradient(circle, #ff00ff, #00ffff, #0000ff)', price: 30, currency: 'stars', bonus: { clickPower: 7, maxEnergy: 300, energyRegen: 3 } },
-      { id: 'nebula', name: 'Туманность', gradient: 'linear-gradient(135deg, #ff00ff, #8a2be2, #00bfff)', price: 75, currency: 'stars', bonus: { clickPower: 15, maxEnergy: 500, energyRegen: 5 } },
-      { id: 'phoenix', name: 'Феникс', gradient: 'radial-gradient(circle, #ff5e62, #ff9966)', price: 150, currency: 'stars', bonus: { clickPower: 30, energyRegen: 10 } },
-      { id: 'quantum', name: 'Квантовый', gradient: 'linear-gradient(135deg, #834d9b, #d04ed6)', price: 500, currency: 'stars', bonus: { clickPower: 50, maxEnergy: 1000, energyRegen: 15 } },
-      { id: 'void', name: 'Пустота', gradient: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 5000, currency: 'stars', bonus: { clickPower: 100, maxEnergy: 2000, energyRegen: 25 } }
+      { id: 'cosmic', name: 'Космос', gradient: 'linear-gradient(135deg, #4b0082, #000080, #191970)', price: 1, currency: 'stars', bonus: { clickPower: 3, energyRegen: 2 } },
+      { id: 'galaxy', name: 'Галактика', gradient: 'radial-gradient(circle, #ff00ff, #00ffff, #0000ff)', price: 3, currency: 'stars', bonus: { clickPower: 7, maxEnergy: 300, energyRegen: 3 } },
+      { id: 'nebula', name: 'Туманность', gradient: 'linear-gradient(135deg, #ff00ff, #8a2be2, #00bfff)', price: 5, currency: 'stars', bonus: { clickPower: 15, maxEnergy: 500, energyRegen: 5 } },
+      { id: 'phoenix', name: 'Феникс', gradient: 'radial-gradient(circle, #ff5e62, #ff9966)', price: 15, currency: 'stars', bonus: { clickPower: 30, energyRegen: 10 } },
+      { id: 'quantum', name: 'Квантовый', gradient: 'linear-gradient(135deg, #834d9b, #d04ed6)', price: 50, currency: 'stars', bonus: { clickPower: 50, maxEnergy: 1000, energyRegen: 15 } },
+      { id: 'void', name: 'Пустота', gradient: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 200, currency: 'stars', bonus: { clickPower: 100, maxEnergy: 2000, energyRegen: 25 } }
     ];
 
     let bonusActive = false;
     let activeBonusElement = null;
     let nextBonusTimer = null;
 
-    // 🔁 ЕДИНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ВСЕХ ВКЛАДОК
+    // ===== ОСНОВНЫЕ ВКЛАДКИ =====
     document.querySelectorAll('.tab-btn[data-tab]').forEach(button => {
       button.addEventListener('click', () => {
         const tabId = button.dataset.tab;
 
-        // Снимаем активность со всех
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-        // Активируем нужную
         button.classList.add('active');
         document.getElementById(tabId)?.classList.add('active');
 
-        // Обновляем магазины при открытии
-        if (tabId === 'tab-shop-score' || tabId === 'tab-shop-stars') {
+        // Если открыли магазин — обновляем его содержимое
+        if (tabId === 'tab-shop') {
           renderShop();
+          // Убедимся, что активна первая подвкладка
+          activateShopTab('shop-score');
         }
       });
     });
 
+    // ===== ПОДВКЛАДКИ МАГАЗИНА =====
+    function activateShopTab(tabId) {
+      // Снимаем активность со всех подвкладок
+      document.querySelectorAll('.shop-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.shop-tab-content').forEach(c => c.classList.remove('active'));
+
+      // Активируем нужную
+      const btn = document.querySelector(`.shop-tab-btn[data-shop-tab="${tabId}"]`);
+      const content = document.getElementById(tabId);
+      if (btn) btn.classList.add('active');
+      if (content) content.classList.add('active');
+
+      renderShop(); // обновляем список скинов
+    }
+
+    // Назначаем обработчики для подвкладок магазина
+    document.querySelectorAll('.shop-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.dataset.shopTab;
+        activateShopTab(tabId);
+      });
+    });
+
+    // ===== ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) =====
     function showLoading() {
       document.getElementById('loadingScreen').style.display = 'block';
       document.getElementById('authMessage').style.display = 'none';
