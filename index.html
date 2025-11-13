@@ -112,6 +112,8 @@
       margin: 12px 0;
       font-size: 17px;
       font-weight: 600;
+      flex-wrap: wrap;
+      gap: 5px;
     }
 
     .energy-bar {
@@ -226,6 +228,16 @@
       box-shadow: 0 0 0 2px gold;
     }
 
+    /* Мерцающий эффект для звёздных скинов */
+    .star-skin .skin-preview {
+      animation: shimmer 3s infinite alternate;
+    }
+
+    @keyframes shimmer {
+      0% { filter: brightness(1); }
+      100% { filter: brightness(1.4) hue-rotate(20deg); }
+    }
+
     .info-line {
       margin: 12px 0;
       font-size: 14px;
@@ -331,6 +343,7 @@
         <div class="stats">
           <div>⚡ Энергия: <span id="energy">100</span></div>
           <div>🏆 Очки: <span id="score">0</span></div>
+          <div>✨ Звёзды: <span id="stars">0</span></div>
         </div>
 
         <div class="energy-bar">
@@ -366,13 +379,14 @@
   </div>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbz93-bV0w_P1YUJNeU0BQSfjJ8yYWLX7m0ZMHN52dl-drdpPunFFUJsVLy-Qwl0Cw/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbwXN3FCAQ-V9Y5jTb3Z3D-gUm-6DNj0xFmjQcJPaITUppGcL8wmx4oNDiA-psFd_Fk-/exec";
 
     const tg = window.Telegram?.WebApp;
     let player = {
       id: null,
       name: 'Гость',
       score: 0,
+      stars: 0, // ✨ НОВАЯ ВАЛЮТА
       energy: 100,
       energyRegen: 1,
       energyUpgrades: 0,
@@ -389,7 +403,33 @@
       { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 5, bonus: { energyRegen: 1 } },
       { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 1000, bonus: { maxEnergy: 100 } },
       { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 2000, bonus: { clickPower: 2, energyRegen: 1 } },
-      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } }
+      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } },
+      
+      // ✨ НОВЫЕ СКИНЫ ЗА ЗВЁЗДЫ
+      { 
+        id: 'cosmic', 
+        name: 'Космос', 
+        gradient: 'linear-gradient(135deg, #4b0082, #000080, #191970)', 
+        price: 1, 
+        currency: 'stars',
+        bonus: { clickPower: 3, energyRegen: 2 } 
+      },
+      { 
+        id: 'galaxy', 
+        name: 'Галактика', 
+        gradient: 'radial-gradient(circle, #ff00ff, #00ffff, #0000ff)', 
+        price: 3, 
+        currency: 'stars',
+        bonus: { clickPower: 7, maxEnergy: 300, energyRegen: 3 } 
+      },
+      { 
+        id: 'nebula', 
+        name: 'Туманность', 
+        gradient: 'linear-gradient(135deg, #ff00ff, #8a2be2, #00bfff)', 
+        price: 5, 
+        currency: 'stars',
+        bonus: { clickPower: 15, maxEnergy: 500, energyRegen: 5 } 
+      }
     ];
 
     let bonusActive = false;
@@ -482,13 +522,19 @@
       SKINS.forEach(skin => {
         const isOwned = player.ownedSkins.includes(skin.id);
         const isActive = skin.id === player.skin;
-        const canAfford = player.score >= skin.price;
+        const currency = skin.currency || 'score';
+        const canAfford = isOwned 
+          ? true 
+          : (currency === 'stars' ? player.stars >= skin.price : player.score >= skin.price);
 
         const item = document.createElement('div');
         if (!isOwned && !canAfford) {
           item.className = 'skin-item disabled';
         } else {
           item.className = `skin-item ${isActive ? 'active' : ''}`;
+          if (skin.currency === 'stars') {
+            item.classList.add('star-skin');
+          }
         }
         item.dataset.skinId = skin.id;
 
@@ -509,7 +555,10 @@
         if (isOwned) {
           info.innerHTML = `<b>${skin.name}</b><small>✅ Куплено</small>${bonusText}`;
         } else {
-          info.innerHTML = `<b>${skin.name}</b><small>Цена: ${skin.price.toLocaleString()}</small>${bonusText}`;
+          const priceText = currency === 'stars' 
+            ? `✨ ${skin.price}` 
+            : skin.price.toLocaleString();
+          info.innerHTML = `<b>${skin.name}</b><small>Цена: ${priceText}</small>${bonusText}`;
         }
 
         item.appendChild(preview);
@@ -540,8 +589,18 @@
         return;
       }
 
-      if (player.score >= skin.price) {
-        player.score -= skin.price;
+      const currency = skin.currency || 'score';
+      const price = skin.price;
+      const affordable = (currency === 'stars') 
+        ? player.stars >= price 
+        : player.score >= price;
+
+      if (affordable) {
+        if (currency === 'stars') {
+          player.stars -= price;
+        } else {
+          player.score -= price;
+        }
         player.ownedSkins.push(skinId);
         player.skin = skinId;
         applySkin();
@@ -549,7 +608,7 @@
         savePlayerData();
         showMessage(`✅ Куплен скин: ${skin.name}`, true);
       } else {
-        showMessage("❌ Недостаточно очков!", false);
+        showMessage("❌ Недостаточно ресурсов!", false);
       }
     }
 
@@ -557,6 +616,7 @@
       const effectivePower = getEffectiveClickPower();
       const effectiveMaxEnergy = getEffectiveMaxEnergy();
       document.getElementById("score").innerText = player.score.toLocaleString();
+      document.getElementById("stars").innerText = player.stars; // ✨
       document.getElementById("energy").innerText = `${Math.floor(player.energy)}/${Math.floor(effectiveMaxEnergy)}`;
 
       const regenCost = getEnergyRegenCost(player.energyUpgrades);
@@ -581,7 +641,6 @@
       btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
       btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
 
-      // 🔥 Обязательно обновляем магазин при любом изменении состояния
       renderShop();
     }
 
@@ -603,6 +662,7 @@
           id: player.id,
           name: player.name,
           score: player.score,
+          stars: player.stars, // ✨
           energy: player.energy,
           energyRegen: player.energyRegen,
           energyUpgrades: player.energyUpgrades,
@@ -632,6 +692,7 @@
 
         if (data.success) {
           player.score = data.found ? (parseInt(data.score) || 0) : 0;
+          player.stars = data.found ? (parseInt(data.stars) || 0) : 0; // ✨
           player.energy = data.found ? (parseFloat(data.energy) || 100) : 100;
           player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
           player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
@@ -829,6 +890,13 @@
       if (player.energy >= 5) {
         player.energy -= 5;
         player.score += getEffectiveClickPower();
+        
+        // ✨ 1% шанс получить звезду
+        if (Math.random() < 0.5) {
+          player.stars += 1;
+          showMessage("✨ Вы получили звезду!", true);
+        }
+        
         updateUI();
         if (player.score % 5 === 0) savePlayerData();
       } else {
@@ -875,6 +943,7 @@
       player.id = Math.floor(Math.random() * 1000000) + 1000;
       player.name = "Тест";
       player.score = 0;
+      player.stars = 0;
       player.energy = 100;
       player.energyRegen = 1;
       player.energyUpgrades = 0;
