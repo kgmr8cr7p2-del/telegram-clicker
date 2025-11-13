@@ -51,7 +51,7 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    /* === ЗАГРУЗОЧНЫЙ ЭКРАН === */
+    /* ЗАГРУЗКА */
     #loadingScreen {
       display: none;
       padding: 30px;
@@ -99,6 +99,7 @@
       transition: width 0.3s ease;
     }
 
+    /* ОСНОВНАЯ КНОПКА КЛИКА */
     .click-btn {
       width: 180px;
       height: 180px;
@@ -120,6 +121,18 @@
     .click-btn:active {
       transform: scale(0.95);
       box-shadow: 0 4px 12px rgba(255, 82, 0, 0.5);
+    }
+
+    /* 🔥 БОНУС: КРАСНАЯ МЕРЦАЮЩАЯ КНОПКА */
+    .click-btn.bonus-active {
+      background: linear-gradient(135deg, #ff0000, #b30000);
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+      animation: pulseRed 1s infinite alternate;
+    }
+
+    @keyframes pulseRed {
+      from { box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); }
+      to { box-shadow: 0 0 30px rgba(255, 80, 80, 0.9), 0 0 40px rgba(255, 0, 0, 0.7); }
     }
 
     .upgrades {
@@ -209,26 +222,56 @@
       font-size: 13px;
       background: rgba(255,255,255,0.15);
     }
+
+    /* === БОНУС x2 ПОПАП === */
+    .bonus-popup {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 215, 0, 0.95);
+      color: #000;
+      font-weight: bold;
+      padding: 12px 24px;
+      border-radius: 50px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      z-index: 2000;
+      cursor: pointer;
+      animation: pulse 1.5s infinite, float 3s ease-in-out infinite;
+      font-size: 18px;
+      display: none;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(255, 215, 0, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-10px); }
+    }
   </style>
 </head>
 <body>
+  <!-- БОНУС ПОПАП -->
+  <div id="bonusPopup" class="bonus-popup" onclick="activateBonus()">✨ x2 Клик!</div>
+
   <div class="container">
     <h1>🎮 Энерго-Кликер</h1>
 
-    <!-- ЗАГРУЗОЧНЫЙ ЭКРАН -->
     <div id="loadingScreen">
       <div class="spinner"></div>
       <p>Подключение к серверу...</p>
     </div>
 
-    <!-- АВТОРИЗАЦИЯ (если не в Telegram) -->
     <div id="authMessage">
       <h3>Запускайте игру через Telegram бота!</h3>
       <p>Эта игра работает только внутри Telegram.</p>
       <button onclick="simulateTelegram()">Тестовый режим</button>
     </div>
 
-    <!-- ИГРОВОЕ ПОЛЕ -->
     <div id="game">
       <p id="user"></p>
 
@@ -280,21 +323,22 @@
       isInitialized: false
     };
 
-    // Показать загрузку
+    let bonusActive = false;
+    let bonusTimeout = null;
+    let nextBonusTimer = null;
+
     function showLoading() {
       document.getElementById('loadingScreen').style.display = 'block';
       document.getElementById('authMessage').style.display = 'none';
       document.getElementById('game').style.display = 'none';
     }
 
-    // Показать игру
     function showGame() {
       document.getElementById('loadingScreen').style.display = 'none';
       document.getElementById('authMessage').style.display = 'none';
       document.getElementById('game').style.display = 'block';
     }
 
-    // Показать ошибку авторизации
     function showAuth() {
       document.getElementById('loadingScreen').style.display = 'none';
       document.getElementById('authMessage').style.display = 'block';
@@ -318,7 +362,12 @@
     const getAutoClickerCost = getUpgradeCost;
     const getClickPowerCost = getUpgradeCost;
 
+    function getEffectiveClickPower() {
+      return bonusActive ? player.clickPower * 2 : player.clickPower;
+    }
+
     function updateUI() {
+      const effectivePower = getEffectiveClickPower();
       document.getElementById("score").innerText = player.score.toLocaleString();
       document.getElementById("energy").innerText = Math.floor(player.energy);
       
@@ -331,7 +380,7 @@
       document.getElementById("clickPowerCost").innerText = powerCost.toLocaleString();
 
       document.getElementById("autoClickerLevel").innerText = player.autoClickerLevel;
-      document.getElementById("clickPower").innerText = player.clickPower;
+      document.getElementById("clickPower").innerText = effectivePower;
 
       const percent = (player.energy / player.maxEnergy) * 100;
       document.getElementById("energyFill").style.width = percent + "%";
@@ -343,6 +392,14 @@
       btnRegen.classList.toggle("upgrade-disabled", player.score < regenCost);
       btnAuto.classList.toggle("upgrade-disabled", player.score < autoCost);
       btnPower.classList.toggle("upgrade-disabled", player.score < powerCost);
+
+      // 🔴 Обновление стиля кнопки при бонусе
+      const clickBtn = document.getElementById("clickBtn");
+      if (bonusActive) {
+        clickBtn.classList.add("bonus-active");
+      } else {
+        clickBtn.classList.remove("bonus-active");
+      }
     }
 
     function showMessage(msg, success = true) {
@@ -499,27 +556,47 @@
       document.getElementById("user").innerText = `Привет, ${player.name}!`;
       updateUI();
       loadLeaderboard();
+      scheduleNextBonus();
     }
 
-    function initTelegramGame() {
-      showLoading(); // 💡 Показываем загрузку сразу
-
-      if (tg?.initDataUnsafe?.user) {
-        const user = tg.initDataUnsafe.user;
-        player.id = user.id;
-        player.name = user.first_name || 'Игрок';
-        tg.expand();
-        loadPlayerData(); // Загружаем данные → дальше логика внутри
-      } else {
-        // Не в Telegram → показываем инструкцию
-        setTimeout(() => showAuth(), 800); // небольшая задержка для плавности
-      }
+    // === БОНУС x2 ===
+    function showBonus() {
+      if (bonusActive || !player.isInitialized) return;
+      const el = document.getElementById('bonusPopup');
+      el.style.display = 'block';
+      bonusTimeout = setTimeout(() => {
+        if (el.style.display !== 'none') {
+          el.style.display = 'none';
+          showMessage("⏳ Бонус исчез!", false);
+        }
+      }, 5000);
+      scheduleNextBonus();
     }
 
+    function activateBonus() {
+      if (bonusActive) return;
+      clearTimeout(bonusTimeout);
+      document.getElementById('bonusPopup').style.display = 'none';
+      bonusActive = true;
+      updateUI();
+      showMessage("🔥 x2 активирован на 15 сек!", true);
+      setTimeout(() => {
+        bonusActive = false;
+        updateUI();
+        showMessage("⏳ Эффект x2 закончился", false);
+      }, 15000);
+    }
+
+    function scheduleNextBonus() {
+      const delay = (1 + Math.random() * 2) * 60 * 1000; // 3–5 минут
+      nextBonusTimer = setTimeout(showBonus, delay);
+    }
+
+    // === ОСНОВНОЙ КЛИК ===
     document.getElementById("clickBtn").addEventListener("click", () => {
       if (player.energy >= 5) {
         player.energy -= 5;
-        player.score += player.clickPower;
+        player.score += getEffectiveClickPower();
         updateUI();
         if (player.score % 5 === 0) savePlayerData();
       } else {
@@ -527,6 +604,7 @@
       }
     });
 
+    // ТАЙМЕРЫ
     setInterval(() => {
       if (player.energy < 650 && player.isInitialized) {
         player.energy = Math.min(650, player.energy + player.energyRegen);
@@ -547,6 +625,21 @@
     }, 30000);
 
     window.forceSave = () => savePlayerData().then(ok => showMessage(ok ? "✅ Сохранено!" : "❌ Ошибка", ok));
+
+    // ЗАПУСК
+    async function initTelegramGame() {
+      showLoading();
+      if (tg?.initDataUnsafe?.user) {
+        const user = tg.initDataUnsafe.user;
+        player.id = user.id;
+        player.name = user.first_name || 'Игрок';
+        tg.expand();
+        await loadPlayerData();
+        scheduleNextBonus();
+      } else {
+        setTimeout(() => showAuth(), 800);
+      }
+    }
 
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
