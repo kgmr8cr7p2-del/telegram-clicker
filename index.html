@@ -75,7 +75,7 @@
       display: none;
     }
 
-    /* === ВКЛАДКИ === */
+    /* ВКЛАДКИ */
     .tabs {
       display: flex;
       justify-content: space-around;
@@ -108,7 +108,7 @@
       display: block;
     }
 
-    /* === ИГРОВАЯ ВКЛАДКА === */
+    /* ИГРА */
     .stats {
       display: flex;
       justify-content: space-between;
@@ -166,7 +166,7 @@
       to { box-shadow: 0 0 30px rgba(255, 80, 80, 0.9), 0 0 40px rgba(255, 0, 0, 0.7); }
     }
 
-    /* === УЛУЧШЕНИЯ === */
+    /* УЛУЧШЕНИЯ */
     .upgrades {
       display: flex;
       flex-direction: column;
@@ -202,7 +202,7 @@
       color: #e0f7fa;
     }
 
-    /* === ЛИДЕРБОРД === */
+    /* ЛИДЕРБОРД */
     #leaderboard {
       margin-top: 10px;
       text-align: left;
@@ -218,7 +218,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
-    /* === БОНУС ЛЕТАЮЩИЙ === */
+    /* ЛЕТАЮЩИЙ БОНУС */
     .bonus-popup {
       position: fixed;
       background: rgba(255, 215, 0, 0.95);
@@ -232,15 +232,15 @@
       font-size: 16px;
       pointer-events: auto;
       user-select: none;
-      animation: float 4s ease-in-out infinite;
+      animation: float 2s ease-in-out infinite;
     }
 
     @keyframes float {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+      50% { transform: translateY(-6px); }
     }
 
-    /* === СТАТУС === */
+    /* СТАТУС */
     .status {
       position: fixed;
       top: 20px;
@@ -276,9 +276,6 @@
   </style>
 </head>
 <body>
-  <!-- ЛЕТАЮЩИЙ БОНУС (динамически создаётся) -->
-  <!-- Заготовки: не в DOM, создаётся через JS -->
-
   <div class="container">
     <h1>🎮 Энерго-Кликер</h1>
 
@@ -296,14 +293,12 @@
     <div id="game">
       <p id="user"></p>
 
-      <!-- ВКЛАДКИ -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="tab-game">Игра</button>
         <button class="tab-btn" data-tab="tab-upgrades">Улучшения</button>
         <button class="tab-btn" data-tab="tab-leaderboard">Лидерборд</button>
       </div>
 
-      <!-- ИГРА -->
       <div id="tab-game" class="tab-content active">
         <div class="stats">
           <div>⚡ Энергия: <span id="energy">100</span>/650</div>
@@ -321,7 +316,6 @@
         </div>
       </div>
 
-      <!-- УЛУЧШЕНИЯ -->
       <div id="tab-upgrades" class="tab-content">
         <div class="upgrades">
           <button id="btnRegen" onclick="buyEnergyRegen()">🔋 Энергия/сек<br><small>(Цена: <span id="regenCost">10</span>)</small></button>
@@ -331,7 +325,6 @@
         <button onclick="forceSave()" style="margin-top:10px; background: rgba(255,255,255,0.2);">💾 Сохранить</button>
       </div>
 
-      <!-- ЛИДЕРБОРД -->
       <div id="tab-leaderboard" class="tab-content">
         <div id="leaderboard">Загрузка...</div>
         <button onclick="loadLeaderboard()" style="margin-top:10px; background: rgba(255,255,255,0.2);">🔄 Обновить</button>
@@ -359,11 +352,13 @@
     let bonusActive = false;
     let activeBonusElement = null;
     let nextBonusTimer = null;
+    let currentTab = 'tab-game'; // ← активная вкладка
 
-    // === ВКЛАДКИ ===
+    // ВКЛАДКИ
     document.querySelectorAll('.tab-btn').forEach(button => {
       button.addEventListener('click', () => {
         const tabId = button.dataset.tab;
+        currentTab = tabId;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         button.classList.add('active');
@@ -371,7 +366,6 @@
       });
     });
 
-    // === UI ===
     function showLoading() {
       document.getElementById('loadingScreen').style.display = 'block';
       document.getElementById('authMessage').style.display = 'none';
@@ -456,7 +450,6 @@
       }, 3000);
     }
 
-    // === СЕРВЕР ===
     async function savePlayerData() {
       if (!player.id || !player.isInitialized) return false;
       try {
@@ -555,7 +548,6 @@
       }
     }
 
-    // === УЛУЧШЕНИЯ ===
     function buyEnergyRegen() {
       const cost = getEnergyRegenCost(player.energyUpgrades);
       if (player.score >= cost) {
@@ -593,9 +585,18 @@
       }
     }
 
-    // === БОНУС x2 (ЛЕТАЮЩИЙ) ===
+    // === ✨ БОНУС x2 (ТОЛЬКО НА ВКЛАДКЕ "ИГРА", БЫСТРЫЙ) ===
     function createFlyingBonus() {
-      if (bonusActive || !player.isInitialized || activeBonusElement) return;
+      // ✅ Только если открыта вкладка "Игра"
+      if (currentTab !== 'tab-game') {
+        nextBonusTimer = setTimeout(createFlyingBonus, 1000);
+        return;
+      }
+
+      if (bonusActive || !player.isInitialized || activeBonusElement) {
+        nextBonusTimer = setTimeout(createFlyingBonus, 1000);
+        return;
+      }
 
       const bonus = document.createElement('div');
       bonus.className = 'bonus-popup';
@@ -607,8 +608,9 @@
 
       let x = parseFloat(bonus.style.left);
       let y = parseFloat(bonus.style.top);
-      const dx = (Math.random() - 0.5) * 0.3;
-      const dy = (Math.random() - 0.5) * 0.3;
+      // 💨 Увеличена скорость в 2 раза
+      let dx = (Math.random() - 0.5) * 0.6; // было 0.3 → стало 0.6
+      let dy = (Math.random() - 0.5) * 0.6;
 
       bonus.addEventListener('click', () => {
         activateBonus(bonus);
@@ -623,9 +625,9 @@
           activeBonusElement = null;
           showMessage("⏳ Бонус улетел!", false);
         }
+        scheduleNextBonus();
       }, 5000);
 
-      // Плавное движение
       const moveInterval = setInterval(() => {
         if (!bonus.parentNode) {
           clearInterval(moveInterval);
@@ -637,9 +639,8 @@
         if (y <= 5 || y >= 85) dy = -dy;
         bonus.style.left = x + '%';
         bonus.style.top = y + '%';
-      }, 100);
+      }, 50); // обновление каждые 50 мс для плавности
 
-      // Сохраняем для очистки
       bonus.dataset.moveInterval = moveInterval;
       bonus.dataset.disappearTimeout = disappearTimeout;
     }
@@ -660,11 +661,13 @@
         bonusActive = false;
         updateUI();
         showMessage("⏳ Эффект x2 закончился", false);
+        scheduleNextBonus();
       }, 15000);
     }
 
     function scheduleNextBonus() {
-	  const delay = (10 + Math.random() * 5) * 1000; // 10–15 секунд
+      // 🕒 10–15 секунд для тестов
+      const delay = (5 + Math.random() * 5) * 1000;
       nextBonusTimer = setTimeout(createFlyingBonus, delay);
     }
 
