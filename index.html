@@ -1,5 +1,4 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -166,7 +165,6 @@
       to { box-shadow: 0 0 30px rgba(255, 80, 80, 0.9), 0 0 40px rgba(255, 0, 0, 0.7); }
     }
 
-    /* 💫 МЕРЦАНИЕ ДЛЯ ЗВЁЗДНЫХ СКИНОВ НА КНОПКЕ */
     .click-btn.star-skin {
       animation: shimmer-button 3s infinite alternate;
     }
@@ -239,7 +237,6 @@
       box-shadow: 0 0 0 2px gold;
     }
 
-    /* Мерцание превью в магазине */
     .star-skin .skin-preview {
       animation: shimmer 3s infinite alternate;
     }
@@ -323,6 +320,17 @@
       margin-bottom: 8px;
       font-weight: 600;
     }
+
+    /* Стиль для кнопки покупки звёзд */
+    #buyStarsBtn {
+      background: linear-gradient(135deg, #ffd700, #ff8c00);
+      color: #000;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    #buyStarsBtn:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -385,12 +393,19 @@
       <div id="tab-shop" class="tab-content">
         <h3 style="margin:10px 0;">🎨 Скины кнопки</h3>
         <div id="skinsList" class="skins-list"></div>
+
+        <!-- 💎 КНОПКА ПОКУПКИ ЗВЁЗД -->
+        <div style="margin-top:20px;">
+          <button id="buyStarsBtn" class="upgrades button">
+            💎 Купить 50 звёзд за $0.99
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbyAJLkzTMB1wKdyWlItA8rKHrVZuI81zlwLGqH9NAP1-qq-tt9NGDMoc7uggcWLwVk/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbyl4HmLoiGS-pzm_R9eUXDwbjBiH3NBLEZCv2ngJdwu_w-PSETM94hri6Uclpt3v1gt/exec";
 
     const tg = window.Telegram?.WebApp;
     let player = {
@@ -415,8 +430,6 @@
       { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 1000, bonus: { maxEnergy: 100 } },
       { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 2000, bonus: { clickPower: 2, energyRegen: 1 } },
       { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } },
-      
-      // ✨ ЗВЁЗДНЫЕ СКИНЫ
       { 
         id: 'cosmic', 
         name: 'Космос', 
@@ -517,13 +530,12 @@
       return 650 + getSkinBonus('maxEnergy');
     }
 
-    // ✅ ОБНОВЛЁННАЯ ФУНКЦИЯ: добавляет класс star-skin к кнопке!
     function applySkin() {
       const btn = document.getElementById('clickBtn');
       const skin = SKINS.find(s => s.id === player.skin);
       if (skin) {
         btn.style.background = skin.gradient;
-        btn.classList.toggle('star-skin', skin.currency === 'stars'); // ✨ ключевая строка
+        btn.classList.toggle('star-skin', skin.currency === 'stars');
       }
       btn.classList.toggle('bonus-active', bonusActive);
     }
@@ -903,18 +915,25 @@
       if (player.energy >= 5) {
         player.energy -= 5;
         player.score += getEffectiveClickPower();
-        
-        // ✨ 1% шанс получить звезду
         if (Math.random() < 0.01) {
           player.stars += 1;
           showMessage("✨ Вы получили звезду!", true);
         }
-        
         updateUI();
         if (player.score % 5 === 0) savePlayerData();
       } else {
         showMessage("⚡ Нет энергии!", false);
       }
+    });
+
+    // 💎 КНОПКА ПОКУПКИ ЗВЁЗД
+    document.getElementById('buyStarsBtn').addEventListener('click', () => {
+      if (!window.Telegram?.WebApp) {
+        alert("Откройте игру в Telegram!");
+        return;
+      }
+      const url = "https://t.me/tribute/app?startapp=pmPV";
+      window.Telegram.WebApp.openLink(url, { try_instant_view: false });
     });
 
     setInterval(() => {
