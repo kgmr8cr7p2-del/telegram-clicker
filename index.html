@@ -1,6 +1,4 @@
-﻿
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -367,8 +365,8 @@
   </div>
 
   <script>
-    // 🔥 ЗАМЕНИТЕ ЭТОТ URL НА НОВЫЙ ИЗ DEPLOYMENT!
-    const apiUrl = "https://script.google.com/macros/s/AKfycbyq3J3JvsusOJfN1alSpYy_ig7m3XgCrqV6Txin7x-RxxIXCuVlaIKOaiazcWaqDrxs/exec"; // ← СЮДА ВСТАВЬТЕ НОВЫЙ URL
+    // ✅ Используется ваш новый рабочий GAS URL
+    const apiUrl = "https://script.google.com/macros/s/AKfycbz93-bV0w_P1YUJNeU0BQSfjJ8yYWLX7m0ZMHN52dl-drdpPunFFUJsVLy-Qwl0Cw/exec";
 
     const tg = window.Telegram.WebApp;
     let player = {
@@ -459,6 +457,7 @@
       }
     }
 
+    // ✅ РАБОЧАЯ ВЕРСИЯ БЕЗ onclick
     function renderShop() {
       const shop = document.getElementById('skinsList');
       let html = '';
@@ -470,7 +469,7 @@
 
         html += `
           <div class="skin-item ${isDisabled ? 'disabled' : ''} ${isActive ? 'active' : ''}"
-               ${isDisabled ? '' : 'onclick="selectSkin(\'' + skin.id + '\')"'}>
+               data-skin-id="${skin.id}">
             <div class="skin-preview" style="background: ${skin.gradient};"></div>
             <div class="skin-info">
               <b>${skin.name}</b>
@@ -481,8 +480,17 @@
       });
 
       shop.innerHTML = html;
+
+      // Добавляем обработчики кликов
+      shop.querySelectorAll('.skin-item:not(.disabled)').forEach(item => {
+        item.addEventListener('click', () => {
+          const skinId = item.dataset.skinId;
+          selectSkin(skinId);
+        });
+      });
     }
 
+    // ✅ ГЛОБАЛЬНАЯ ФУНКЦИЯ (работает в Telegram)
     function selectSkin(skinId) {
       const skin = SKINS.find(s => s.id === skinId);
       if (!skin || skinId === player.skin) return;
@@ -570,74 +578,65 @@
     }
 
     async function loadPlayerData() {
-  if (!player.id) {
-    showAuth();
-    return;
-  }
-  try {
-    const url = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
-    const res = await fetch(url);
-    const data = await res.json();
+      if (!player.id) {
+        showAuth();
+        return;
+      }
+      try {
+        const url = `${apiUrl}?action=getPlayer&id=${player.id}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-    if (data.success) {
-      player.score = data.found ? (parseInt(data.score) || 0) : 0;
-      player.energy = data.found ? (parseFloat(data.energy) || 100) : 100;
-      player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
-      player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
-      player.autoClickerLevel = data.found ? (parseInt(data.autoClickerLevel) || 0) : 0;
-      player.clickPower = data.found ? (parseInt(data.clickPower) || 1) : 1;
-      player.skin = data.found ? (data.skin || 'default') : 'default';
+        if (data.success) {
+          player.score = data.found ? (parseInt(data.score) || 0) : 0;
+          player.energy = data.found ? (parseFloat(data.energy) || 100) : 100;
+          player.energyRegen = data.found ? (parseInt(data.energyRegen) || 1) : 1;
+          player.energyUpgrades = data.found ? (parseInt(data.energyUpgrades) || 0) : 0;
+          player.autoClickerLevel = data.found ? (parseInt(data.autoClickerLevel) || 0) : 0;
+          player.clickPower = data.found ? (parseInt(data.clickPower) || 1) : 1;
+          player.skin = data.found ? (data.skin || 'default') : 'default';
 
-      // === НАДЁЖНАЯ ЗАГРУЗКА ownedSkins ===
-      let ownedSkins = ['default'];
-      if (data.found && data.ownedSkins) {
-        try {
-          let raw = data.ownedSkins;
-          // Убираем двойное экранирование: \" → "
-          raw = raw.replace(/\\"/g, '"');
-          // Если строка обёрнута во внешние кавычки — убираем их
-          if (raw.startsWith('"') && raw.endsWith('"')) {
-            raw = raw.slice(1, -1);
-            raw = raw.replace(/\\"/g, '"');
+          // ✅ Надёжная загрузка ownedSkins
+          let ownedSkins = ['default'];
+          if (data.found && data.ownedSkins) {
+            try {
+              let raw = data.ownedSkins;
+              raw = raw.replace(/\\"/g, '"');
+              if (raw.startsWith('"') && raw.endsWith('"')) {
+                raw = raw.slice(1, -1);
+                raw = raw.replace(/\\"/g, '"');
+              }
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) ownedSkins = parsed;
+            } catch (e) {
+              console.warn("Parse ownedSkins error", data.ownedSkins);
+            }
           }
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) {
-            ownedSkins = parsed;
-          } else {
-            throw new Error('Not an array');
+          player.ownedSkins = ownedSkins;
+
+          if (data.found && data.lastOnline) {
+            const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
+            player.energy = Math.min(650, player.energy + offlineSec * player.energyRegen);
           }
-        } catch (e) {
-          console.warn('Ошибка парсинга ownedSkins, используем default:', data.ownedSkins, e);
-          ownedSkins = ['default'];
+
+          player.isInitialized = true;
+          showGame();
+          document.getElementById("user").innerText = `Привет, ${player.name}!`;
+          applySkin();
+          updateUI();
+          loadLeaderboard();
+          showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
         }
+      } catch (e) {
+        console.error("Load error", e);
+        player.isInitialized = true;
+        showGame();
+        document.getElementById("user").innerText = `Привет, ${player.name}!`;
+        applySkin();
+        updateUI();
+        showMessage("⚠️ Офлайн-режим", false);
       }
-      player.ownedSkins = ownedSkins;
-
-      if (data.found && data.lastOnline) {
-        const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
-        player.energy = Math.min(650, player.energy + offlineSec * player.energyRegen);
-      }
-
-      player.isInitialized = true;
-      showGame();
-      document.getElementById("user").innerText = `Привет, ${player.name}!`;
-      applySkin();
-      updateUI();
-      loadLeaderboard();
-      showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
-    } else {
-      throw new Error("Server error");
     }
-  } catch (e) {
-    console.error("Load error", e);
-    player.isInitialized = true;
-    showGame();
-    document.getElementById("user").innerText = `Привет, ${player.name}!`;
-    applySkin();
-    updateUI();
-    showMessage("⚠️ Офлайн-режим", false);
-  }
-}
 
     async function loadLeaderboard() {
       try {
@@ -711,15 +710,8 @@
     }
 
     function createFlyingBonus() {
-      if (currentTab !== 'tab-game') {
-        nextBonusTimer = setTimeout(createFlyingBonus, 1000);
-        return;
-      }
-
-      if (bonusActive || !player.isInitialized || activeBonusElement) {
-        nextBonusTimer = setTimeout(createFlyingBonus, 1000);
-        return;
-      }
+      if (currentTab !== 'tab-game') return;
+      if (bonusActive || !player.isInitialized || activeBonusElement) return;
 
       const bonus = document.createElement('div');
       bonus.className = 'bonus-popup';
@@ -769,16 +761,13 @@
 
     function activateBonus(bonusEl) {
       if (bonusActive) return;
-
       clearInterval(bonusEl.dataset.moveInterval);
       clearTimeout(bonusEl.dataset.disappearTimeout);
       if (bonusEl.parentNode) bonusEl.parentNode.removeChild(bonusEl);
       activeBonusElement = null;
-
       bonusActive = true;
       updateUI();
       showMessage("🔥 x2 активирован на 15 сек!", true);
-
       setTimeout(() => {
         bonusActive = false;
         updateUI();
