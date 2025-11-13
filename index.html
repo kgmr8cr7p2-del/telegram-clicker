@@ -375,24 +375,37 @@
       </div>
 
       <div id="tab-shop" class="tab-content">
-        <h3 style="margin:10px 0;">🎨 Скины кнопки</h3>
-        <div id="skinsList" class="skins-list"></div>
+        <div class="tabs" style="margin-top:10px;">
+          <button class="tab-btn active" data-subtab="shop-score">🏷️ За очки</button>
+          <button class="tab-btn" data-subtab="shop-stars">✨ За звёзды</button>
+          <button class="tab-btn" data-subtab="shop-donate">💎 Донат</button>
+        </div>
 
-        <!-- 💎 КНОПКА ПОКУПКИ ЗВЁЗД -->
-        <div class="buy-section">
-          <h3 style="margin:15px 0 8px; font-size:18px;">💎 Купить звёзды</h3>
-          <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
-          <small style="display:block; margin-top:6px; color:#bbdefb;">
-            После оплаты на Tribute мы вручную выдадим звёзды.
-            <br>Ваш ID для покупки: <b id="displayedId"></b>
-          </small>
+        <div id="shop-score" class="tab-content active" style="display:block;">
+          <h3>🎨 Скины за очки</h3>
+          <div id="skinsScoreList" class="skins-list"></div>
+        </div>
+
+        <div id="shop-stars" class="tab-content">
+          <h3>🌟 Эксклюзивные скины</h3>
+          <div id="skinsStarsList" class="skins-list"></div>
+        </div>
+
+        <div id="shop-donate" class="tab-content">
+          <h3>💎 Покупка звёзд</h3>
+          <div class="buy-section">
+            <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
+            <small style="display:block; margin-top:6px; color:#bbdefb;">
+              После оплаты на Tribute мы вручную выдадим звёзды.<br>
+              Ваш ID для покупки: <b id="displayedId"></b>
+            </small>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // 🔁 ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL Google Apps Script!
     const apiUrl = "https://script.google.com/macros/s/AKfycbyAJLkzTMB1wKdyWlItA8rKHrVZuI81zlwLGqH9NAP1-qq-tt9NGDMoc7uggcWLwVk/exec";
 
     const tg = window.Telegram?.WebApp;
@@ -411,57 +424,66 @@
       isInitialized: false
     };
 
+    // 🔥 Цены УВЕЛИЧЕНЫ В РАЗЫ
     const SKINS = [
+      // За ОЧКИ
       { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0, bonus: {} },
-      { id: 'red', name: 'Красный', gradient: 'linear-gradient(135deg, #ff0000, #b30000)', price: 2, bonus: { clickPower: 1 } },
-      { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 5, bonus: { energyRegen: 1 } },
-      { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 1000, bonus: { maxEnergy: 100 } },
-      { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 2000, bonus: { clickPower: 2, energyRegen: 1 } },
-      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 5000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } },
-      { 
-        id: 'cosmic', 
-        name: 'Космос', 
-        gradient: 'linear-gradient(135deg, #4b0082, #000080, #191970)', 
-        price: 1, 
-        currency: 'stars',
-        bonus: { clickPower: 3, energyRegen: 2 } 
-      },
-      { 
-        id: 'galaxy', 
-        name: 'Галактика', 
-        gradient: 'radial-gradient(circle, #ff00ff, #00ffff, #0000ff)', 
-        price: 3, 
-        currency: 'stars',
-        bonus: { clickPower: 7, maxEnergy: 300, energyRegen: 3 } 
-      },
-      { 
-        id: 'nebula', 
-        name: 'Туманность', 
-        gradient: 'linear-gradient(135deg, #ff00ff, #8a2be2, #00bfff)', 
-        price: 5, 
-        currency: 'stars',
-        bonus: { clickPower: 15, maxEnergy: 500, energyRegen: 5 } 
-      }
+      { id: 'red', name: 'Красный', gradient: 'linear-gradient(135deg, #ff0000, #b30000)', price: 1000, bonus: { clickPower: 1 } },
+      { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 5000, bonus: { energyRegen: 1 } },
+      { id: 'green', name: 'Изумрудный', gradient: 'linear-gradient(135deg, #00b09b, #96c93d)', price: 25_000, bonus: { maxEnergy: 100 } },
+      { id: 'purple', name: 'Фиолетовый', gradient: 'linear-gradient(135deg, #8E2DE2, #4A00E0)', price: 70_000, bonus: { clickPower: 2, energyRegen: 1 } },
+      { id: 'gold', name: 'Золотой', gradient: 'linear-gradient(135deg, #ffd700, #ff8c00)', price: 100_000, bonus: { clickPower: 5, maxEnergy: 200, energyRegen: 2 } },
+      { id: 'lava', name: 'Лава', gradient: 'linear-gradient(135deg, #ff416c, #ff4b2b)', price: 125_000, bonus: { clickPower: 10, energyRegen: 3 } },
+      { id: 'forest', name: 'Лес', gradient: 'linear-gradient(135deg, #23074d, #cc5333)', price: 200_000, bonus: { maxEnergy: 300, energyRegen: 5 } },
+      { id: 'cyber', name: 'Кибер', gradient: 'linear-gradient(135deg, #00c9ff, #92fe9d)', price: 500_000, bonus: { clickPower: 20, maxEnergy: 500 } },
+
+      // За ЗВЁЗДЫ
+      { id: 'cosmic', name: 'Космос', gradient: 'linear-gradient(135deg, #4b0082, #000080, #191970)', price: 10, currency: 'stars', bonus: { clickPower: 3, energyRegen: 2 } },
+      { id: 'galaxy', name: 'Галактика', gradient: 'radial-gradient(circle, #ff00ff, #00ffff, #0000ff)', price: 50, currency: 'stars', bonus: { clickPower: 7, maxEnergy: 300, energyRegen: 3 } },
+      { id: 'nebula', name: 'Туманность', gradient: 'linear-gradient(135deg, #ff00ff, #8a2be2, #00bfff)', price: 150, currency: 'stars', bonus: { clickPower: 15, maxEnergy: 500, energyRegen: 5 } },
+      { id: 'phoenix', name: 'Феникс', gradient: 'radial-gradient(circle, #ff5e62, #ff9966)', price: 450, currency: 'stars', bonus: { clickPower: 30, energyRegen: 10 } },
+      { id: 'quantum', name: 'Квантовый', gradient: 'linear-gradient(135deg, #834d9b, #d04ed6)', price: 1000, currency: 'stars', bonus: { clickPower: 50, maxEnergy: 1000, energyRegen: 15 } },
+      { id: 'void', name: 'Пустота', gradient: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 5000, currency: 'stars', bonus: { clickPower: 100, maxEnergy: 2000, energyRegen: 25 } }
     ];
 
     let bonusActive = false;
     let activeBonusElement = null;
     let nextBonusTimer = null;
     let currentTab = 'tab-game';
+    let currentSubTab = 'shop-score';
 
-    document.querySelectorAll('.tab-btn').forEach(button => {
+    // Основные вкладки
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(button => {
       button.addEventListener('click', () => {
         const tabId = button.dataset.tab;
         currentTab = tabId;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content[data-tab]').forEach(c => c.classList.remove('active'));
         button.classList.add('active');
         document.getElementById(tabId).classList.add('active');
         if (tabId === 'tab-shop') {
-          renderShop();
+          renderShopSubTabs();
         }
       });
     });
+
+    // Подвкладки магазина
+    function renderShopSubTabs() {
+      const subButtons = document.querySelectorAll('#tab-shop .tab-btn[data-subtab]');
+      const subContents = document.querySelectorAll('#tab-shop .tab-content[id^="shop-"]');
+
+      subButtons.forEach(btn => {
+        const subTabId = btn.dataset.subtab;
+        btn.onclick = () => {
+          currentSubTab = subTabId;
+          subButtons.forEach(b => b.classList.remove('active'));
+          subContents.forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(subTabId).classList.add('active');
+          renderShop();
+        };
+      });
+    }
 
     function showLoading() {
       document.getElementById('loadingScreen').style.display = 'block';
@@ -495,7 +517,6 @@
       const base = 50;
       return Math.round(base * Math.pow(1.8, level));
     }
-
     const getAutoClickerCost = getUpgradeCost;
     const getClickPowerCost = getUpgradeCost;
 
@@ -529,8 +550,10 @@
     }
 
     function renderShop() {
-      const shop = document.getElementById('skinsList');
-      shop.innerHTML = '';
+      const scoreList = document.getElementById('skinsScoreList');
+      const starsList = document.getElementById('skinsStarsList');
+      scoreList.innerHTML = '';
+      starsList.innerHTML = '';
 
       SKINS.forEach(skin => {
         const isOwned = player.ownedSkins.includes(skin.id);
@@ -562,7 +585,7 @@
           const parts = [];
           if (skin.bonus.clickPower) parts.push(`+${skin.bonus.clickPower} клик`);
           if (skin.bonus.energyRegen) parts.push(`+${skin.bonus.energyRegen} энергия/сек`);
-          if (skin.bonus.maxEnergy) parts.push(`+${skin.bonus.maxEnergy} макс.энергия`);
+          if (skin.bonus.maxEnergy !== undefined) parts.push(`+${skin.bonus.maxEnergy} макс.энергия`);
           bonusText = `<br><small style="color:#a7ffeb">${parts.join(', ')}</small>`;
         }
         if (isOwned) {
@@ -581,7 +604,11 @@
           item.addEventListener('click', () => selectSkin(skin.id));
         }
 
-        shop.appendChild(item);
+        if (currency === 'score') {
+          scoreList.appendChild(item);
+        } else if (currency === 'stars') {
+          starsList.appendChild(item);
+        }
       });
 
       document.getElementById('displayedId').innerText = player.id || '—';
@@ -606,7 +633,7 @@
 
       const currency = skin.currency || 'score';
       const price = skin.price;
-      const affordable = (currency === 'stars') 
+      const affordable = currency === 'stars' 
         ? player.stars >= price 
         : player.score >= price;
 
@@ -827,7 +854,6 @@
       }
     }
 
-    // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОКУПКИ
     function buyStarsManual() {
       if (!window.Telegram?.WebApp) {
         showMessage("Откройте игру в Telegram!", false);
@@ -840,7 +866,6 @@
         return;
       }
 
-      // Всё в startapp — так работает в Telegram
       const payload = `pmQi-ref-${playerId}`;
       const tributeUrl = `https://t.me/tribute/app?startapp=${encodeURIComponent(payload)}`;
 
@@ -864,17 +889,13 @@
       bonus.innerText = '✨ x2!';
       bonus.style.left = Math.random() * 70 + 15 + '%';
       bonus.style.top = Math.random() * 60 + 10 + '%';
-      bonus.style.position = 'fixed';
-      bonus.style.zIndex = '3000';
 
       let x = parseFloat(bonus.style.left);
       let y = parseFloat(bonus.style.top);
       let dx = (Math.random() - 0.5) * 0.6;
       let dy = (Math.random() - 0.5) * 0.6;
 
-      bonus.addEventListener('click', () => {
-        activateBonus(bonus);
-      });
+      bonus.addEventListener('click', () => activateBonus(bonus));
 
       document.body.appendChild(bonus);
       activeBonusElement = bonus;
@@ -1004,7 +1025,11 @@
       e.stopPropagation();
     }, { passive: false });
 
-    document.addEventListener('DOMContentLoaded', initTelegramGame);
+    document.addEventListener('DOMContentLoaded', () => {
+      initTelegramGame();
+      // Инициализация подвкладок магазина
+      renderShopSubTabs();
+    });
   </script>
 </body>
 </html>
