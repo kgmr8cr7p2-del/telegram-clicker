@@ -78,13 +78,15 @@
       display: flex;
       justify-content: space-around;
       margin: 10px 0;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .tab-btn {
       flex: 1;
+      min-width: 80px;
       padding: 8px;
-      font-size: 14px;
+      font-size: 13px;
       background: rgba(255,255,255,0.15);
       border: none;
       border-radius: 10px;
@@ -335,12 +337,14 @@
     <div id="game">
       <p id="user"></p>
 
-      <!-- ОСНОВНЫЕ ВКЛАДКИ -->
+      <!-- 🔥 6 НЕЗАВИСИМЫХ ВКЛАДОК -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="tab-game">Игра</button>
         <button class="tab-btn" data-tab="tab-upgrades">Улучшения</button>
         <button class="tab-btn" data-tab="tab-leaderboard">Лидерборд</button>
-        <button class="tab-btn" data-tab="tab-shop">Магазин</button>
+        <button class="tab-btn" data-tab="tab-shop-score">🏷️ За очки</button>
+        <button class="tab-btn" data-tab="tab-shop-stars">✨ За звёзды</button>
+        <button class="tab-btn" data-tab="tab-shop-donate">💎 Донат</button>
       </div>
 
       <!-- Игра -->
@@ -378,37 +382,27 @@
         <button onclick="loadLeaderboard()" style="margin-top:10px; background: rgba(255,255,255,0.2);">🔄 Обновить</button>
       </div>
 
-      <!-- МАГАЗИН (с подвкладками) -->
-      <div id="tab-shop" class="tab-content">
-        <!-- Подвкладки внутри магазина -->
-        <div class="tabs" style="margin-top:10px;">
-          <button class="shop-tab-btn active" data-shop-tab="shop-score">🏷️ За очки</button>
-          <button class="shop-tab-btn" data-shop-tab="shop-stars">✨ За звёзды</button>
-          <button class="shop-tab-btn" data-shop-tab="shop-donate">💎 Донат</button>
-        </div>
+      <!-- Магазин: за очки -->
+      <div id="tab-shop-score" class="tab-content">
+        <h3>🎨 Скины за очки</h3>
+        <div id="skinsScoreList" class="skins-list"></div>
+      </div>
 
-        <!-- Скины за очки -->
-        <div id="shop-score" class="shop-tab-content active">
-          <h3>🎨 Скины за очки</h3>
-          <div id="skinsScoreList" class="skins-list"></div>
-        </div>
+      <!-- Магазин: за звёзды -->
+      <div id="tab-shop-stars" class="tab-content">
+        <h3>🌟 Эксклюзивные скины</h3>
+        <div id="skinsStarsList" class="skins-list"></div>
+      </div>
 
-        <!-- Скины за звёзды -->
-        <div id="shop-stars" class="shop-tab-content">
-          <h3>🌟 Эксклюзивные скины</h3>
-          <div id="skinsStarsList" class="skins-list"></div>
-        </div>
-
-        <!-- Донат -->
-        <div id="shop-donate" class="shop-tab-content">
-          <h3>💎 Покупка звёзд</h3>
-          <div class="buy-section">
-            <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
-            <small style="display:block; margin-top:6px; color:#bbdefb;">
-              После оплаты на Tribute мы вручную выдадим звёзды.<br>
-              Ваш ID для покупки: <b id="displayedId"></b>
-            </small>
-          </div>
+      <!-- Донат -->
+      <div id="tab-shop-donate" class="tab-content">
+        <h3>💎 Покупка звёзд</h3>
+        <div class="buy-section">
+          <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
+          <small style="display:block; margin-top:6px; color:#bbdefb;">
+            После оплаты на Tribute мы вручную выдадим звёзды.<br>
+            Ваш ID для покупки: <b id="displayedId"></b>
+          </small>
         </div>
       </div>
     </div>
@@ -433,6 +427,7 @@
       isInitialized: false
     };
 
+    // 🔥 Скины с ВЫСОКИМИ ценами
     const SKINS = [
       // За ОЧКИ
       { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0, bonus: {} },
@@ -458,50 +453,26 @@
     let activeBonusElement = null;
     let nextBonusTimer = null;
 
-    // ===== ОСНОВНЫЕ ВКЛАДКИ =====
+    // 🔁 ЕДИНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ВСЕХ ВКЛАДОК
     document.querySelectorAll('.tab-btn[data-tab]').forEach(button => {
       button.addEventListener('click', () => {
         const tabId = button.dataset.tab;
 
+        // Снимаем активность со всех
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
+        // Активируем нужную
         button.classList.add('active');
         document.getElementById(tabId)?.classList.add('active');
 
-        // Если открыли магазин — обновляем его содержимое
-        if (tabId === 'tab-shop') {
+        // Обновляем магазины при открытии
+        if (tabId === 'tab-shop-score' || tabId === 'tab-shop-stars') {
           renderShop();
-          // Убедимся, что активна первая подвкладка
-          activateShopTab('shop-score');
         }
       });
     });
 
-    // ===== ПОДВКЛАДКИ МАГАЗИНА =====
-    function activateShopTab(tabId) {
-      // Снимаем активность со всех подвкладок
-      document.querySelectorAll('.shop-tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.shop-tab-content').forEach(c => c.classList.remove('active'));
-
-      // Активируем нужную
-      const btn = document.querySelector(`.shop-tab-btn[data-shop-tab="${tabId}"]`);
-      const content = document.getElementById(tabId);
-      if (btn) btn.classList.add('active');
-      if (content) content.classList.add('active');
-
-      renderShop(); // обновляем список скинов
-    }
-
-    // Назначаем обработчики для подвкладок магазина
-    document.querySelectorAll('.shop-tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tabId = btn.dataset.shopTab;
-        activateShopTab(tabId);
-      });
-    });
-
-    // ===== ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) =====
     function showLoading() {
       document.getElementById('loadingScreen').style.display = 'block';
       document.getElementById('authMessage').style.display = 'none';
