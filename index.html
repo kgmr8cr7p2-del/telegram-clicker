@@ -392,7 +392,8 @@
   </div>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbxOKWpJ7Z_TfNOg0uK2pcTsoE5Cm7nJz6OK9OqkelD-rvg2ZQf5Sz8rJC6hLs1RCXQn/exec";
+    // 🔁 ЗАМЕНИТЕ НА ВАШ РЕАЛЬНЫЙ URL Google Apps Script!
+    const apiUrl = "https://script.google.com/macros/s/AKfycbyAJLkzTMB1wKdyWlItA8rKHrVZuI81zlwLGqH9NAP1-qq-tt9NGDMoc7uggcWLwVk/exec";
 
     const tg = window.Telegram?.WebApp;
     let player = {
@@ -583,7 +584,6 @@
         shop.appendChild(item);
       });
 
-      // Обновляем отображение ID
       document.getElementById('displayedId').innerText = player.id || '—';
     }
 
@@ -827,24 +827,33 @@
       }
     }
 
+    // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ ПОКУПКИ
     function buyStarsManual() {
-  if (!window.Telegram?.WebApp) {
-    showMessage("Откройте игру в Telegram!", false);
-    return;
-  }
+      if (!window.Telegram?.WebApp) {
+        showMessage("Откройте игру в Telegram!", false);
+        return;
+      }
 
-  const playerId = player.id;
-  if (!playerId) {
-    showMessage("Ошибка: неизвестный ID", false);
-    return;
-  }
+      const playerId = player.id;
+      if (!playerId) {
+        showMessage("Ошибка: ID не загружен", false);
+        return;
+      }
 
-  // Передаём ID через параметр ref — Tribute его сохранит в заказе
-  const tributeUrl = `https://t.me/tribute/app?startapp=pmQi&ref=${encodeURIComponent(playerId)}`;
+      // Всё в startapp — так работает в Telegram
+      const payload = `pmQi-ref-${playerId}`;
+      const tributeUrl = `https://t.me/tribute/app?startapp=${encodeURIComponent(payload)}`;
 
-  window.Telegram.WebApp.openLink(tributeUrl, { try_instant_view: false });
-  showMessage("Открываем Tribute...", true);
-}
+      try {
+        window.Telegram.WebApp.openLink(tributeUrl, { try_instant_view: false });
+        showMessage("Открываем Tribute...", true);
+      } catch (e) {
+        console.error("Open link error:", e);
+        showMessage("Не удалось открыть Tribute", false);
+      }
+    }
+
+    document.getElementById("buyStarsManualBtn")?.addEventListener("click", buyStarsManual);
 
     function createFlyingBonus() {
       if (currentTab !== 'tab-game') return;
