@@ -1214,13 +1214,17 @@
           msg += "Ещё один спин через 5 сек!";
         }
         
-        updateUI();
-        checkAchievements();
-        await savePlayerData();
-        showMessage(msg, true);
-        
-        lastSpinTime = Date.now();
-        updateWheelTimer();
+
+updateUI();
+checkAchievements();
+
+lastSpinTime = Date.now();   // <-- сначала обновляем
+updateWheelTimer();
+
+await savePlayerData();      // <-- потом сохраняем новое значение
+
+showMessage(msg, true);
+
       }, 4000);
     }
 
