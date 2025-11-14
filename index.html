@@ -90,7 +90,7 @@
       background: rgba(255,255,255,0.15);
       border: none;
       border-radius: 10px;
-      color: white;
+      colour: white;
       cursor: pointer;
       transition: background 0.2s;
     }
@@ -139,7 +139,7 @@
       font-size: 22px;
       font-weight: bold;
       background: linear-gradient(135deg, #ff9a00, #ff5200);
-      color: white;
+      colour: white;
       border: none;
       border-radius: 50%;
       box-shadow: 0 6px 18px rgba(255, 82, 0, 0.4);
@@ -184,7 +184,7 @@
       border: none;
       border-radius: 14px;
       background: rgba(255, 255, 255, 0.15);
-      color: white;
+      colour: white;
       cursor: pointer;
       transition: background 0.2s;
     }
@@ -246,7 +246,7 @@
     .info-line {
       margin: 12px 0;
       font-size: 14px;
-      color: #e0f7fa;
+      colour: #e0f7fa;
     }
 
     #leaderboard {
@@ -267,7 +267,7 @@
     .bonus-popup {
       position: fixed;
       background: rgba(255, 215, 0, 0.95);
-      color: #000;
+      colour: #000;
       font-weight: bold;
       padding: 10px 18px;
       border-radius: 50px;
@@ -304,9 +304,9 @@
       100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
     }
 
-    .status-success { background: rgba(40, 167, 69, 0.9); color: #fff; }
-    .status-error { background: rgba(220, 53, 69, 0.9); color: #fff; }
-    .status-info { background: rgba(23, 162, 184, 0.9); color: #fff; }
+    .status-success { background: rgba(40, 167, 69, 0.9); colour: #fff; }
+    .status-error { background: rgba(220, 53, 69, 0.9); colour: #fff; }
+    .status-info { background: rgba(23, 162, 184, 0.9); colour: #fff; }
 
     button {
       outline: none;
@@ -316,58 +316,6 @@
       font-size: 17px;
       margin-bottom: 8px;
       font-weight: 600;
-    }
-
-    /* === Достижения === */
-    .achievements-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin: 15px 0;
-    }
-
-    .achievement-item {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 14px;
-      color: white;
-    }
-
-    .achievement-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      margin-right: 14px;
-      flex-shrink: 0;
-    }
-
-    .achievement-info {
-      flex: 1;
-      text-align: left;
-    }
-
-    .achievement-info b {
-      display: block;
-      font-size: 15px;
-    }
-
-    .achievement-item.locked {
-      opacity: 0.5;
-    }
-
-    .achievement-item.locked .achievement-icon {
-      background: rgba(100, 100, 100, 0.3);
-    }
-
-    .achievement-item.unlocked .achievement-icon {
-      background: linear-gradient(135deg, #ffd700, #ff8c00);
-      box-shadow: 0 0 8px gold;
     }
   </style>
 </head>
@@ -453,7 +401,7 @@
         <h3>💎 Покупка звёзд</h3>
         <div class="buy-section">
           <button class="buy-btn" id="buyStarsManualBtn">Купить за реальные деньги</button>
-          <small style="display:block; margin-top:6px; color:#bbdefb;">
+          <small style="display:block; margin-top:6px; colour:#bbdefb;">
             После оплаты на Tribute мы вручную выдадим звёзды.<br>
             Ваш ID для покупки: <b id="displayedId"></b>
           </small>
@@ -470,7 +418,7 @@
       <div id="tab-daily" class="tab-content">
         <h3>📆 Ежедневный бонус</h3>
         <p id="dailyInfo">Загрузка...</p>
-        <button id="claimDailyBtn" style="margin-top:15px; padding:12px; background:rgba(255,255,255,0.2); border:none; border-radius:14px; color:white; font-size:16px; cursor:pointer; width:100%; max-width:300px;">
+        <button id="claimDailyBtn" style="margin-top:15px; padding:12px; background:rgba(255,255,255,0.2); border:none; border-radius:14px; colour:white; font-size:16px; cursor:pointer; width:100%; max-width:300px;">
           Получить награду
         </button>
       </div>
@@ -801,10 +749,11 @@
       }, 3000);
     }
 
+    // 🔥 ИСПРАВЛЕНО: Используем POST вместо Image
     async function savePlayerData() {
       if (!player.id || !player.isInitialized) return false;
       try {
-        const params = new URLSearchParams({
+        const data = {
           action: "updateScore",
           id: player.id,
           name: player.name,
@@ -821,10 +770,15 @@
           bonusActivations: player.bonusActivations || 0,
           dailyStreak: player.dailyStreak || 0,
           lastClaimDate: player.lastClaimDate || ''
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
         });
-        const img = new Image();
-        img.src = `${apiUrl}?${params}&_=${Date.now()}`;
-        return true;
+
+        return response.ok;
       } catch (e) {
         console.error("Save failed", e);
         return false;
@@ -1054,6 +1008,10 @@
       activeBonusElement = null;
       bonusActive = true;
       player.bonusActivations = (player.bonusActivations || 0) + 1;
+      
+      // 🔥 Сохраняем сразу!
+      savePlayerData();
+      
       updateUI();
       showMessage("🔥 x2 активирован на 15 сек!", true);
       setTimeout(() => {
