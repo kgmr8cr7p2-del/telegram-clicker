@@ -492,7 +492,8 @@
     };
 
     let lastSpinTime = 0;
-    const SPIN_COOLDOWN = 4 * 60 * 60 * 1000; // 4 часа
+	const SPIN_COOLDOWN = 20 * 1000; // 1 минута (для тестов)
+    //const SPIN_COOLDOWN = 4 * 60 * 60 * 1000; // 4 часа
 
     const SKINS = [
       { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0, bonus: {} },
