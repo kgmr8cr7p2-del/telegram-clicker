@@ -1179,7 +1179,10 @@
 
       const winIndex = Math.floor(Math.random() * WHEEL_REWARDS.length);
       const spins = 10 + Math.floor(Math.random() * 10);
-      const totalRotation = 360 * spins + (360 - (winIndex * (360 / WHEEL_REWARDS.length)));
+      const sectorAngle = 360 / WHEEL_REWARDS.length;
+	  const targetAngle = winIndex * sectorAngle + sectorAngle / 2;
+      const totalRotation = 360 * spins - targetAngle;
+
       
       wheel.style.transform = `rotate(${totalRotation}deg)`;
 
