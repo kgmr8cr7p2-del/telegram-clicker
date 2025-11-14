@@ -458,49 +458,71 @@
 
     // 🏆 Ачивки
     const ACHIEVEMENTS = [
-      {
-        id: 'click_100',
-        name: 'Первые 100',
-        desc: 'Наберите 100 очков',
-        condition: p => p.score >= 100,
-        bonus: { clickPower: 1 }
-      },
-      {
-        id: 'click_1k',
-        name: 'Тысяча кликов',
-        desc: 'Наберите 1 000 очков',
-        bonus: { clickPower: 2 },
-        condition: p => p.score >= 1000
-      },
-      {
-        id: 'star_1',
-        name: 'Первая звезда!',
-        desc: 'Получите первую звезду',
-        condition: p => p.stars >= 1,
-        bonus: { energyRegen: 1 }
-      },
-      {
-        id: 'auto_5',
-        name: 'Робо-помощник',
-        desc: 'Купите 5 уровней автокликера',
-        condition: p => p.autoClickerLevel >= 5,
-        bonus: { energyRegen: 2 }
-      },
-      {
-        id: 'skin_5',
-        name: 'Модник',
-        desc: 'Купите 5 скинов',
-        condition: p => p.ownedSkins.length >= 5,
-        bonus: { maxEnergy: 100 }
-      },
-      {
-        id: 'max_energy_1k',
-        name: 'Энергоблок',
-        desc: 'Достигните 1000 макс. энергии',
-        condition: p => getEffectiveMaxEnergy() >= 1000,
-        bonus: { clickPower: 5 }
-      }
-    ];
+  {
+    id: 'click_100',
+    name: 'Разминка',
+    desc: 'Наберите 100 очков',
+    condition: p => p.score >= 100,
+    bonus: { clickPower: 1 }
+  },
+  {
+    id: 'click_10k',
+    name: 'Тысяча и один клик',
+    desc: 'Наберите 10 000 очков',
+    condition: p => p.score >= 10_000,
+    bonus: { clickPower: 2 }
+  },
+  {
+    id: 'click_1m',
+    name: 'Миллионер',
+    desc: 'Наберите  100 000 очков',
+    condition: p => p.score >= 100_000,
+    bonus: { clickPower: 5 }
+  },
+
+  {
+    id: 'star_1',
+    name: 'Первая звезда!',
+    desc: 'Получите первую звезду',
+    condition: p => p.stars >= 1,
+    bonus: { energyRegen: 1 }
+  },
+  {
+    id: 'star_10',
+    name: 'Звёздный коллекционер',
+    desc: 'Соберите 10 звёзд',
+    condition: p => p.stars >= 10,
+    bonus: { energyRegen: 2 }
+  },
+  {
+    id: 'star_50',
+    name: 'Галактический магнат',
+    desc: 'Соберите 50 звёзд',
+    condition: p => p.stars >= 50,
+    bonus: { clickPower: 10 }
+  },
+  {
+    id: 'auto_10',
+    name: 'Армия роботов',
+    desc: 'Купите 10 уровней автокликера',
+    condition: p => p.autoClickerLevel >= 10,
+    bonus: { energyRegen: 3 }
+  },
+  {
+    id: 'skin_5',
+    name: 'Модник',
+    desc: 'Купите 5 скинов',
+    condition: p => p.ownedSkins.length >= 5,
+    bonus: { maxEnergy: 100 }
+  },
+  {
+    id: 'skin_10',
+    name: 'Дизайнер миров',
+    desc: 'Купите 10 скинов',
+    condition: p => p.ownedSkins.length >= 10,
+    bonus: { clickPower: 7 }
+  },
+];
 
     let bonusActive = false;
     let activeBonusElement = null;
