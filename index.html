@@ -369,53 +369,6 @@
       background: linear-gradient(135deg, #ffd700, #ff8c00);
       box-shadow: 0 0 8px gold;
     }
-
-    /* === Ежедневный бонус === */
-    .daily-rewards {
-      display: flex;
-      justify-content: space-between;
-      margin: 15px 0;
-      gap: 4px;
-    }
-
-    .daily-day {
-      width: 42px;
-      height: 60px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      font-size: 12px;
-      padding-bottom: 4px;
-      position: relative;
-    }
-
-    .daily-day.claimed {
-      background: rgba(50, 200, 100, 0.3);
-      color: #aaffaa;
-    }
-
-    .daily-day.current {
-      box-shadow: 0 0 8px gold;
-      background: rgba(255, 215, 0, 0.2);
-    }
-
-    .daily-day.locked {
-      opacity: 0.4;
-    }
-
-    .daily-day::before {
-      content: "🎁";
-      font-size: 18px;
-      margin-bottom: 4px;
-    }
-
-    .daily-day.claimed::before {
-      content: "✅";
-      color: #4caf50;
-    }
   </style>
 </head>
 <body>
@@ -513,12 +466,11 @@
         <div id="achievementsList" class="achievements-list"></div>
       </div>
 
-      <!-- Ежедневный бонус -->
+      <!-- Ежедневный бонус (УПРОЩЁННЫЙ) -->
       <div id="tab-daily" class="tab-content">
         <h3>📆 Ежедневный бонус</h3>
-        <p>Заходите каждый день и получайте награды!</p>
-        <div id="dailyRewards" class="daily-rewards"></div>
-        <button id="claimDailyBtn" style="margin-top:15px; padding:12px; background:rgba(255,255,255,0.2); border:none; border-radius:14px; color:white; font-size:16px; cursor:pointer;">
+        <p id="dailyInfo">Загрузка...</p>
+        <button id="claimDailyBtn" style="margin-top:15px; padding:12px; background:rgba(255,255,255,0.2); border:none; border-radius:14px; color:white; font-size:16px; cursor:pointer; width:100%; max-width:300px;">
           Получить награду
         </button>
       </div>
@@ -1165,12 +1117,11 @@
 
     function renderDailyBonus() {
       const today = getTodayDate();
-      const container = document.getElementById('dailyRewards');
+      const infoEl = document.getElementById('dailyInfo');
       const btn = document.getElementById('claimDailyBtn');
 
-      if (!container || !btn) return;
+      if (!infoEl || !btn) return;
 
-      // Проверка на сброс цепочки
       const canContinue = (
         player.dailyStreak === 0 ||
         isSameDay(player.lastClaimDate, today) ||
@@ -1182,43 +1133,24 @@
         savePlayerData();
       }
 
-      // Определяем статус каждого дня
-      const days = [];
-      for (let i = 1; i <= 7; i++) {
-        if (i <= player.dailyStreak) {
-          days.push('claimed');
-        } else if (i === player.dailyStreak + 1) {
-          if (isSameDay(player.lastClaimDate, today)) {
-            days.push('current-claimed');
-          } else {
-            days.push('current');
-          }
-        } else {
-          days.push('locked');
-        }
-      }
-
-      container.innerHTML = '';
-      DAILY_REWARDS.forEach((reward, idx) => {
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'daily-day';
-        if (days[idx] === 'claimed') {
-          dayDiv.classList.add('claimed');
-        } else if (days[idx] === 'current') {
-          dayDiv.classList.add('current');
-        } else if (days[idx] === 'current-claimed') {
-          dayDiv.classList.add('claimed');
-        }
-
-        dayDiv.innerHTML = `<b>${reward.day}</b><br><small>${reward.label}</small>`;
-        container.appendChild(dayDiv);
-      });
+      const nextDay = Math.min(player.dailyStreak + 1, 7);
+      const reward = DAILY_REWARDS[nextDay - 1];
 
       const alreadyClaimed = isSameDay(player.lastClaimDate, today);
-      btn.disabled = alreadyClaimed || days[player.dailyStreak] !== 'current';
-      btn.innerText = alreadyClaimed ? "✅ Получено сегодня" : "🎁 Получить награду";
-      btn.style.opacity = (alreadyClaimed || days[player.dailyStreak] !== 'current') ? "0.6" : "1";
-      btn.style.cursor = (alreadyClaimed || days[player.dailyStreak] !== 'current') ? "not-allowed" : "pointer";
+
+      if (alreadyClaimed) {
+        infoEl.innerHTML = `✅ Вы уже получили награду за сегодня!<br><br><b>День ${nextDay} из 7:</b> ${reward.label}`;
+        btn.disabled = true;
+        btn.innerText = "✅ Получено";
+        btn.style.opacity = "0.6";
+        btn.style.cursor = "not-allowed";
+      } else {
+        infoEl.innerHTML = `🎁 <b>Сегодня день ${nextDay} из 7</b><br>Ваша награда: ${reward.label}`;
+        btn.disabled = false;
+        btn.innerText = `Получить ${reward.label}`;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+      }
     }
 
     document.getElementById('claimDailyBtn')?.addEventListener('click', () => {
@@ -1245,7 +1177,7 @@
       player.dailyStreak = nextDay;
       player.lastClaimDate = today;
 
-      // 🔁 Сброс циклический: после 7 → снова 1
+      // 🔁 Циклический сброс: после 7 → снова 1
       if (player.dailyStreak >= 7) {
         player.dailyStreak = 0;
       }
