@@ -171,14 +171,14 @@
       100% { filter: brightness(1.4) hue-rotate(20deg); }
     }
 
-    .upgrades, .skins-list, .buy-section {
+    .upgrades, .skins-list, .buy-section, .achievements-list {
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin: 15px 0;
     }
 
-    .upgrades button, .skin-item, .buy-btn {
+    .upgrades button, .skin-item, .buy-btn, .achievement-item {
       padding: 12px;
       font-size: 15px;
       border: none;
@@ -189,7 +189,7 @@
       transition: background 0.2s;
     }
 
-    .upgrades button:hover, .skin-item:not(.disabled):hover, .buy-btn:hover {
+    .upgrades button:hover, .skin-item:not(.disabled):hover, .buy-btn:hover, .achievement-item:hover {
       background: rgba(255, 255, 255, 0.25);
     }
 
@@ -199,15 +199,15 @@
       pointer-events: none;
     }
 
-    .skin-item {
+    .skin-item, .achievement-item {
       display: flex;
       align-items: center;
       padding: 12px;
       text-align: left;
-      cursor: pointer;
+      cursor: default;
     }
 
-    .skin-preview {
+    .skin-preview, .ach-preview {
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -216,18 +216,17 @@
       border: 2px solid white;
     }
 
-    .skin-info {
+    .skin-info, .ach-info {
       flex: 1;
     }
 
-    .skin-info b {
+    .skin-info b, .ach-info b {
       display: block;
     }
 
-    .skin-item.disabled {
+    .skin-item.disabled, .achievement-item.locked {
       opacity: 0.6;
       cursor: not-allowed;
-      pointer-events: none;
     }
 
     .skin-item.active .skin-preview {
@@ -337,13 +336,14 @@
     <div id="game">
       <p id="user"></p>
 
-      <!-- 🔥 6 НЕЗАВИСИМЫХ ВКЛАДОК -->
+      <!-- 🔥 7 НЕЗАВИСИМЫХ ВКЛАДОК -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="tab-game">Игра</button>
         <button class="tab-btn" data-tab="tab-upgrades">Улучшения</button>
         <button class="tab-btn" data-tab="tab-leaderboard">Лидерборд</button>
         <button class="tab-btn" data-tab="tab-shop-score">🏷️ За очки</button>
         <button class="tab-btn" data-tab="tab-shop-stars">✨ За звёзды</button>
+        <button class="tab-btn" data-tab="tab-achievements">🏆 Ачивки</button>
         <button class="tab-btn" data-tab="tab-shop-donate">💎 Донат</button>
       </div>
 
@@ -394,6 +394,12 @@
         <div id="skinsStarsList" class="skins-list"></div>
       </div>
 
+      <!-- Ачивки -->
+      <div id="tab-achievements" class="tab-content">
+        <h3>Ваши достижения</h3>
+        <div id="achievementsList" class="achievements-list"></div>
+      </div>
+
       <!-- Донат -->
       <div id="tab-shop-donate" class="tab-content">
         <h3>💎 Покупка звёзд</h3>
@@ -424,6 +430,7 @@
       clickPower: 1,
       skin: 'default',
       ownedSkins: ['default'],
+      achievements: [], // ← ачивки
       isInitialized: false
     };
 
@@ -449,6 +456,52 @@
       { id: 'void', name: 'Пустота', gradient: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 200, currency: 'stars', bonus: { clickPower: 100, maxEnergy: 2000, energyRegen: 25 } }
     ];
 
+    // 🏆 Ачивки
+    const ACHIEVEMENTS = [
+      {
+        id: 'click_100',
+        name: 'Первые 100',
+        desc: 'Наберите 100 очков',
+        condition: p => p.score >= 100,
+        bonus: { clickPower: 1 }
+      },
+      {
+        id: 'click_1k',
+        name: 'Тысяча кликов',
+        desc: 'Наберите 1 000 очков',
+        bonus: { clickPower: 2 },
+        condition: p => p.score >= 1000
+      },
+      {
+        id: 'star_1',
+        name: 'Первая звезда!',
+        desc: 'Получите первую звезду',
+        condition: p => p.stars >= 1,
+        bonus: { energyRegen: 1 }
+      },
+      {
+        id: 'auto_5',
+        name: 'Робо-помощник',
+        desc: 'Купите 5 уровней автокликера',
+        condition: p => p.autoClickerLevel >= 5,
+        bonus: { energyRegen: 2 }
+      },
+      {
+        id: 'skin_5',
+        name: 'Модник',
+        desc: 'Купите 5 скинов',
+        condition: p => p.ownedSkins.length >= 5,
+        bonus: { maxEnergy: 100 }
+      },
+      {
+        id: 'max_energy_1k',
+        name: 'Энергоблок',
+        desc: 'Достигните 1000 макс. энергии',
+        condition: p => getEffectiveMaxEnergy() >= 1000,
+        bonus: { clickPower: 5 }
+      }
+    ];
+
     let bonusActive = false;
     let activeBonusElement = null;
     let nextBonusTimer = null;
@@ -458,17 +511,17 @@
       button.addEventListener('click', () => {
         const tabId = button.dataset.tab;
 
-        // Снимаем активность со всех
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-        // Активируем нужную
         button.classList.add('active');
         document.getElementById(tabId)?.classList.add('active');
 
-        // Обновляем магазины при открытии
         if (tabId === 'tab-shop-score' || tabId === 'tab-shop-stars') {
           renderShop();
+        }
+        if (tabId === 'tab-achievements') {
+          renderAchievements();
         }
       });
     });
@@ -484,6 +537,7 @@
       document.getElementById('authMessage').style.display = 'none';
       document.getElementById('game').style.display = 'block';
       renderShop();
+      renderAchievements();
     }
 
     function showAuth() {
@@ -524,7 +578,12 @@
     }
 
     function getEffectiveMaxEnergy() {
-      return 650 + getSkinBonus('maxEnergy');
+      let base = 650;
+      base += getSkinBonus('maxEnergy');
+      const achBonus = player.achievements
+        .map(id => ACHIEVEMENTS.find(a => a.id === id)?.bonus?.maxEnergy || 0)
+        .reduce((a, b) => a + b, 0);
+      return base + achBonus;
     }
 
     function applySkin() {
@@ -604,6 +663,29 @@
       document.getElementById('displayedId').innerText = player.id || '—';
     }
 
+    function renderAchievements() {
+      const list = document.getElementById('achievementsList');
+      if (!list) return;
+
+      list.innerHTML = '';
+
+      ACHIEVEMENTS.forEach(ach => {
+        const earned = player.achievements.includes(ach.id);
+        const div = document.createElement('div');
+        div.className = `achievement-item ${earned ? 'active' : 'locked'}`;
+        const previewColor = earned ? '#ffd700' : '#555';
+        div.innerHTML = `
+          <div class="ach-preview" style="background: ${previewColor};"></div>
+          <div class="ach-info">
+            <b>${ach.name}</b><br>
+            <small>${ach.desc}</small>
+            ${earned ? '<br><small style="color:#aaffaa">✅ Получено</small>' : ''}
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
     function selectSkin(skinId) {
       const skin = SKINS.find(s => s.id === skinId);
       if (!skin) return;
@@ -616,6 +698,7 @@
         player.skin = skinId;
         applySkin();
         updateUI();
+        checkAchievements();
         savePlayerData();
         showMessage(`✨ Скин применён: ${skin.name}`, true);
         return;
@@ -637,6 +720,7 @@
         player.skin = skinId;
         applySkin();
         updateUI();
+        checkAchievements();
         savePlayerData();
         showMessage(`✅ Куплен скин: ${skin.name}`, true);
       } else {
@@ -687,6 +771,29 @@
       }, 3000);
     }
 
+    function checkAchievements() {
+      let earned = false;
+      ACHIEVEMENTS.forEach(ach => {
+        if (!player.achievements.includes(ach.id) && ach.condition(player)) {
+          if (ach.bonus.clickPower) player.clickPower += ach.bonus.clickPower;
+          if (ach.bonus.energyRegen) player.energyRegen += ach.bonus.energyRegen;
+          // maxEnergy обрабатывается через getEffectiveMaxEnergy()
+
+          player.achievements.push(ach.id);
+          showMessage(`🏆 Новая ачивка: ${ach.name}!`, true);
+          earned = true;
+        }
+      });
+
+      if (earned) {
+        updateUI();
+        savePlayerData();
+        if (document.getElementById('tab-achievements').classList.contains('active')) {
+          renderAchievements();
+        }
+      }
+    }
+
     async function savePlayerData() {
       if (!player.id || !player.isInitialized) return false;
       try {
@@ -702,7 +809,8 @@
           autoClickerLevel: player.autoClickerLevel,
           clickPower: player.clickPower,
           skin: player.skin,
-          ownedSkins: JSON.stringify(player.ownedSkins)
+          ownedSkins: JSON.stringify(player.ownedSkins),
+          achievements: JSON.stringify(player.achievements)
         });
         const img = new Image();
         img.src = `${apiUrl}?${params}&_=${Date.now()}`;
@@ -750,6 +858,22 @@
           }
           player.ownedSkins = ownedSkins;
 
+          let achievements = [];
+          if (data.found && data.achievements) {
+            try {
+              let raw = data.achievements;
+              raw = raw.replace(/\\"/g, '"');
+              if (raw.startsWith('"') && raw.endsWith('"')) {
+                raw = raw.slice(1, -1);
+              }
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) achievements = parsed;
+            } catch (e) {
+              console.warn("Parse achievements error", data.achievements);
+            }
+          }
+          player.achievements = achievements;
+
           if (data.found && data.lastOnline) {
             const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
             const offlineEnergy = offlineSec * getEffectiveEnergyRegen();
@@ -761,6 +885,7 @@
           applySkin();
           updateUI();
           loadLeaderboard();
+          checkAchievements();
           showMessage(data.found ? '✅ Добро пожаловать обратно!' : '🆕 Новая игра!');
         }
       } catch (e) {
@@ -814,6 +939,7 @@
         player.energyUpgrades++;
         player.energyRegen++;
         updateUI();
+        checkAchievements();
         savePlayerData();
       } else {
         showMessage("❌ Недостаточно очков!", false);
@@ -826,6 +952,7 @@
         player.score -= cost;
         player.autoClickerLevel++;
         updateUI();
+        checkAchievements();
         savePlayerData();
       } else {
         showMessage("❌ Недостаточно очков для автокликера!", false);
@@ -838,6 +965,7 @@
         player.score -= cost;
         player.clickPower++;
         updateUI();
+        checkAchievements();
         savePlayerData();
       } else {
         showMessage("❌ Недостаточно очков для силы клика!", false);
@@ -949,6 +1077,7 @@
           showMessage("✨ Вы получили звезду!", true);
         }
         updateUI();
+        checkAchievements();
         if (player.score % 5 === 0) savePlayerData();
       } else {
         showMessage("⚡ Нет энергии!", false);
@@ -966,6 +1095,7 @@
       if (player.isInitialized && player.autoClickerLevel > 0) {
         player.score += player.autoClickerLevel;
         updateUI();
+        checkAchievements();
         if (player.score % 10 === 0) savePlayerData();
       }
     }, 1000);
@@ -1002,12 +1132,14 @@
       player.clickPower = 1;
       player.skin = 'default';
       player.ownedSkins = ['default'];
+      player.achievements = [];
       player.isInitialized = true;
 
       showGame();
       applySkin();
       updateUI();
       loadLeaderboard();
+      checkAchievements();
       scheduleNextBonus();
     }
 
