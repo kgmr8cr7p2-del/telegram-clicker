@@ -316,6 +316,26 @@
       margin-bottom: 8px;
       font-weight: 600;
     }
+
+    .wheel-segment {
+      position: absolute;
+      width: 50%;
+      height: 50%;
+      transform-origin: bottom right;
+      left: 0;
+      top: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 20px;
+      box-sizing: border-box;
+      font-weight: bold;
+      font-size: 11px;
+      text-align: center;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.8);
+      color: white;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -336,7 +356,7 @@
     <div id="game">
       <p id="user"></p>
 
-      <!-- 🔥 7 НЕЗАВИСИМЫХ ВКЛАДОК -->
+      <!-- 🔥 8 НЕЗАВИСИМЫХ ВКЛАДОК -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="tab-game">Игра</button>
         <button class="tab-btn" data-tab="tab-upgrades">Улучшения</button>
@@ -344,6 +364,7 @@
         <button class="tab-btn" data-tab="tab-shop-score">🏷️ За очки</button>
         <button class="tab-btn" data-tab="tab-shop-stars">✨ За звёзды</button>
         <button class="tab-btn" data-tab="tab-achievements">🏆 Ачивки</button>
+        <button class="tab-btn" data-tab="tab-wheel">🎡 Колесо</button>
         <button class="tab-btn" data-tab="tab-shop-donate">💎 Донат</button>
       </div>
 
@@ -400,6 +421,42 @@
         <div id="achievementsList" class="achievements-list"></div>
       </div>
 
+      <!-- Колесо Фортуны -->
+      <div id="tab-wheel" class="tab-content">
+        <h3>🎡 Колесо Удачи</h3>
+        <p class="info-line">Крутите раз в 4 часа и получайте случайную награду!</p>
+        
+        <div id="wheelContainer" style="position: relative; width: 280px; height: 280px; margin: 20px auto;">
+          <div id="wheel" style="
+            width: 100%; 
+            height: 100%; 
+            border-radius: 50%; 
+            position: relative; 
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            background: #222;
+          "></div>
+          <div style="
+            position: absolute; 
+            top: -10px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 0; 
+            height: 0; 
+            border-left: 12px solid transparent; 
+            border-right: 12px solid transparent; 
+            border-top: 24px solid gold;
+            z-index: 10;
+          "></div>
+        </div>
+
+        <button id="spinBtn" class="buy-btn" style="margin: 10px auto; display: block; width: 160px;">
+          Крутить
+        </button>
+        <p id="wheelTimer" class="info-line" style="color: #ffeb3b; min-height: 24px;"></p>
+      </div>
+
       <!-- Донат -->
       <div id="tab-shop-donate" class="tab-content">
         <h3>💎 Покупка звёзд</h3>
@@ -430,13 +487,14 @@
       clickPower: 1,
       skin: 'default',
       ownedSkins: ['default'],
-      achievements: [], // ← ачивки
+      achievements: [],
       isInitialized: false
     };
 
-    // 🔥 Скины с ВЫСОКИМИ ценами
+    let lastSpinTime = 0;
+    const SPIN_COOLDOWN = 4 * 60 * 60 * 1000; // 4 часа
+
     const SKINS = [
-      // За ОЧКИ
       { id: 'default', name: 'Оранжевый', gradient: 'linear-gradient(135deg, #ff9a00, #ff5200)', price: 0, bonus: {} },
       { id: 'red', name: 'Красный', gradient: 'linear-gradient(135deg, #ff0000, #b30000)', price: 1_000, bonus: { clickPower: 1 } },
       { id: 'blue', name: 'Синий', gradient: 'linear-gradient(135deg, #00c3ff, #0072ff)', price: 5_000, bonus: { energyRegen: 1 } },
@@ -446,8 +504,6 @@
       { id: 'lava', name: 'Лава', gradient: 'linear-gradient(135deg, #ff416c, #ff4b2b)', price: 25_000_000, bonus: { clickPower: 10, energyRegen: 3 } },
       { id: 'forest', name: 'Лес', gradient: 'linear-gradient(135deg, #23074d, #cc5333)', price: 100_000_000, bonus: { maxEnergy: 300, energyRegen: 5 } },
       { id: 'cyber', name: 'Кибер', gradient: 'linear-gradient(135deg, #00c9ff, #92fe9d)', price: 500_000_000, bonus: { clickPower: 20, maxEnergy: 500 } },
-
-      // За ЗВЁЗДЫ
       { id: 'cosmic', name: 'Космос', gradient: 'linear-gradient(135deg, #4b0082, #000080, #191970)', price: 1, currency: 'stars', bonus: { clickPower: 3, energyRegen: 2 } },
       { id: 'galaxy', name: 'Галактика', gradient: 'radial-gradient(circle, #ff00ff, #00ffff, #0000ff)', price: 3, currency: 'stars', bonus: { clickPower: 7, maxEnergy: 300, energyRegen: 3 } },
       { id: 'nebula', name: 'Туманность', gradient: 'linear-gradient(135deg, #ff00ff, #8a2be2, #00bfff)', price: 5, currency: 'stars', bonus: { clickPower: 15, maxEnergy: 500, energyRegen: 5 } },
@@ -456,79 +512,108 @@
       { id: 'void', name: 'Пустота', gradient: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', price: 200, currency: 'stars', bonus: { clickPower: 100, maxEnergy: 2000, energyRegen: 25 } }
     ];
 
-    // 🏆 Ачивки
     const ACHIEVEMENTS = [
-  {
-    id: 'click_100',
-    name: 'Разминка',
-    desc: 'Наберите 100 очков',
-    condition: p => p.score >= 100,
-    bonus: { clickPower: 1 }
-  },
-  {
-    id: 'click_10k',
-    name: 'Тысяча и один клик',
-    desc: 'Наберите 10 000 очков',
-    condition: p => p.score >= 10_000,
-    bonus: { clickPower: 2 }
-  },
-  {
-    id: 'click_1m',
-    name: 'Миллионер',
-    desc: 'Наберите  100 000 очков',
-    condition: p => p.score >= 100_000,
-    bonus: { clickPower: 5 }
-  },
+      {
+        id: 'click_100',
+        name: 'Разминка',
+        desc: 'Наберите 100 очков',
+        condition: p => p.score >= 100,
+        bonus: { clickPower: 1 }
+      },
+      {
+        id: 'click_10k',
+        name: 'Тысяча и один клик',
+        desc: 'Наберите 10 000 очков',
+        condition: p => p.score >= 10_000,
+        bonus: { clickPower: 2 }
+      },
+      {
+        id: 'click_1m',
+        name: 'Миллионер',
+        desc: 'Наберите 1 000 000 очков',
+        condition: p => p.score >= 1_000_000,
+        bonus: { clickPower: 5 }
+      },
+      {
+        id: 'click_100m',
+        name: 'Легенда клика',
+        desc: 'Наберите 100 000 000 очков',
+        condition: p => p.score >= 100_000_000,
+        bonus: { clickPower: 15 }
+      },
+      {
+        id: 'star_1',
+        name: 'Первая звезда!',
+        desc: 'Получите первую звезду',
+        condition: p => p.stars >= 1,
+        bonus: { energyRegen: 1 }
+      },
+      {
+        id: 'star_10',
+        name: 'Звёздный коллекционер',
+        desc: 'Соберите 10 звёзд',
+        condition: p => p.stars >= 10,
+        bonus: { energyRegen: 2 }
+      },
+      {
+        id: 'star_50',
+        name: 'Галактический магнат',
+        desc: 'Соберите 50 звёзд',
+        condition: p => p.stars >= 50,
+        bonus: { clickPower: 10 }
+      },
+      {
+        id: 'auto_10',
+        name: 'Армия роботов',
+        desc: 'Купите 10 уровней автокликера',
+        condition: p => p.autoClickerLevel >= 10,
+        bonus: { energyRegen: 3 }
+      },
+      {
+        id: 'skin_5',
+        name: 'Модник',
+        desc: 'Купите 5 скинов',
+        condition: p => p.ownedSkins.length >= 5,
+        bonus: { maxEnergy: 100 }
+      },
+      {
+        id: 'skin_10',
+        name: 'Дизайнер миров',
+        desc: 'Купите 10 скинов',
+        condition: p => p.ownedSkins.length >= 10,
+        bonus: { clickPower: 7 }
+      },
+      {
+        id: 'max_energy_2k',
+        name: 'Энергобог',
+        desc: 'Достигните 2000 максимальной энергии',
+        condition: p => getEffectiveMaxEnergy() >= 2000,
+        bonus: { clickPower: 12 }
+      },
+      {
+        id: 'max_energy_5k',
+        name: 'Бесконечный двигатель',
+        desc: 'Достигните 5000 максимальной энергии',
+        condition: p => getEffectiveMaxEnergy() >= 5000,
+        bonus: { energyRegen: 10 }
+      }
+    ];
 
-  {
-    id: 'star_1',
-    name: 'Первая звезда!',
-    desc: 'Получите первую звезду',
-    condition: p => p.stars >= 1,
-    bonus: { energyRegen: 1 }
-  },
-  {
-    id: 'star_10',
-    name: 'Звёздный коллекционер',
-    desc: 'Соберите 10 звёзд',
-    condition: p => p.stars >= 10,
-    bonus: { energyRegen: 2 }
-  },
-  {
-    id: 'star_50',
-    name: 'Галактический магнат',
-    desc: 'Соберите 50 звёзд',
-    condition: p => p.stars >= 50,
-    bonus: { clickPower: 10 }
-  },
-  {
-    id: 'auto_10',
-    name: 'Армия роботов',
-    desc: 'Купите 10 уровней автокликера',
-    condition: p => p.autoClickerLevel >= 10,
-    bonus: { energyRegen: 3 }
-  },
-  {
-    id: 'skin_5',
-    name: 'Модник',
-    desc: 'Купите 5 скинов',
-    condition: p => p.ownedSkins.length >= 5,
-    bonus: { maxEnergy: 100 }
-  },
-  {
-    id: 'skin_10',
-    name: 'Дизайнер миров',
-    desc: 'Купите 10 скинов',
-    condition: p => p.ownedSkins.length >= 10,
-    bonus: { clickPower: 7 }
-  },
-];
+    const WHEEL_REWARDS = [
+      { text: "100\nочков", type: "score", value: 100, color: "#FF5252" },
+      { text: "500\nочков", type: "score", value: 500, color: "#FF4081" },
+      { text: "1 000\nочков", type: "score", value: 1000, color: "#E040FB" },
+      { text: "5\nзвёзд", type: "stars", value: 5, color: "#7C4DFF" },
+      { text: "1\nзвезда", type: "stars", value: 1, color: "#536DFE" },
+      { text: "Полная\nэнергия", type: "energy", value: "max", color: "#448AFF" },
+      { text: "x2 на\n10 сек", type: "bonus", value: 10, color: "#18FFFF" },
+      { text: "Повтор!", type: "reroll", value: 0, color: "#69F0AE" }
+    ];
 
     let bonusActive = false;
     let activeBonusElement = null;
     let nextBonusTimer = null;
 
-    // 🔁 ЕДИНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ВСЕХ ВКЛАДОК
     document.querySelectorAll('.tab-btn[data-tab]').forEach(button => {
       button.addEventListener('click', () => {
         const tabId = button.dataset.tab;
@@ -545,6 +630,9 @@
         if (tabId === 'tab-achievements') {
           renderAchievements();
         }
+        if (tabId === 'tab-wheel') {
+          initWheel();
+        }
       });
     });
 
@@ -560,6 +648,7 @@
       document.getElementById('game').style.display = 'block';
       renderShop();
       renderAchievements();
+      initWheel(); // Инициализация колеса при входе в игру
     }
 
     function showAuth() {
@@ -686,41 +775,40 @@
     }
 
     function renderAchievements() {
-  const list = document.getElementById('achievementsList');
-  if (!list) return;
+      const list = document.getElementById('achievementsList');
+      if (!list) return;
 
-  list.innerHTML = '';
+      list.innerHTML = '';
 
-  ACHIEVEMENTS.forEach(ach => {
-    const earned = player.achievements.includes(ach.id);
-    const div = document.createElement('div');
-    div.className = `achievement-item ${earned ? 'active' : 'locked'}`;
-    const previewColor = earned ? '#ffd700' : '#555';
+      ACHIEVEMENTS.forEach(ach => {
+        const earned = player.achievements.includes(ach.id);
+        const div = document.createElement('div');
+        div.className = `achievement-item ${earned ? 'active' : 'locked'}`;
+        const previewColor = earned ? '#ffd700' : '#555';
 
-    // Формируем текст бонуса
-    let bonusText = '';
-    if (ach.bonus && Object.keys(ach.bonus).length > 0) {
-      const parts = [];
-      if (ach.bonus.clickPower) parts.push(`+${ach.bonus.clickPower} к силе клика`);
-      if (ach.bonus.energyRegen) parts.push(`+${ach.bonus.energyRegen} к восст. энергии/сек`);
-      if (ach.bonus.maxEnergy !== undefined) parts.push(`+${ach.bonus.maxEnergy} к макс. энергии`);
-      if (parts.length > 0) {
-        bonusText = `<br><small style="color:#a7ffeb">Бонус: ${parts.join(', ')}</small>`;
-      }
+        let bonusText = '';
+        if (ach.bonus && Object.keys(ach.bonus).length > 0) {
+          const parts = [];
+          if (ach.bonus.clickPower) parts.push(`+${ach.bonus.clickPower} к силе клика`);
+          if (ach.bonus.energyRegen) parts.push(`+${ach.bonus.energyRegen} к восст. энергии/сек`);
+          if (ach.bonus.maxEnergy !== undefined) parts.push(`+${ach.bonus.maxEnergy} к макс. энергии`);
+          if (parts.length > 0) {
+            bonusText = `<br><small style="color:#a7ffeb">Бонус: ${parts.join(', ')}</small>`;
+          }
+        }
+
+        div.innerHTML = `
+          <div class="ach-preview" style="background: ${previewColor};"></div>
+          <div class="ach-info">
+            <b>${ach.name}</b><br>
+            <small>${ach.desc}</small>
+            ${bonusText}
+            ${earned ? '<br><small style="color:#aaffaa">✅ Получено</small>' : ''}
+          </div>
+        `;
+        list.appendChild(div);
+      });
     }
-
-    div.innerHTML = `
-      <div class="ach-preview" style="background: ${previewColor};"></div>
-      <div class="ach-info">
-        <b>${ach.name}</b><br>
-        <small>${ach.desc}</small>
-        ${bonusText}
-        ${earned ? '<br><small style="color:#aaffaa">✅ Получено</small>' : ''}
-      </div>
-    `;
-    list.appendChild(div);
-  });
-}
 
     function selectSkin(skinId) {
       const skin = SKINS.find(s => s.id === skinId);
@@ -813,7 +901,6 @@
         if (!player.achievements.includes(ach.id) && ach.condition(player)) {
           if (ach.bonus.clickPower) player.clickPower += ach.bonus.clickPower;
           if (ach.bonus.energyRegen) player.energyRegen += ach.bonus.energyRegen;
-          // maxEnergy обрабатывается через getEffectiveMaxEnergy()
 
           player.achievements.push(ach.id);
           showMessage(`🏆 Новая ачивка: ${ach.name}!`, true);
@@ -846,7 +933,8 @@
           clickPower: player.clickPower,
           skin: player.skin,
           ownedSkins: JSON.stringify(player.ownedSkins),
-          achievements: JSON.stringify(player.achievements)
+          achievements: JSON.stringify(player.achievements),
+          lastSpinTime: lastSpinTime
         });
         const img = new Image();
         img.src = `${apiUrl}?${params}&_=${Date.now()}`;
@@ -909,6 +997,8 @@
             }
           }
           player.achievements = achievements;
+
+          lastSpinTime = data.found ? (parseInt(data.lastSpinTime) || 0) : 0;
 
           if (data.found && data.lastOnline) {
             const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
@@ -1032,7 +1122,109 @@
       }
     }
 
+    // === КОЛЕСО ФОРТУНЫ ===
+    function initWheel() {
+      const wheel = document.getElementById('wheel');
+      if (!wheel) return;
+      wheel.innerHTML = '';
+      const segmentAngle = 360 / WHEEL_REWARDS.length;
+      
+      WHEEL_REWARDS.forEach((reward, i) => {
+        const segment = document.createElement('div');
+        segment.className = 'wheel-segment';
+        segment.style.transform = `rotate(${i * segmentAngle}deg)`;
+        segment.style.backgroundColor = reward.color;
+        segment.innerText = reward.text;
+        wheel.appendChild(segment);
+      });
+      
+      updateWheelTimer();
+    }
+
+    function updateWheelTimer() {
+      const now = Date.now();
+      const timeLeft = lastSpinTime + SPIN_COOLDOWN - now;
+      
+      const timerEl = document.getElementById('wheelTimer');
+      const spinBtn = document.getElementById('spinBtn');
+      
+      if (!timerEl || !spinBtn) return;
+      
+      if (timeLeft <= 0) {
+        spinBtn.disabled = false;
+        spinBtn.textContent = 'Крутить!';
+        timerEl.textContent = 'Готово к вращению!';
+      } else {
+        const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+        const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+        const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+        spinBtn.disabled = true;
+        timerEl.textContent = `Следующий спин через: ${hours}ч ${minutes}м ${seconds}с`;
+        setTimeout(updateWheelTimer, 1000);
+      }
+    }
+
+    async function spinWheel() {
+      if (Date.now() < lastSpinTime + SPIN_COOLDOWN) {
+        showMessage("⏳ Колесо можно крутить раз в 4 часа!", false);
+        return;
+      }
+
+      const wheel = document.getElementById('wheel');
+      const spinBtn = document.getElementById('spinBtn');
+      if (!wheel || !spinBtn) return;
+
+      spinBtn.disabled = true;
+
+      const winIndex = Math.floor(Math.random() * WHEEL_REWARDS.length);
+      const spins = 10 + Math.floor(Math.random() * 10);
+      const totalRotation = 360 * spins + (360 - (winIndex * (360 / WHEEL_REWARDS.length)));
+      
+      wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+      setTimeout(async () => {
+        const reward = WHEEL_REWARDS[winIndex];
+        let msg = "🎁 Вы выиграли: ";
+        
+        if (reward.type === "score") {
+          player.score += reward.value;
+          msg += `${reward.value.toLocaleString()} очков!`;
+        } else if (reward.type === "stars") {
+          player.stars += reward.value;
+          msg += `${reward.value} звёзд!`;
+        } else if (reward.type === "energy") {
+          player.energy = getEffectiveMaxEnergy();
+          msg += "Полную энергию!";
+        } else if (reward.type === "bonus") {
+          bonusActive = true;
+          updateUI();
+          msg += `x2 на ${reward.value} секунд!`;
+          setTimeout(() => {
+            bonusActive = false;
+            updateUI();
+            showMessage("⏳ Эффект x2 закончился", false);
+          }, reward.value * 1000);
+        } else if (reward.type === "reroll") {
+          setTimeout(() => {
+            lastSpinTime = Date.now() - SPIN_COOLDOWN;
+            updateWheelTimer();
+            showMessage("🎯 Повторный спин доступен!", true);
+          }, 5000);
+          msg += "Ещё один спин через 5 сек!";
+        }
+        
+        updateUI();
+        checkAchievements();
+        await savePlayerData();
+        showMessage(msg, true);
+        
+        lastSpinTime = Date.now();
+        updateWheelTimer();
+      }, 4000);
+    }
+
     document.getElementById("buyStarsManualBtn")?.addEventListener("click", buyStarsManual);
+    document.getElementById("spinBtn")?.addEventListener("click", spinWheel);
 
     function createFlyingBonus() {
       const currentTab = document.querySelector('.tab-btn.active')?.dataset.tab;
@@ -1169,6 +1361,7 @@
       player.skin = 'default';
       player.ownedSkins = ['default'];
       player.achievements = [];
+      lastSpinTime = 0;
       player.isInitialized = true;
 
       showGame();
