@@ -369,6 +369,53 @@
       background: linear-gradient(135deg, #ffd700, #ff8c00);
       box-shadow: 0 0 8px gold;
     }
+
+    /* === Ежедневный бонус === */
+    .daily-rewards {
+      display: flex;
+      justify-content: space-between;
+      margin: 15px 0;
+      gap: 4px;
+    }
+
+    .daily-day {
+      width: 42px;
+      height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      font-size: 12px;
+      padding-bottom: 4px;
+      position: relative;
+    }
+
+    .daily-day.claimed {
+      background: rgba(50, 200, 100, 0.3);
+      color: #aaffaa;
+    }
+
+    .daily-day.current {
+      box-shadow: 0 0 8px gold;
+      background: rgba(255, 215, 0, 0.2);
+    }
+
+    .daily-day.locked {
+      opacity: 0.4;
+    }
+
+    .daily-day::before {
+      content: "🎁";
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .daily-day.claimed::before {
+      content: "✅";
+      color: #4caf50;
+    }
   </style>
 </head>
 <body>
@@ -389,7 +436,7 @@
     <div id="game">
       <p id="user"></p>
 
-      <!-- 🔥 7 НЕЗАВИСИМЫХ ВКЛАДОК -->
+      <!-- 🔥 8 ВКЛАДОК -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="tab-game">Игра</button>
         <button class="tab-btn" data-tab="tab-upgrades">Улучшения</button>
@@ -398,6 +445,7 @@
         <button class="tab-btn" data-tab="tab-shop-stars">✨ За звёзды</button>
         <button class="tab-btn" data-tab="tab-shop-donate">💎 Донат</button>
         <button class="tab-btn" data-tab="tab-achievements">🏆 Достижения</button>
+        <button class="tab-btn" data-tab="tab-daily">📆 Ежедневно</button>
       </div>
 
       <!-- Игра -->
@@ -464,6 +512,16 @@
         <h3>🏆 Мои достижения</h3>
         <div id="achievementsList" class="achievements-list"></div>
       </div>
+
+      <!-- Ежедневный бонус -->
+      <div id="tab-daily" class="tab-content">
+        <h3>📆 Ежедневный бонус</h3>
+        <p>Заходите каждый день и получайте награды!</p>
+        <div id="dailyRewards" class="daily-rewards"></div>
+        <button id="claimDailyBtn" style="margin-top:15px; padding:12px; background:rgba(255,255,255,0.2); border:none; border-radius:14px; color:white; font-size:16px; cursor:pointer;">
+          Получить награду
+        </button>
+      </div>
     </div>
   </div>
 
@@ -485,6 +543,8 @@
       ownedSkins: ['default'],
       achievements: [],
       bonusActivations: 0,
+      dailyStreak: 0,
+      lastClaimDate: '',
       isInitialized: false
     };
 
@@ -521,6 +581,17 @@
       { id: 'bonus_5', name: 'Удачливый', description: 'Активируйте x2 бонус 5 раз', icon: '🍀', check: (p) => (p.bonusActivations || 0) >= 5 }
     ];
 
+    // 🔥 Ежедневные награды (циклические: после 7 → снова 1)
+    const DAILY_REWARDS = [
+      { day: 1, score: 100, stars: 0, label: "+100 🏆" },
+      { day: 2, score: 250, stars: 0, label: "+250 🏆" },
+      { day: 3, score: 500, stars: 1, label: "+500 🏆 +1 ✨" },
+      { day: 4, score: 1000, stars: 0, label: "+1 000 🏆" },
+      { day: 5, score: 2000, stars: 2, label: "+2 000 🏆 +2 ✨" },
+      { day: 6, score: 5000, stars: 0, label: "+5 000 🏆" },
+      { day: 7, score: 10000, stars: 5, label: "+10 000 🏆 +5 ✨" }
+    ];
+
     let bonusActive = false;
     let activeBonusElement = null;
     let nextBonusTimer = null;
@@ -537,9 +608,28 @@
           renderShop();
         } else if (tabId === 'tab-achievements') {
           renderAchievements();
+        } else if (tabId === 'tab-daily') {
+          renderDailyBonus();
         }
       });
     });
+
+    function getTodayDate() {
+      const now = new Date();
+      return now.toISOString().split('T')[0]; // "2025-11-14"
+    }
+
+    function isSameDay(date1, date2) {
+      return date1 === date2;
+    }
+
+    function isYesterday(date) {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yestStr = yesterday.toISOString().split('T')[0];
+      return date === yestStr;
+    }
 
     function showLoading() {
       document.getElementById('loadingScreen').style.display = 'block';
@@ -553,6 +643,7 @@
       document.getElementById('game').style.display = 'block';
       renderShop();
       renderAchievements();
+      renderDailyBonus();
     }
 
     function showAuth() {
@@ -775,7 +866,9 @@
           skin: player.skin,
           ownedSkins: JSON.stringify(player.ownedSkins),
           achievements: JSON.stringify(player.achievements),
-          bonusActivations: player.bonusActivations || 0
+          bonusActivations: player.bonusActivations || 0,
+          dailyStreak: player.dailyStreak || 0,
+          lastClaimDate: player.lastClaimDate || ''
         });
         const img = new Image();
         img.src = `${apiUrl}?${params}&_=${Date.now()}`;
@@ -826,6 +919,8 @@
           player.achievements = data.found && data.achievements ? 
             (JSON.parse(data.achievements) || []) : [];
           player.bonusActivations = data.found ? (parseInt(data.bonusActivations) || 0) : 0;
+          player.dailyStreak = data.found ? (parseInt(data.dailyStreak) || 0) : 0;
+          player.lastClaimDate = data.found ? (data.lastClaimDate || '') : '';
 
           if (data.found && data.lastOnline) {
             const offlineSec = Math.min(86400, Math.floor((Date.now() - new Date(data.lastOnline)) / 1000));
@@ -1068,6 +1163,100 @@
       });
     }
 
+    function renderDailyBonus() {
+      const today = getTodayDate();
+      const container = document.getElementById('dailyRewards');
+      const btn = document.getElementById('claimDailyBtn');
+
+      if (!container || !btn) return;
+
+      // Проверка на сброс цепочки
+      const canContinue = (
+        player.dailyStreak === 0 ||
+        isSameDay(player.lastClaimDate, today) ||
+        isYesterday(player.lastClaimDate)
+      );
+
+      if (!canContinue && player.dailyStreak > 0) {
+        player.dailyStreak = 0;
+        savePlayerData();
+      }
+
+      // Определяем статус каждого дня
+      const days = [];
+      for (let i = 1; i <= 7; i++) {
+        if (i <= player.dailyStreak) {
+          days.push('claimed');
+        } else if (i === player.dailyStreak + 1) {
+          if (isSameDay(player.lastClaimDate, today)) {
+            days.push('current-claimed');
+          } else {
+            days.push('current');
+          }
+        } else {
+          days.push('locked');
+        }
+      }
+
+      container.innerHTML = '';
+      DAILY_REWARDS.forEach((reward, idx) => {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'daily-day';
+        if (days[idx] === 'claimed') {
+          dayDiv.classList.add('claimed');
+        } else if (days[idx] === 'current') {
+          dayDiv.classList.add('current');
+        } else if (days[idx] === 'current-claimed') {
+          dayDiv.classList.add('claimed');
+        }
+
+        dayDiv.innerHTML = `<b>${reward.day}</b><br><small>${reward.label}</small>`;
+        container.appendChild(dayDiv);
+      });
+
+      const alreadyClaimed = isSameDay(player.lastClaimDate, today);
+      btn.disabled = alreadyClaimed || days[player.dailyStreak] !== 'current';
+      btn.innerText = alreadyClaimed ? "✅ Получено сегодня" : "🎁 Получить награду";
+      btn.style.opacity = (alreadyClaimed || days[player.dailyStreak] !== 'current') ? "0.6" : "1";
+      btn.style.cursor = (alreadyClaimed || days[player.dailyStreak] !== 'current') ? "not-allowed" : "pointer";
+    }
+
+    document.getElementById('claimDailyBtn')?.addEventListener('click', () => {
+      const today = getTodayDate();
+      if (isSameDay(player.lastClaimDate, today)) {
+        showMessage("✅ Вы уже получили награду сегодня!", true);
+        return;
+      }
+
+      const canContinue = (
+        player.dailyStreak === 0 ||
+        isYesterday(player.lastClaimDate)
+      );
+
+      if (!canContinue && player.dailyStreak > 0) {
+        player.dailyStreak = 0;
+      }
+
+      const nextDay = Math.min(player.dailyStreak + 1, 7);
+      const reward = DAILY_REWARDS[nextDay - 1];
+
+      player.score += reward.score;
+      player.stars += reward.stars;
+      player.dailyStreak = nextDay;
+      player.lastClaimDate = today;
+
+      // 🔁 Сброс циклический: после 7 → снова 1
+      if (player.dailyStreak >= 7) {
+        player.dailyStreak = 0;
+      }
+
+      updateUI();
+      savePlayerData();
+      showMessage(`🎁 Получено: ${reward.label}`, true);
+      renderDailyBonus();
+      checkAchievements();
+    });
+
     document.getElementById("clickBtn").addEventListener("click", () => {
       if (player.energy >= 5) {
         player.energy -= 5;
@@ -1134,6 +1323,8 @@
       player.ownedSkins = ['default'];
       player.achievements = [];
       player.bonusActivations = 0;
+      player.dailyStreak = 0;
+      player.lastClaimDate = '';
       player.isInitialized = true;
 
       showGame();
