@@ -750,40 +750,40 @@
     }
 
     // 🔥 ИСПРАВЛЕНО: Используем POST вместо Image
-    async function savePlayerData() {
-      if (!player.id || !player.isInitialized) return false;
-      try {
-        const data = {
-          action: "updateScore",
-          id: player.id,
-          name: player.name,
-          score: player.score,
-          stars: player.stars,
-          energy: player.energy,
-          energyRegen: player.energyRegen,
-          energyUpgrades: player.energyUpgrades,
-          autoClickerLevel: player.autoClickerLevel,
-          clickPower: player.clickPower,
-          skin: player.skin,
-          ownedSkins: JSON.stringify(player.ownedSkins),
-          achievements: JSON.stringify(player.achievements),
-          bonusActivations: player.bonusActivations || 0,
-          dailyStreak: player.dailyStreak || 0,
-          lastClaimDate: player.lastClaimDate || ''
-        };
+async function savePlayerData() {
+  if (!player.id || !player.isInitialized) return false;
+  try {
+    // Создаём данные как URL-encoded строку
+    const params = new URLSearchParams();
+    params.append('action', 'updateScore');
+    params.append('id', player.id);
+    params.append('name', player.name);
+    params.append('score', player.score);
+    params.append('stars', player.stars);
+    params.append('energy', player.energy);
+    params.append('energyRegen', player.energyRegen);
+    params.append('energyUpgrades', player.energyUpgrades);
+    params.append('autoClickerLevel', player.autoClickerLevel);
+    params.append('clickPower', player.clickPower);
+    params.append('skin', player.skin);
+    params.append('ownedSkins', JSON.stringify(player.ownedSkins));
+    params.append('achievements', JSON.stringify(player.achievements));
+    params.append('bonusActivations', player.bonusActivations || 0);
+    params.append('dailyStreak', player.dailyStreak || 0);
+    params.append('lastClaimDate', player.lastClaimDate || '');
 
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      body: params,
+      // НЕ указываем Content-Type — браузер сам поставит application/x-www-form-urlencoded
+    });
 
-        return response.ok;
-      } catch (e) {
-        console.error("Save failed", e);
-        return false;
-      }
-    }
+    return response.ok;
+  } catch (e) {
+    console.error("Save failed", e);
+    return false;
+  }
+}
 
     async function loadPlayerData() {
       if (!player.id) {
