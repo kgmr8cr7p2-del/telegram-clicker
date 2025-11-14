@@ -472,7 +472,7 @@
   </div>
 
   <script>
-    const apiUrl = "https://script.google.com/macros/s/AKfycbxC0HjBxkE1anKmz3mTPxC6Yzt_jEUfVysuBheVk5FXmTkT1ckeB3a8WnepfwXJprMM/exec";
+    const apiUrl = "https://script.google.com/macros/s/AKfycbwwDg-kBNDho7N1GN2qclpRv2G6Bgo8eejRY4GzR_TE5rVN7mpk081MtTBFdUOZXa6D/exec";
 
     const tg = window.Telegram?.WebApp;
     let player = {
@@ -918,32 +918,32 @@
     }
 
     async function savePlayerData() {
-      if (!player.id || !player.isInitialized) return false;
-      try {
-        const params = new URLSearchParams({
-          action: "updateScore",
-          id: player.id,
-          name: player.name,
-          score: player.score,
-          stars: player.stars,
-          energy: player.energy,
-          energyRegen: player.energyRegen,
-          energyUpgrades: player.energyUpgrades,
-          autoClickerLevel: player.autoClickerLevel,
-          clickPower: player.clickPower,
-          skin: player.skin,
-          ownedSkins: JSON.stringify(player.ownedSkins),
-          achievements: JSON.stringify(player.achievements),
-          lastSpinTime: lastSpinTime
-        });
-        const img = new Image();
-        img.src = `${apiUrl}?${params}&_=${Date.now()}`;
-        return true;
-      } catch (e) {
-        console.error("Save failed", e);
-        return false;
-      }
-    }
+  if (!player.id || !player.isInitialized) return false;
+  try {
+    const params = new URLSearchParams({
+      action: "updateScore",
+      id: player.id,
+      name: player.name,
+      score: player.score,
+      stars: player.stars,
+      energy: player.energy,
+      energyRegen: player.energyRegen,
+      energyUpgrades: player.energyUpgrades,
+      autoClickerLevel: player.autoClickerLevel,
+      clickPower: player.clickPower,
+      skin: player.skin,
+      ownedSkins: JSON.stringify(player.ownedSkins),
+      achievements: JSON.stringify(player.achievements),
+      lastSpinTime: lastSpinTime // ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
+    });
+    const img = new Image();
+    img.src = `${apiUrl}?${params}&_=${Date.now()}`;
+    return true;
+  } catch (e) {
+    console.error("Save failed", e);
+    return false;
+  }
+}
 
     async function loadPlayerData() {
       if (!player.id) {
