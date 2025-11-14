@@ -664,27 +664,41 @@
     }
 
     function renderAchievements() {
-      const list = document.getElementById('achievementsList');
-      if (!list) return;
+  const list = document.getElementById('achievementsList');
+  if (!list) return;
 
-      list.innerHTML = '';
+  list.innerHTML = '';
 
-      ACHIEVEMENTS.forEach(ach => {
-        const earned = player.achievements.includes(ach.id);
-        const div = document.createElement('div');
-        div.className = `achievement-item ${earned ? 'active' : 'locked'}`;
-        const previewColor = earned ? '#ffd700' : '#555';
-        div.innerHTML = `
-          <div class="ach-preview" style="background: ${previewColor};"></div>
-          <div class="ach-info">
-            <b>${ach.name}</b><br>
-            <small>${ach.desc}</small>
-            ${earned ? '<br><small style="color:#aaffaa">✅ Получено</small>' : ''}
-          </div>
-        `;
-        list.appendChild(div);
-      });
+  ACHIEVEMENTS.forEach(ach => {
+    const earned = player.achievements.includes(ach.id);
+    const div = document.createElement('div');
+    div.className = `achievement-item ${earned ? 'active' : 'locked'}`;
+    const previewColor = earned ? '#ffd700' : '#555';
+
+    // Формируем текст бонуса
+    let bonusText = '';
+    if (ach.bonus && Object.keys(ach.bonus).length > 0) {
+      const parts = [];
+      if (ach.bonus.clickPower) parts.push(`+${ach.bonus.clickPower} к силе клика`);
+      if (ach.bonus.energyRegen) parts.push(`+${ach.bonus.energyRegen} к восст. энергии/сек`);
+      if (ach.bonus.maxEnergy !== undefined) parts.push(`+${ach.bonus.maxEnergy} к макс. энергии`);
+      if (parts.length > 0) {
+        bonusText = `<br><small style="color:#a7ffeb">Бонус: ${parts.join(', ')}</small>`;
+      }
     }
+
+    div.innerHTML = `
+      <div class="ach-preview" style="background: ${previewColor};"></div>
+      <div class="ach-info">
+        <b>${ach.name}</b><br>
+        <small>${ach.desc}</small>
+        ${bonusText}
+        ${earned ? '<br><small style="color:#aaffaa">✅ Получено</small>' : ''}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
 
     function selectSkin(skinId) {
       const skin = SKINS.find(s => s.id === skinId);
