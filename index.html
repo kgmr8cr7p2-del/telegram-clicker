@@ -651,10 +651,13 @@
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     (async () => {
       const tg = window.Telegram?.WebApp;
-      if (tg?.initDataUnsafe?.user) {
-        const user = tg.initDataUnsafe.user;
-        player.id = String(user.id);
-        player.name = user.first_name || "Игрок";
+	  if (tg?.initDataUnsafe?.user) {
+		const user = tg.initDataUnsafe.user;
+		player.id = String(user.id);
+		// Используем username с @, если есть, иначе имя
+		player.name = user.username 
+		? '@' + user.username 
+		: (user.first_name || "Игрок") + (user.last_name ? " " + user.last_name : "");
         try { tg.expand(); } catch (e) {}
         setStatus("Подключение...");
         try {
