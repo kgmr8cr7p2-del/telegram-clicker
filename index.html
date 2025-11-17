@@ -181,7 +181,7 @@
     .result-rarity { font-size: 13px; margin-top: 2px; font-style: italic; }
     .result-mod { font-size: 12px; margin-top: 3px; color: gold; }
 
-    /* ИНВЕНТАРЬ МОДАЛЬНОЕ ОКНО */
+    /* ИНВЕНТАРЬ */
     .inventory-modal {
       display: none;
       position: fixed;
@@ -222,7 +222,7 @@
       background: rgba(255, 255, 255, 0.1);
       border-radius: 8px;
       padding: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       text-align: left;
       border-left: 3px solid #4b69ff;
     }
@@ -233,12 +233,80 @@
     .inv-item-name {
       font-weight: bold;
       font-size: 14px;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
     }
 
     .inv-item-meta {
       font-size: 12px;
       opacity: 0.85;
+      margin-bottom: 4px;
+    }
+
+    .sell-btn {
+      background: linear-gradient(135deg, #ff3366, #ff6600);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-top: 4px;
+      width: 100%;
+      font-weight: bold;
+    }
+
+    .sell-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* МОДАЛЬНОЕ ОКНО ПРОДАЖИ */
+    .sell-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      padding: 20px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .sell-content {
+      background: rgba(30,30,50,0.9);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+    }
+
+    .sell-price {
+      font-size: 24px;
+      font-weight: bold;
+      color: gold;
+      margin: 10px 0;
+    }
+
+    .sell-confirm-btn, .sell-cancel-btn {
+      margin: 8px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .sell-confirm-btn {
+      background: #4caf50;
+      color: white;
+    }
+
+    .sell-cancel-btn {
+      background: #f44336;
+      color: white;
     }
   </style>
 </head>
@@ -266,7 +334,7 @@
     </div>
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО ИНВЕНТАРЯ -->
+  <!-- ИНВЕНТАРЬ -->
   <div class="inventory-modal" id="invModal">
     <div class="inventory-header">
       <div class="inventory-title">🎒 Инвентарь</div>
@@ -275,9 +343,21 @@
     <div id="invList">Загрузка...</div>
   </div>
 
+  <!-- ПРОДАЖА -->
+  <div class="sell-modal" id="sellModal">
+    <div class="sell-content">
+      <h3>💰 Продать предмет?</h3>
+      <div id="sellItemName" style="font-weight:bold; margin:8px 0;"></div>
+      <div>Вы получите:</div>
+      <div class="sell-price" id="sellPrice">0 очков</div>
+      <button class="sell-confirm-btn" id="sellConfirm">Продать</button>
+      <button class="sell-cancel-btn" id="sellCancel">Отмена</button>
+    </div>
+  </div>
+
   <script>
     // ===== НАСТРОЙКИ =====
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzbNf-4nX4y7DV0unVOFsW8L2UX6wy3e1nPY75wpkrsbTDvAFnV4lZ4ruOTAo5QIRuf/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxy5iYP8TcBzVu2AQo4xczr_kvNbKdZHaQ_XeTWUaXgNqBu4HTcwtxgRXGsMFdJ2Icz/exec";
 
     // ===== CS2 ДАННЫЕ =====
     const QUALITIES = [
@@ -319,8 +399,9 @@
       inventory: []
     };
     let isSpinning = false;
+    let sellPendingIndex = -1;
 
-    // ===== DOM ЭЛЕМЕНТЫ =====
+    // ===== DOM =====
     const scoreEl = document.getElementById('score');
     const statusEl = document.getElementById('status');
     const clickBtn = document.getElementById('clickBtn');
@@ -335,6 +416,9 @@
     const resultQuality = document.getElementById('resultQuality');
     const resultRarity = document.getElementById('resultRarity');
     const resultMod = document.getElementById('resultMod');
+    const sellModal = document.getElementById('sellModal');
+    const sellConfirm = document.getElementById('sellConfirm');
+    const sellCancel = document.getElementById('sellCancel');
 
     // ===== УТИЛИТЫ =====
     function setStatus(text, isError = false) {
@@ -344,6 +428,18 @@
 
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function calculateItemPrice(weaponName, qualityFullName, rarityName, statTrak = false, souvenir = false) {
+      const rarityValue = RARITIES.findIndex(r => r.name === rarityName);
+      const qualityValue = QUALITIES.findIndex(q => q.fullName === qualityFullName);
+      let base = (rarityValue + 1) * 10 + (qualityValue + 1) * 2;
+      let bonus = 0;
+      if (statTrak) bonus += 0.3;
+      if (souvenir) bonus += 0.5;
+      const withBonus = base * (1 + bonus);
+      const randomFactor = 0.8 + Math.random() * 0.4;
+      return Math.floor(withBonus * randomFactor);
     }
 
     function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
@@ -377,7 +473,7 @@
       });
     }
 
-    // ===== РАБОТА С GAS =====
+    // ===== GAS =====
     async function loadPlayerFromGAS() {
       const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
       const res = await fetch(url);
@@ -416,6 +512,14 @@
 
     // ===== ИНВЕНТАРЬ =====
     function addItemToInventory(itemData) {
+      const price = calculateItemPrice(
+        itemData.weapon.name,
+        itemData.quality.fullName,
+        itemData.rarity.name,
+        itemData.statTrak,
+        itemData.souvenir
+      );
+
       const newItem = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
         weapon: itemData.weapon.name,
@@ -424,6 +528,7 @@
         rarity: itemData.rarity.name,
         statTrak: itemData.statTrak,
         souvenir: itemData.souvenir,
+        price: price,
         timestamp: Date.now()
       };
       player.inventory.push(newItem);
@@ -443,7 +548,7 @@
 
       const sorted = [...player.inventory].sort((a, b) => b.timestamp - a.timestamp);
       let html = '';
-      sorted.forEach(item => {
+      sorted.forEach((item, index) => {
         let mods = [];
         if (item.statTrak) mods.push("StatTrak™");
         if (item.souvenir) mods.push("Сувенир");
@@ -453,81 +558,95 @@
           <div class="inv-item ${item.statTrak ? 'stattrak' : ''} ${item.souvenir ? 'souvenir' : ''}">
             <div class="inv-item-name">${item.weapon}</div>
             <div class="inv-item-meta">${item.qualityFullName} • ${item.rarity}${modText}</div>
+            <div style="font-size:13px; color:gold; margin:4px 0;">💰 Цена: ${item.price} очков</div>
+            <button class="sell-btn" data-index="${index}">Продать</button>
           </div>
         `;
       });
       invList.innerHTML = html;
+
+      document.querySelectorAll('.sell-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          showSellModal(index);
+        });
+      });
+    }
+
+    function showSellModal(index) {
+      const item = player.inventory[index];
+      if (!item) return;
+
+      sellPendingIndex = index;
+      document.getElementById('sellItemName').textContent = item.weapon;
+      document.getElementById('sellPrice').textContent = `${item.price} очков`;
+      sellModal.style.display = 'flex';
     }
 
     // ===== РУЛЕТКА =====
     async function spinRoulette() {
-  if (isSpinning || player.score < 10) {
-    if (player.score < 10) setStatus("❌ Нужно 10 очков!");
-    return;
-  }
+      if (isSpinning || player.score < 10) {
+        if (player.score < 10) setStatus("❌ Нужно 10 очков!");
+        return;
+      }
 
-  isSpinning = true;
-  player.score -= 10;
-  scoreEl.textContent = player.score;
-  saveScoreToGAS();
-  setStatus("Крутим...");
+      isSpinning = true;
+      player.score -= 10;
+      scoreEl.textContent = player.score;
+      saveScoreToGAS();
+      setStatus("Крутим...");
 
-  resultBox.style.display = 'none';
+      resultBox.style.display = 'none';
 
-  // Генерация скинов
-  const preSpin = generateRouletteSkins(30);
-  const weapon = WEAPONS[getRandomInt(0, WEAPONS.length - 1)];
-  const rarity = RARITIES[weapon.rarity];
-  const quality = QUALITIES[getRandomInt(0, QUALITIES.length - 1)];
-  const statTrak = Math.random() < 0.08;
-  const souvenir = !statTrak && Math.random() < 0.03;
-  const winSkin = { weapon, quality, rarity, statTrak, souvenir };
-  const postSpin = generateRouletteSkins(15);
-  const fullList = [...preSpin, winSkin, ...postSpin];
-  renderRoulette(fullList);
+      const preSpin = generateRouletteSkins(30);
+      const weapon = WEAPONS[getRandomInt(0, WEAPONS.length - 1)];
+      const rarity = RARITIES[weapon.rarity];
+      const quality = QUALITIES[getRandomInt(0, QUALITIES.length - 1)];
+      const statTrak = Math.random() < 0.08;
+      const souvenir = !statTrak && Math.random() < 0.03;
+      const winSkin = { weapon, quality, rarity, statTrak, souvenir };
+      const postSpin = generateRouletteSkins(15);
+      const fullList = [...preSpin, winSkin, ...postSpin];
+      renderRoulette(fullList);
 
-  await new Promise(r => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, 50));
 
-  const itemWidth = 88;
-  const winIndex = preSpin.length;
-  const containerWidth = document.querySelector('.roulette-container').offsetWidth;
-  const targetCenter = winIndex * itemWidth + itemWidth / 2;
-  const scrollLeft = targetCenter - containerWidth / 2;
+      const itemWidth = 88;
+      const winIndex = preSpin.length;
+      const containerWidth = document.querySelector('.roulette-container').offsetWidth;
+      const targetCenter = winIndex * itemWidth + itemWidth / 2;
+      const scrollLeft = targetCenter - containerWidth / 2;
 
-  // === 🔁 КЛЮЧЕВОЙ ФИКС: СБРОС АНИМАЦИИ ===
-  // 1. Отключаем transition
-  rouletteTrack.style.transition = 'none';
-  // 2. Сбрасываем transform на текущее (или 0), чтобы начать "с чистого листа"
-  rouletteTrack.style.transform = 'translateX(0)';
-  // 3. Принудительный reflow — браузер применит изменения
-  rouletteTrack.offsetHeight; // <-- триггер перерисовки
-  // 4. Включаем анимацию и устанавливаем цель
-  rouletteTrack.style.transition = 'transform 3s cubic-bezier(0.16, 1, 0.3, 1)';
-  rouletteTrack.style.transform = `translateX(${-scrollLeft}px)`;
+      // 🔁 Фикс повторной анимации
+      rouletteTrack.style.transition = 'none';
+      rouletteTrack.style.transform = 'translateX(0)';
+      rouletteTrack.offsetHeight; // reflow
+      rouletteTrack.style.transition = 'transform 3s cubic-bezier(0.16, 1, 0.3, 1)';
+      rouletteTrack.style.transform = `translateX(${-scrollLeft}px)`;
 
-  setTimeout(() => {
-    isSpinning = false;
-    const items = rouletteTrack.querySelectorAll('.skin-item');
-    items.forEach(el => el.classList.remove('highlight'));
-    if (items[winIndex]) items[winIndex].classList.add('highlight');
+      setTimeout(() => {
+        isSpinning = false;
+        const items = rouletteTrack.querySelectorAll('.skin-item');
+        items.forEach(el => el.classList.remove('highlight'));
+        if (items[winIndex]) items[winIndex].classList.add('highlight');
 
-    resultName.textContent = weapon.name;
-    resultQuality.textContent = quality.fullName;
-    resultQuality.style.color = quality.color;
-    resultRarity.textContent = rarity.name;
-    resultRarity.style.color = rarity.color;
+        resultName.textContent = weapon.name;
+        resultQuality.textContent = quality.fullName;
+        resultQuality.style.color = quality.color;
+        resultRarity.textContent = rarity.name;
+        resultRarity.style.color = rarity.color;
 
-    const mods = [];
-    if (statTrak) mods.push("StatTrak™");
-    if (souvenir) mods.push("Сувенир");
-    resultMod.textContent = mods.join(" | ");
-    resultMod.style.display = mods.length ? 'block' : 'none';
-    resultBox.style.display = 'block';
+        const mods = [];
+        if (statTrak) mods.push("StatTrak™");
+        if (souvenir) mods.push("Сувенир");
+        resultMod.textContent = mods.join(" | ");
+        resultMod.style.display = mods.length ? 'block' : 'none';
+        resultBox.style.display = 'block';
 
-    addItemToInventory(winSkin);
-    setStatus("✅ Предмет сохранён!");
-  }, 3100);
-}
+        addItemToInventory(winSkin);
+        setStatus("✅ Предмет сохранён!");
+      }, 3100);
+    }
 
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     (async () => {
@@ -548,7 +667,6 @@
           setStatus("⚠️ Офлайн-режим", true);
         }
       } else {
-        // Тестовый режим
         player.id = "test_" + Math.floor(Math.random() * 1000000);
         player.name = "Тест";
         player.isLoaded = true;
@@ -559,7 +677,6 @@
       scoreEl.textContent = player.score;
       renderRoulette(generateRouletteSkins(25));
 
-      // События
       clickBtn.addEventListener('click', () => {
         player.score += 1;
         scoreEl.textContent = player.score;
@@ -574,8 +691,24 @@
       closeInv.addEventListener('click', () => {
         invModal.style.display = 'none';
       });
+      sellCancel.addEventListener('click', () => {
+        sellModal.style.display = 'none';
+        sellPendingIndex = -1;
+      });
+      sellConfirm.addEventListener('click', () => {
+        if (sellPendingIndex === -1 || sellPendingIndex >= player.inventory.length) return;
+        const item = player.inventory[sellPendingIndex];
+        player.score += item.price;
+        player.inventory.splice(sellPendingIndex, 1);
+        scoreEl.textContent = player.score;
+        saveScoreToGAS();
+        saveInventoryToGAS();
+        renderInventory();
+        sellModal.style.display = 'none';
+        sellPendingIndex = -1;
+        setStatus(`✅ +${item.price} очков!`);
+      });
 
-      // Автосохранение
       setInterval(() => {
         if (player.isLoaded) {
           saveScoreToGAS();
