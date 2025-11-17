@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>🎮 CS2 Кликер + Кейсы</title>
+  <title>🎮 CS2 Кликер + Gallery Case</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * {
@@ -17,7 +17,6 @@
       cursor: default;
       touch-action: manipulation;
     }
-
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -29,7 +28,6 @@
       justify-content: flex-start;
       padding: 15px;
     }
-
     .container {
       text-align: center;
       background: rgba(0, 0, 0, 0.35);
@@ -41,26 +39,22 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       margin-bottom: 20px;
     }
-
     h1 {
       font-size: 20px;
       margin-bottom: 10px;
       color: #4fc3f7;
     }
-
     .score {
       font-size: 24px;
       font-weight: bold;
       margin: 10px 0;
       color: gold;
     }
-
     .case-count {
       font-size: 16px;
       margin: 8px 0;
       color: #aaffaa;
     }
-
     .click-btn,
     .open-case-btn,
     .inv-btn {
@@ -77,23 +71,19 @@
       justify-content: center;
       transition: transform 0.1s ease;
     }
-
     .click-btn {
       background: linear-gradient(135deg, #ff9a00, #ff5200);
       box-shadow: 0 6px 18px rgba(255, 82, 0, 0.4);
     }
-
     .open-case-btn {
       background: linear-gradient(135deg, #00b09b, #96c93d);
       box-shadow: 0 6px 18px rgba(0, 176, 155, 0.4);
     }
-
     .open-case-btn:disabled {
       background: #555;
       cursor: not-allowed;
       transform: none;
     }
-
     .inv-btn {
       background: linear-gradient(135deg, #6a00ff, #b027ff);
       box-shadow: 0 6px 18px rgba(106, 0, 255, 0.4);
@@ -102,26 +92,22 @@
       border-radius: 12px;
       font-size: 14px;
     }
-
     .click-btn:active,
     .open-case-btn:active,
     .inv-btn:active {
       transform: scale(0.94);
     }
-
     .status {
       margin-top: 8px;
       font-size: 12px;
       color: #aaffaa;
     }
-
     /* РУЛЕТКА */
     .roulette-wrapper {
       position: relative;
       width: 100%;
       margin: 15px 0;
     }
-
     .roulette-arrow {
       position: absolute;
       top: -22px;
@@ -133,7 +119,6 @@
       z-index: 20;
       pointer-events: none;
     }
-
     .roulette-container {
       width: 100%;
       height: 120px;
@@ -141,14 +126,12 @@
       border-radius: 10px;
       background: rgba(0, 0, 0, 0.25);
     }
-
     .roulette-track {
       display: flex;
       align-items: center;
       height: 120px;
       transition: transform 0.1s linear;
     }
-
     .skin-item {
       min-width: 90px;
       height: 100px;
@@ -162,12 +145,9 @@
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.1);
       text-align: center;
-      color: white;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
-
     .skin-item img {
       width: 60px;
       height: 60px;
@@ -175,34 +155,12 @@
       margin-bottom: 4px;
       border-radius: 4px;
     }
-
-    .skin-quality {
-      font-size: 8px;
-      opacity: 0.8;
-      margin-top: 2px;
-    }
-
     .highlight {
       transform: scale(1.15);
       box-shadow: 0 0 16px gold;
       z-index: 10;
       position: relative;
     }
-
-    /* РЕЗУЛЬТАТ */
-    .result-box {
-      margin-top: 15px;
-      padding: 12px;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 10px;
-      display: none;
-    }
-
-    .result-name { font-weight: bold; font-size: 16px; }
-    .result-quality { font-size: 13px; margin-top: 3px; }
-    .result-rarity { font-size: 13px; margin-top: 2px; font-style: italic; }
-    .result-mod { font-size: 12px; margin-top: 3px; color: gold; }
-
     /* ИНВЕНТАРЬ */
     .inventory-modal {
       display: none;
@@ -216,19 +174,16 @@
       padding: 20px;
       overflow-y: auto;
     }
-
     .inventory-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 15px;
     }
-
     .inventory-title {
       color: white;
       font-size: 20px;
     }
-
     .close-inv {
       background: #ff4d4d;
       color: white;
@@ -239,7 +194,6 @@
       font-weight: bold;
       cursor: pointer;
     }
-
     .inv-item {
       background: rgba(30, 30, 40, 0.7);
       border-radius: 10px;
@@ -250,10 +204,8 @@
       display: flex;
       align-items: center;
     }
-
     .inv-item.stattrak { border-left-color: gold; }
     .inv-item.souvenir { border-left-color: #00ffcc; }
-
     .inv-item img {
       width: 50px;
       height: 50px;
@@ -261,23 +213,19 @@
       margin-right: 12px;
       border-radius: 4px;
     }
-
     .inv-item-info {
       flex: 1;
     }
-
     .inv-item-name {
       font-weight: bold;
       font-size: 14px;
       margin-bottom: 2px;
     }
-
     .inv-item-meta {
       font-size: 12px;
       opacity: 0.85;
       margin-bottom: 4px;
     }
-
     .sell-btn {
       background: linear-gradient(135deg, #ff3366, #ff6600);
       color: white;
@@ -290,27 +238,24 @@
       font-weight: bold;
       width: auto;
     }
-
     .sell-btn:active {
       transform: scale(0.96);
     }
-
-    /* МОДАЛЬНОЕ ОКНО ПРОДАЖИ */
-    .sell-modal {
+    /* МОДАЛЬНОЕ ОКНО ВЫПАВШЕГО СКИНА */
+    .result-modal {
       display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.85);
-      z-index: 200;
+      background: rgba(0,0,0,0.9);
+      z-index: 300;
       padding: 20px;
       justify-content: center;
       align-items: center;
     }
-
-    .sell-content {
+    .result-modal-content {
       background: rgba(20,20,30,0.95);
       border-radius: 16px;
       padding: 20px;
@@ -318,29 +263,33 @@
       max-width: 320px;
       width: 90%;
     }
-
-    .sell-price {
-      font-size: 24px;
-      font-weight: bold;
-      color: gold;
+    .result-modal img {
+      width: 100px;
+      height: auto;
+      border-radius: 8px;
       margin: 10px 0;
     }
-
-    .sell-confirm-btn, .sell-cancel-btn {
-      margin: 8px;
+    .result-modal-price {
+      font-size: 18px;
+      color: gold;
+      margin: 8px 0;
+    }
+    .result-modal-btns {
+      margin-top: 12px;
+    }
+    .result-keep-btn, .result-sell-btn {
+      margin: 0 6px;
       padding: 8px 16px;
       border: none;
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
     }
-
-    .sell-confirm-btn {
+    .result-keep-btn {
       background: #4caf50;
       color: white;
     }
-
-    .sell-cancel-btn {
+    .result-sell-btn {
       background: #f44336;
       color: white;
     }
@@ -348,26 +297,35 @@
 </head>
 <body>
   <div class="container">
-    <h1>🎮 CS2 Кликер + Кейсы</h1>
+    <h1>🎮 CS2 Кликер + Gallery Case</h1>
     <div class="score">Очки: <span id="score">0</span></div>
     <div class="case-count">Кейсов: <span id="caseCount">0</span></div>
     <button class="click-btn" id="clickBtn">КЛИК!</button>
     <button class="open-case-btn" id="openCaseBtn" disabled>Открыть кейс</button>
     <button class="inv-btn" id="invBtn">Инвентарь</button>
     <div class="status" id="status">Загрузка...</div>
-
     <div class="roulette-wrapper">
       <div class="roulette-arrow">▼</div>
       <div class="roulette-container">
         <div class="roulette-track" id="rouletteTrack"></div>
       </div>
     </div>
+  </div>
 
-    <div class="result-box" id="resultBox">
-      <div class="result-name" id="resultName">—</div>
-      <div class="result-quality" id="resultQuality">—</div>
-      <div class="result-rarity" id="resultRarity">—</div>
-      <div class="result-mod" id="resultMod"></div>
+  <!-- МОДАЛЬНОЕ ОКНО ВЫПАВШЕГО СКИНА -->
+  <div class="result-modal" id="resultModal">
+    <div class="result-modal-content">
+      <h3>🎉 Выпал предмет!</h3>
+      <div id="resultModalImg"></div>
+      <div id="resultModalName" style="font-weight:bold; font-size:16px;"></div>
+      <div id="resultModalQuality" style="color:#aaa;"></div>
+      <div id="resultModalRarity" style="font-style:italic;"></div>
+      <div id="resultModalMod" style="color:gold; margin:6px 0;"></div>
+      <div class="result-modal-price">Цена: <span id="resultModalPrice">0</span> ₽</div>
+      <div class="result-modal-btns">
+        <button class="result-keep-btn" id="resultKeepBtn">Оставить</button>
+        <button class="result-sell-btn" id="resultSellBtn">Продать</button>
+      </div>
     </div>
   </div>
 
@@ -380,23 +338,9 @@
     <div id="invList">Загрузка...</div>
   </div>
 
-  <!-- ПРОДАЖА -->
-  <div class="sell-modal" id="sellModal">
-    <div class="sell-content">
-      <h3>💰 Продать предмет?</h3>
-      <div id="sellItemName" style="font-weight:bold; margin:8px 0;"></div>
-      <div>Вы получите:</div>
-      <div class="sell-price" id="sellPrice">0 очков</div>
-      <button class="sell-confirm-btn" id="sellConfirm">Продать</button>
-      <button class="sell-cancel-btn" id="sellCancel">Отмена</button>
-    </div>
-  </div>
-
   <script>
-    // ===== НАСТРОЙКИ =====
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwa5Xl9TyUGpH7rITh2J_s3ER656u3rqYeIW2v6fMMIZURavVXCg_H-fVM_Xgm0yD56/exec";
 
-    // ===== CS2 ДАННЫЕ =====
     const QUALITIES = [
       { name: "FN", fullName: "Прямо с завода", color: "#b0c3d9" },
       { name: "MW", fullName: "Немного поношенное", color: "#5e92f3" },
@@ -411,58 +355,612 @@
       { name: "Армейское", color: "#4b69ff" },
       { name: "Запрещенное", color: "#8847ff" },
       { name: "Засекреченное", color: "#d32ce6" },
-      { name: "Тайное", color: "#eb4b4b" }
+      { name: "Тайное", color: "#eb4b4b" },
+      { name: "Нож", color: "#ffd700" }
     ];
 
     const CASES = [
-      {
-        name: "Chroma Case",
-        weapons: [
-          { name: "MP9 | Deadly Poison", rarity: 2, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/64fx64f" },
-          { name: "P250 | Muertos", rarity: 2, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/64fx64f" }
-        ]
-      },
-      {
-        name: "Gamma Case",
-        weapons: [
-          { name: "Nova | Hyper Beast", rarity: 2, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/64fx64f" },
-          { name: "USP-S | Cyrex", rarity: 3, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/64fx64f" }
-        ]
-      },
-      // === ТВОЙ КАСТОМНЫЙ КЕЙС ===
-      {
-        name: "CyberPunk Case",
-        weapons: [
-          { 
-            name: "AWP | Dragon Lore", 
-            rarity: 5, 
-            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/128fx128f" 
-          },
-          { 
-            name: "AK-47 | Vulcan", 
-            rarity: 4, 
-            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/128fx128f" 
-          },
-          { 
-            name: "M4A4 | Howl", 
-            rarity: 5, 
-            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0vL3dzRY7dG0mYi0k_jkI7LWl25V18l4jeHVu9v0jBq1-hJpYW37JtfGc1I5M17Z-FC7xOztgZK17ZiYzHY3viE/128fx128f" 
-          },
-          { 
-            name: "Desert Eagle | Blaze", 
-            rarity: 4, 
-            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfAR17OL3YQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/128fx128f" 
-          },
-          { 
-            name: "Glock-18 | Fade", 
-            rarity: 3, 
-            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/128fx128f" 
-          }
-        ]
-      }
-    ];
+  {
+    name: "Gallery Case",
+    weapons: [
 
-    // ===== ГЛОБАЛЬНЫЙ СОСТОЯНИЕ =====
+	  
+	  // === ДЕШЁВЫЕ СКИНЫ (ШИРПОТРЕБ) ===
+{
+  name: "UMP-45 | Green Swirl",
+  rarity: 0,
+  img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/UMP-45%20Green%20Swirl.png?raw=true",
+  canBeStatTrak: true,
+  qualityWeights: {
+    base: { FN: 30000000, MW: 120000000, WW: 250000000, FT: 400000000, BS: 200000000 }
+  },
+  prices: {
+    base: { BS: 1.12, FT: 1.52, WW: 1.23, MW: 2.49, FN: 6.29 }
+  }
+},
+{
+  name: "MAG-7 | Rust Coat",
+  rarity: 0,
+  img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/MAG-7%20%20Rust%20Coat.png?raw=true",
+  canBeStatTrak: true,
+  qualityWeights: {
+    base: { FN: 25000000, MW: 110000000, WW: 260000000, FT: 410000000, BS: 200000000 }
+  },
+  prices: {
+    base: { BS: 1.2, FT: 1.11, WW: 1.45, MW: 1.67, FN: 14.97 }
+  }
+},
+{
+  name: "PP-Bizon Wood Block Camo",
+  rarity: 0,
+  img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/PP-Bizon%20Wood%20Block%20Camo.png?raw=true",
+  canBeStatTrak: true,
+  qualityWeights: {
+    base: { FN: 20000000, MW: 100000000, WW: 270000000, FT: 420000000, BS: 190000000 }
+  },
+  prices: {
+    base: { BS: 1.05, FT: 1.23, WW: 1.4, MW: 1.56, FN: 4.36 }
+  }
+},
+{
+  name: "Nova Marsh Grass",
+  rarity: 0,
+  img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/360fx360f.png?raw=true",
+  canBeStatTrak: true,
+  qualityWeights: {
+    base: { FN: 35000000, MW: 130000000, WW: 240000000, FT: 390000000, BS: 210000000 }
+  },
+  prices: {
+    base: { BS: 1.12, FT: 1.19, WW: 1.24, MW: 1.46, FN: 4.65 }
+  }
+},
+{
+  name: "Tec-9 Army Mesh",
+  rarity: 0,
+  img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Tec-9%20Army%20Mesh.png?raw=true",
+  canBeStatTrak: true,
+  qualityWeights: {
+    base: { FN: 15000000, MW: 90000000, WW: 280000000, FT: 430000000, BS: 190000000 },
+  },
+  prices: {
+    base: { BS: 1.06, FT: 1.28, WW: 1.85, MW: 3.21, FN: 4.27 },
+  }
+},
+	  
+      {
+        name: "Desert Eagle | Calligraffiti",
+        rarity: 2,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_deagle_deagle_calligraff_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 311700,
+            MW: 2493610,
+            WW: 2493610,
+            FT: 3428710,
+            BS: 1662400
+          },
+          statTrak: {
+            FN: 30830,
+            MW: 246620,
+            WW: 246620,
+            FT: 339100,
+            BS: 164410
+          }
+        },
+        prices: {
+          base: { BS: 14, FT: 22, WW: 17, MW: 52, FN: 180 },
+          statTrak: { BS: 77, FT: 83, WW: 73, MW: 136, FN: 731 }
+        }
+      },
+      {
+        name: "AUG | Luxe Trim",
+        rarity: 2,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_aug_aug_puffer_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 311700,
+            MW: 2493610,
+            WW: 2493610,
+            FT: 3428710,
+            BS: 1662400
+          },
+          statTrak: {
+            FN: 30830,
+            MW: 246620,
+            WW: 246620,
+            FT: 339100,
+            BS: 164410
+          }
+        },
+        prices: {
+          base: { BS: 14.12, FT: 22.55, WW: 17.34, MW: 52.94, FN: 180.58 },
+          statTrak: { BS: 77.31, FT: 83.06, WW: 73.83, MW: 136.95, FN: 731.08 }
+        }
+      },
+      {
+        name: "SCAR-20 | Trail Blazer",
+        rarity: 2,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_scar20_scar20_fury_topo_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 311700,
+            MW: 2493610,
+            WW: 2493610,
+            FT: 3428710,
+            BS: 1662400
+          },
+          statTrak: {
+            FN: 30830,
+            MW: 246620,
+            WW: 246620,
+            FT: 339100,
+            BS: 164410
+          }
+        },
+        prices: {
+          base: { BS: 14.31, FT: 20.47, WW: 45.64, MW: 15.67, FN: 116.10 },
+          statTrak: { BS: 20.83, FT: 33.87, WW: 59.77, MW: 72.73, FN: 198.26 }
+        }
+      },
+      {
+        name: "MP5-SD | Statics",
+        rarity: 2,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_mp5sd_mp5_statics_blue_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 311700,
+            MW: 2493610,
+            WW: 2493610,
+            FT: 3428710,
+            BS: 1662400
+          },
+          statTrak: {
+            FN: 30830,
+            MW: 246620,
+            WW: 246620,
+            FT: 339100,
+            BS: 164410
+          }
+        },
+        prices: {
+          base: { BS: 15.76, FT: 22.64, WW: 16.57, MW: 51.80, FN: 154.93 },
+          statTrak: { BS: 21.84, FT: 32.69, WW: 22.38, MW: 79.06, FN: 265.30 }
+        }
+      },
+      {
+        name: "M249 | Hypnosis",
+        rarity: 2,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m249_m249_hypnosis_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 311700,
+            MW: 2493610,
+            WW: 2493610,
+            FT: 3428710,
+            BS: 1662400
+          },
+          statTrak: {
+            FN: 30830,
+            MW: 246620,
+            WW: 246620,
+            FT: 339100,
+            BS: 164410
+          }
+        },
+        prices: {
+          base: { BS: 19.38, FT: 27.08, WW: 64.94, MW: 21.74, FN: 1365.5 },
+          statTrak: { BS: 77.34, FT: 83.32, WW: 136.3, MW: 72.73, FN: 731.0 }
+        }
+      },
+      {
+        name: "R8 Revolver | Tango",
+        rarity: 2,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_revolver_r8_roses_and_guns_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 311700,
+            MW: 2493610,
+            WW: 2493610,
+            FT: 3428710,
+            BS: 1662400
+          },
+          statTrak: {
+            FN: 30830,
+            MW: 246620,
+            WW: 246620,
+            FT: 339100,
+            BS: 164410
+          }
+        },
+        prices: {
+          base: { BS: 20.74, FT: 23.46, WW: 20.01, MW: 51.71, FN: 172.40 },
+          statTrak: { BS: 29.07, FT: 32.69, WW: 43.65, MW: 96.18, FN: 400.00 }
+        }
+      },
+      {
+        name: "Dual Berettas | Hydro Strike",
+        rarity: 3,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_elite_dual_elite_hydro_strike_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 872800,
+            MW: 6982100,
+            WW: 6982100,
+            FT: 9600400,
+            BS: 4654700
+          },
+          statTrak: {
+            FN: 86300,
+            MW: 690500,
+            WW: 690500,
+            FT: 949500,
+            BS: 460400
+          }
+        },
+        prices: {
+          base: { BS: 72.90, FT: 104.87, WW: 102.33, MW: 268.94, FN: 746.49 },
+          statTrak: { BS: 144.63, FT: 205.16, WW: 279.29, MW: 477.55, FN: 1089.57 }
+        }
+      },
+      {
+        name: "P90 | Randy Rush",
+        rarity: 3,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_p90_p90_randy_rush_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 872800,
+            MW: 6982100,
+            WW: 6982100,
+            FT: 9600400,
+            BS: 4654700
+          },
+          statTrak: {
+            FN: 86300,
+            MW: 690500,
+            WW: 690500,
+            FT: 949500,
+            BS: 460400
+          }
+        },
+        prices: {
+          base: { BS: 77.16, FT: 73.99, WW: 90.56, MW: 182.74, FN: 579.26 },
+          statTrak: { BS: 131.95, FT: 136.29, WW: 153.68, MW: 324.11, FN: 1046.47 }
+        }
+      },
+      {
+        name: "MAC-10 | Saibā Oni",
+        rarity: 3,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_mac10_mac10_ozaki_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 872800,
+            MW: 6982100,
+            WW: 6982100,
+            FT: 9600400,
+            BS: 4654700
+          },
+          statTrak: {
+            FN: 86300,
+            MW: 690500,
+            WW: 690500,
+            FT: 949500,
+            BS: 460400
+          }
+        },
+        prices: {
+          base: { BS: 83.50, FT: 106.50, WW: 163.64, MW: 289.63, FN: 696.50 },
+          statTrak: { BS: 344.80, FT: 368.94, WW: 351.70, MW: 631.00, FN: 1343.00 }
+        }
+      },
+      {
+        name: "M4A4 | Turbine",
+        rarity: 3,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_m4a4_fusion_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 872800,
+            MW: 6982100,
+            WW: 6982100,
+            FT: 9600400,
+            BS: 4654700
+          },
+          statTrak: {
+            FN: 86300,
+            MW: 690500,
+            WW: 690500,
+            FT: 949500,
+            BS: 460400
+          }
+        },
+        prices: {
+          base: { BS: 89.47, FT: 128.87, WW: 156.67, MW: 422.38, FN: 2958.38 },
+          statTrak: { BS: 243.08, FT: 315.49, WW: 367.21, MW: 832.69, FN: 2606.69 }
+        }
+      },
+      {
+        name: "SSG 08 | Rapid Transit",
+        rarity: 3,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_ssg08_ssg08_transit_white_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 872800,
+            MW: 6982100,
+            WW: 6982100,
+            FT: 9600400,
+            BS: 4654700
+          },
+          statTrak: {
+            FN: 86300,
+            MW: 690500,
+            WW: 690500,
+            FT: 949500,
+            BS: 460400
+          }
+        },
+        prices: {
+          base: { BS: 93.91, FT: 100.70, WW: 138.74, MW: 348.25, FN: 1087.84 },
+          statTrak: { BS: 203.43, FT: 251.70, WW: 408.59, MW: 982.68, FN: 2053.28 }
+        }
+      },
+      {
+        name: "P250 | Epicenter",
+        rarity: 4,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_p250_p250_impact_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 290900,
+            MW: 2327400,
+            WW: 2327400,
+            FT: 3200100,
+            BS: 1551600
+          },
+          statTrak: {
+            FN: 28800,
+            MW: 230200,
+            WW: 230200,
+            FT: 316500,
+            BS: 153500
+          }
+        },
+        prices: {
+          base: { BS: 544.78, FT: 656.84, WW: 601.68, MW: 1405.06, FN: 3856.59 },
+          statTrak: { BS: 1146.46, FT: 1132.67, WW: 1163.70, MW: 2151.55, FN: 5485.77 }
+        }
+      },
+      {
+        name: "AK-47 | The Outsiders",
+        rarity: 4,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_ak47_ak47_t_bus_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 290900,
+            MW: 2327400,
+            WW: 2327400,
+            FT: 3200100,
+            BS: 1551600
+          },
+          statTrak: {
+            FN: 28800,
+            MW: 230200,
+            WW: 230200,
+            FT: 316500,
+            BS: 153500
+          }
+        },
+        prices: {
+          base: { BS: 862.00, FT: 968.89, WW: 925.85, MW: 1001.64, FN: 12895.52 },
+          statTrak: { BS: 2186.03, FT: 2403.53, WW: 2167.03, MW: 4616.87, FN: 15630.47 }
+        }
+      },
+      {
+        name: "Glock-18 | Gold Toof",
+        rarity: 5,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_glock_glock_chomper_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 87300,
+            MW: 698200,
+            WW: 698200,
+            FT: 960000,
+            BS: 465500
+          },
+          statTrak: {
+            FN: 8600,
+            MW: 69100,
+            WW: 69100,
+            FT: 94900,
+            BS: 46000
+          }
+        },
+        prices: {
+          base: { BS: 3800.42, FT: 3702.07, WW: 3957.06, MW: 4683.11, FN: 24226.75 },
+          statTrak: { BS: 4460.54, FT: 4438.09, WW: 5645.35, MW: 11359.44, FN: 27515.38 }
+        }
+      },
+      {
+        name: "M4A1-S | Vaporwave",
+        rarity: 5,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_silencer_m4a1s_vaporwave_light_png.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: {
+            FN: 87300,
+            MW: 698200,
+            WW: 698200,
+            FT: 960000,
+            BS: 465500
+          },
+          statTrak: {
+            FN: 8600,
+            MW: 69100,
+            WW: 69100,
+            FT: 94900,
+            BS: 46000
+          }
+        },
+        prices: {
+          base: { BS: 4951.33, FT: 7463.20, WW: 6802.90, MW: 16419.38, FN: 43481.00 },
+          statTrak: { BS: 10281.76, FT: 12900.24, WW: 10402.62, MW: 27971.90, FN: 62867.38 }
+        }
+      },
+      {
+        name: "Kukri Knife | Forest DDPAT",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJkISbluPLPr7Vn35cppUijr6QrNnxjQHi-kU9Zzj0IoeUcQU-ZlHV-VS6kLznhcPp6pnPyXN9-n513dCDn2U.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 6535.68, FT: 7216.66, WW: 7501.12, MW: 8525.18, FN: 20800.06 },
+          statTrak: { BS: 7826.96, FT: 9062.38, WW: 8826.54, MW: 12226.26, FN: 25710.01 }
+        }
+      },
+      {
+        name: "Kukri Knife | Boreal Forest",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJko-ZkuTgDLnehG5Q5Pp5j-jX7MKm2w3l-BI9YW2mLISccgc2Yw3Y-Fi9x7y9gZS96p7NmnEyuiUq4i3egVXp1mMdBESn.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 7240.80, FT: 7166.67, WW: 6709.81, MW: 8421.74, FN: 17274.48 },
+          statTrak: { BS: 8161.42, FT: 8307.86, WW: 9859.56, MW: 10492.26, FN: 20239.76 }
+        }
+      },
+      {
+        name: "Kukri Knife | Safari Mesh",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmYWYn8jgMrXunm5Q_tw_2u-W892n31Dh_kdrYWuiLYeVcwI8aQ7T8wS7xb-6hcXuuZjKn3swsz5iuyhFCX2nfA.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 7263.49, FT: 6959.79, WW: 7077.02, MW: 7868.34, FN: 13667.87 },
+          statTrak: { BS: 8500.12, FT: 7578.70, WW: 8344.16, MW: 9302.70, FN: 27240.92 }
+        }
+      },
+      {
+        name: "Kukri Knife | Scorched",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJkIGbh_vxDLfYkWNFpsEm3bmQoYj2ilfs8hVtNT31doDHJlM2aFHV_Fe5xu7q08S7vpXKwXR9-n51QqUUfjU.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 7599.71, FT: 7267.38, WW: 7506.02, MW: 10007.10, FN: 22597.64 },
+          statTrak: { BS: 9132.43, FT: 8745.87, WW: 10602.60, MW: 12943.79, FN: 127577.86 }
+        }
+      },
+      {
+        name: "Kukri Knife | Night Stripe",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmomMn-PnJ6nYhm5u4MBwnPCP99Xw3wC3-kJoazz7INWRIwA-YA2ErFG_xr3m18e76ZnBySNnvCMrtmGdwUL-hTTBrg.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 8040.74, FT: 7463.20, WW: 9226.85, MW: 10126.85, FN: 42515.56 },
+          statTrak: { BS: 9505.34, FT: 8948.36, WW: 10173.05, MW: 14039.26, FN: 25156.61 }
+        }
+      },
+      {
+        name: "Kukri Knife | Blue Steel",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2JloyekvPLO77QgHIf6ZNw27uYrYmligDh_UptYGincYTBcQY7Y1-EqFK-ku67gJ-66ZyfwGwj5HeBE36zUg.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 10407.79, FT: 12218.99, MW: 13878.20, WW: 11492.66, FN: 21253.47 },
+          statTrak: { BS: 15186.72, FT: 14207.61, MW: 15703.72, WW: 13425.23, FN: 34316.22 }
+        }
+      },
+      {
+        name: "Kukri Knife | Crimson Web",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Kukri%20Blood%20Web.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 10723.28, FT: 13700.63, MW: 20644.90, WW: 13217.91, FN: 108879.22 },
+          statTrak: { BS: 11994.27, FT: 16301.80, MW: 23155.04, WW: 21789.98, FN: 160916.44 }
+        }
+      },
+      {
+        name: "Kukri Knife | Case Hardened",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2Jm4mHkvPLO77QgHIfvMYpiLCXoNSnjQy1rkc-NTzxco-TcldrYF7R_lW5we7qhcPuuZSbm2wj5HeA7vBDmQ.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 },
+          statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 }
+        },
+        prices: {
+          base: { BS: 15009.14, FT: 16550.40, MW: 19779.45, WW: 15554.93, FN: 30957.87 },
+          statTrak: { BS: 17885.58, FT: 20782.82, MW: 21582.76, WW: 19157.09, FN: 84701.84 }
+        }
+      },
+      {
+        name: "Kukri Knife | Fade",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97d2JkoGPksj4OrzZgiUE6ZwmjOqXpYnz2Vew-RY5NWv1IdCXe1Q7NFqB_Fe5kue8hZK8vc_J1zI97Wo4QJnu.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 199000000, MW: 1591000000 },
+          statTrak: { FN: 20000000, MW: 157000000 }
+        },
+        prices: {
+          base: { MW: 33908.13, FN: 28446.00 },
+          statTrak: { MW: 54604.87, FN: 35218.22 }
+        }
+      },
+      {
+        name: "Kukri Knife | Slaughter",
+        rarity: 6,
+        img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97dGJjoWJhfbLP7LWnn8fvZIgjrGYpo-m3wbmqBU6NmmmLYaTIQFqMAzR8gfrx-rs1JK77pWdmmwj5HfC17GeYA.png?raw=true",
+        canBeStatTrak: true,
+        qualityWeights: {
+          base: { FN: 90000000, MW: 716000000, FT: 985000000 },
+          statTrak: { FN: 9000000, MW: 71000000, FT: 97000000 }
+        },
+        prices: {
+          base: { FT: 18102.00, MW: 19945.16, FN: 22714.39 },
+          statTrak: { FT: 22553.86, MW: 26134.99, FN: 26987.50 }
+        }
+      }
+    ]
+  }
+];
+
     let player = {
       id: null,
       name: "Гость",
@@ -473,9 +971,7 @@
       inventory: []
     };
     let isSpinning = false;
-    let sellPendingIndex = -1;
 
-    // ===== DOM =====
     const scoreEl = document.getElementById('score');
     const caseCountEl = document.getElementById('caseCount');
     const statusEl = document.getElementById('status');
@@ -486,52 +982,54 @@
     const invList = document.getElementById('invList');
     const closeInv = document.getElementById('closeInv');
     const rouletteTrack = document.getElementById('rouletteTrack');
-    const resultBox = document.getElementById('resultBox');
-    const resultName = document.getElementById('resultName');
-    const resultQuality = document.getElementById('resultQuality');
-    const resultRarity = document.getElementById('resultRarity');
-    const resultMod = document.getElementById('resultMod');
-    const sellModal = document.getElementById('sellModal');
-    const sellConfirm = document.getElementById('sellConfirm');
-    const sellCancel = document.getElementById('sellCancel');
+    const resultModal = document.getElementById('resultModal');
+    const resultModalImg = document.getElementById('resultModalImg');
+    const resultModalName = document.getElementById('resultModalName');
+    const resultModalQuality = document.getElementById('resultModalQuality');
+    const resultModalRarity = document.getElementById('resultModalRarity');
+    const resultModalMod = document.getElementById('resultModalMod');
+    const resultModalPrice = document.getElementById('resultModalPrice');
+    const resultSellBtn = document.getElementById('resultSellBtn');
+    const resultKeepBtn = document.getElementById('resultKeepBtn');
 
-    // ===== УТИЛИТЫ =====
     function setStatus(text, isError = false) {
       statusEl.textContent = text;
       statusEl.style.color = isError ? '#ff9999' : '#aaffaa';
     }
 
-    function getRandomInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
+    function getWeightedQuality(weapon, isStatTrak) {
+      const weights = isStatTrak ? weapon.qualityWeights.statTrak : weapon.qualityWeights.base;
+      const qualities = Object.keys(weights);
+      const total = qualities.reduce((sum, q) => sum + weights[q], 0);
+      let rand = Math.random() * total;
+      for (const q of qualities) {
+        rand -= weights[q];
+        if (rand <= 0) {
+          return {
+            name: q,
+            fullName: QUALITIES.find(qual => qual.name === q)?.fullName || q,
+            color: QUALITIES.find(qual => qual.name === q)?.color || "#fff"
+          };
+        }
+      }
+      return QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
     }
 
-    function calculateItemPrice(weaponName, qualityFullName, rarityName, statTrak = false, souvenir = false) {
-      const rarityValue = RARITIES.findIndex(r => r.name === rarityName);
-      const qualityValue = QUALITIES.findIndex(q => q.fullName === qualityFullName);
-      let base = (rarityValue + 1) * 10 + (qualityValue + 1) * 2;
-      let bonus = 0;
-      if (statTrak) bonus += 0.3;
-      if (souvenir) bonus += 0.5;
-      const withBonus = base * (1 + bonus);
-      const randomFactor = 0.8 + Math.random() * 0.4;
-      return Math.floor(withBonus * randomFactor);
+    function getPrice(weapon, qualityName, isStatTrak) {
+      return isStatTrak 
+        ? weapon.prices.statTrak[qualityName] 
+        : weapon.prices.base[qualityName];
     }
 
     function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
       const el = document.createElement('div');
       el.className = 'skin-item';
       el.style.backgroundColor = rarity.color + '30';
-      
       if (weapon.img) {
-        el.innerHTML = `
-          <img src="${weapon.img}" alt="${weapon.name}">
-          <div>${weapon.name}</div>
-          <div class="skin-quality">${quality.name}</div>
-        `;
+        el.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
       } else {
-        el.innerHTML = `<div>${weapon.name}</div><div class="skin-quality">${quality.name}</div>`;
+        el.innerHTML = `<div style="width:60px;height:60px;background:rgba(255,255,255,0.1);border-radius:4px;"></div>`;
       }
-      
       if (statTrak) el.style.borderTop = '2px solid gold';
       if (souvenir) el.style.borderBottom = '2px solid #00ffcc';
       return el;
@@ -540,11 +1038,11 @@
     function generateCaseSkins(caseType, count) {
       const skins = [];
       for (let i = 0; i < count; i++) {
-        const weapon = caseType.weapons[getRandomInt(0, caseType.weapons.length - 1)];
+        const weapon = caseType.weapons[Math.floor(Math.random() * caseType.weapons.length)];
         const rarity = RARITIES[weapon.rarity];
-        const quality = QUALITIES[getRandomInt(0, QUALITIES.length - 1)];
-        const statTrak = Math.random() < 0.08;
-        const souvenir = !statTrak && Math.random() < 0.03;
+        const statTrak = weapon.canBeStatTrak ? (Math.random() < 0.10) : false;
+        const quality = getWeightedQuality(weapon, statTrak);
+        const souvenir = false;
         skins.push({ weapon, quality, rarity, statTrak, souvenir });
       }
       return skins;
@@ -558,7 +1056,6 @@
       });
     }
 
-    // ===== GAS =====
     async function loadPlayerFromGAS() {
       const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
       const res = await fetch(url);
@@ -577,7 +1074,6 @@
 
     function savePlayerData() {
       if (!player.id || !player.isLoaded) return;
-      
       const img1 = new Image();
       const params1 = new URLSearchParams({
         action: "updatePlayer",
@@ -587,7 +1083,6 @@
         cases: JSON.stringify(player.cases)
       });
       img1.src = `${GAS_URL}?${params1}&_=${Date.now()}`;
-
       const img2 = new Image();
       const params2 = new URLSearchParams({
         action: "updateInventory",
@@ -597,7 +1092,6 @@
       img2.src = `${GAS_URL}?${params2}&_=${Date.now()}`;
     }
 
-    // ===== КЕЙСЫ =====
     function giveRandomCase() {
       player.cases = [];
       const caseType = CASES[Math.floor(Math.random() * CASES.length)];
@@ -614,141 +1108,131 @@
 
     function openCase() {
       if (player.cases.length === 0 || player.score < 10) return;
-
       const caseName = player.cases.pop();
       const caseType = CASES.find(c => c.name === caseName);
       if (!caseType) return;
-
       player.score -= 10;
       scoreEl.textContent = player.score;
       updateCaseUI();
       savePlayerData();
       setStatus("Крутим...");
-
-      resultBox.style.display = 'none';
-
       const preSpin = generateCaseSkins(caseType, 30);
-      const weapon = caseType.weapons[getRandomInt(0, caseType.weapons.length - 1)];
+      const weapon = caseType.weapons[Math.floor(Math.random() * caseType.weapons.length)];
+      const statTrak = weapon.canBeStatTrak ? (Math.random() < 0.10) : false;
+      const quality = getWeightedQuality(weapon, statTrak);
       const rarity = RARITIES[weapon.rarity];
-      const quality = QUALITIES[getRandomInt(0, QUALITIES.length - 1)];
-      const statTrak = Math.random() < 0.08;
-      const souvenir = !statTrak && Math.random() < 0.03;
-      const winSkin = { weapon, quality, rarity, statTrak, souvenir };
+      const price = getPrice(weapon, quality.name, statTrak);
       const postSpin = generateCaseSkins(caseType, 15);
-      const fullList = [...preSpin, winSkin, ...postSpin];
+      const fullList = [...preSpin, {weapon, quality, rarity, statTrak, price}, ...postSpin];
       renderRoulette(fullList);
-
       setTimeout(() => {
-        const itemWidth = 102; // 90 + 2*6 margin
+        const itemWidth = 102;
         const winIndex = preSpin.length;
         const containerWidth = document.querySelector('.roulette-container').offsetWidth;
         const targetCenter = winIndex * itemWidth + itemWidth / 2;
         const scrollLeft = targetCenter - containerWidth / 2;
-
         rouletteTrack.style.transition = 'none';
         rouletteTrack.style.transform = 'translateX(0)';
         rouletteTrack.offsetHeight;
         rouletteTrack.style.transition = 'transform 3s cubic-bezier(0.16, 1, 0.3, 1)';
         rouletteTrack.style.transform = `translateX(${-scrollLeft}px)`;
-
         setTimeout(() => {
           isSpinning = false;
           const items = rouletteTrack.querySelectorAll('.skin-item');
           items.forEach(el => el.classList.remove('highlight'));
           if (items[winIndex]) items[winIndex].classList.add('highlight');
-
-          resultName.textContent = weapon.name;
-          resultQuality.textContent = quality.fullName;
-          resultQuality.style.color = quality.color;
-          resultRarity.textContent = rarity.name;
-          resultRarity.style.color = rarity.color;
-
+          // Заполняем модальное окно
+          if (weapon.img) {
+            resultModalImg.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
+          } else {
+            resultModalImg.innerHTML = '';
+          }
+          resultModalName.textContent = weapon.name;
+          resultModalQuality.textContent = quality.fullName;
+          resultModalQuality.style.color = quality.color;
+          resultModalRarity.textContent = RARITIES[weapon.rarity].name;
+          resultModalRarity.style.color = RARITIES[weapon.rarity].color;
           const mods = [];
           if (statTrak) mods.push("StatTrak™");
-          if (souvenir) mods.push("Сувенир");
-          resultMod.textContent = mods.join(" | ");
-          resultMod.style.display = mods.length ? 'block' : 'none';
-          resultBox.style.display = 'block';
-
-          const price = calculateItemPrice(
-            weapon.name,
-            quality.fullName,
-            rarity.name,
-            statTrak,
-            souvenir
-          );
-          const newItem = {
-            id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
-            weapon: weapon.name,
-            quality: quality.name,
-            qualityFullName: quality.fullName,
-            rarity: rarity.name,
-            statTrak: statTrak,
-            souvenir: souvenir,
-            price: price,
-            img: weapon.img,
-            timestamp: Date.now()
+          resultModalMod.textContent = mods.join(" | ");
+          resultModalMod.style.display = mods.length ? 'block' : 'none';
+          resultModalPrice.textContent = price;
+          resultModal.style.display = 'flex';
+          // Обработчики кнопок
+          resultSellBtn.onclick = () => {
+            player.score += price;
+            scoreEl.textContent = player.score;
+            savePlayerData();
+            resultModal.style.display = 'none';
+            setStatus(`✅ +${price} ₽!`);
           };
-          player.inventory.push(newItem);
-          savePlayerData();
-          setStatus("✅ Предмет сохранён!");
+          resultKeepBtn.onclick = () => {
+            const newItem = {
+              id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+              weapon: weapon.name,
+              quality: quality.name,
+              qualityFullName: quality.fullName,
+              rarity: RARITIES[weapon.rarity].name,
+              statTrak: statTrak,
+              souvenir: false,
+              price: price,
+              img: weapon.img,
+              timestamp: Date.now()
+            };
+            player.inventory.push(newItem);
+            savePlayerData();
+            resultModal.style.display = 'none';
+            setStatus("✅ Предмет сохранён в инвентарь!");
+          };
         }, 3100);
       }, 50);
     }
 
-    // ===== ИНВЕНТАРЬ И ПРОДАЖА =====
     function renderInventory() {
       if (!player.isLoaded) {
         invList.innerHTML = "Загрузка...";
         return;
       }
-
       if (player.inventory.length === 0) {
         invList.innerHTML = '<div style="color:#aaa; font-style:italic; text-align:center; padding:20px;">Пусто</div>';
         return;
       }
-
       const sorted = [...player.inventory].sort((a, b) => b.timestamp - a.timestamp);
       let html = '';
       sorted.forEach((item, index) => {
         let mods = [];
         if (item.statTrak) mods.push("StatTrak™");
-        if (item.souvenir) mods.push("Сувенир");
         const modText = mods.length ? ` (${mods.join(" | ")})` : '';
-
         html += `
-          <div class="inv-item ${item.statTrak ? 'stattrak' : ''} ${item.souvenir ? 'souvenir' : ''}">
+          <div class="inv-item ${item.statTrak ? 'stattrak' : ''}">
             ${item.img ? `<img src="${item.img}" alt="${item.weapon}">` : ''}
             <div class="inv-item-info">
               <div class="inv-item-name">${item.weapon}</div>
               <div class="inv-item-meta">${item.qualityFullName} • ${item.rarity}${modText}</div>
-              <div style="font-size:13px; color:gold;">💰 Цена: ${item.price} очков</div>
+              <div style="font-size:13px; color:gold;">💰 Цена: ${item.price} ₽</div>
               <button class="sell-btn" data-index="${index}">Продать</button>
             </div>
           </div>
         `;
       });
       invList.innerHTML = html;
-
       document.querySelectorAll('.sell-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const index = parseInt(e.target.dataset.index);
-          showSellModal(index);
+          const item = player.inventory[index];
+          if (!item) return;
+          if (confirm(`Продать ${item.weapon} за ${item.price} ₽?`)) {
+            player.score += item.price;
+            player.inventory.splice(index, 1);
+            scoreEl.textContent = player.score;
+            savePlayerData();
+            renderInventory();
+            setStatus(`✅ +${item.price} ₽!`);
+          }
         });
       });
     }
 
-    function showSellModal(index) {
-      const item = player.inventory[index];
-      if (!item) return;
-
-      sellPendingIndex = index;
-      document.getElementById('sellItemName').textContent = item.weapon;
-      document.getElementById('sellPrice').textContent = `${item.price} очков`;
-      sellModal.style.display = 'flex';
-    }
-
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
     (async () => {
       const tg = window.Telegram?.WebApp;
       if (tg?.initDataUnsafe?.user) {
@@ -775,15 +1259,12 @@
         player.inventory = [];
         setStatus("🧪 Тестовый режим", true);
       }
-
       scoreEl.textContent = player.score;
       caseCountEl.textContent = player.cases.length;
       renderRoulette(generateCaseSkins(CASES[0], 25));
-
       clickBtn.addEventListener('click', () => {
         player.score += 1;
         scoreEl.textContent = player.score;
-
         if (player.cases.length === 0) {
           player.caseProgress += 1;
           if (player.caseProgress >= 20) {
@@ -791,11 +1272,9 @@
             giveRandomCase();
           }
         }
-
         if (player.score % 5 === 0) savePlayerData();
         updateCaseUI();
       });
-
       openCaseBtn.addEventListener('click', openCase);
       invBtn.addEventListener('click', () => {
         renderInventory();
@@ -804,23 +1283,6 @@
       closeInv.addEventListener('click', () => {
         invModal.style.display = 'none';
       });
-      sellCancel.addEventListener('click', () => {
-        sellModal.style.display = 'none';
-        sellPendingIndex = -1;
-      });
-      sellConfirm.addEventListener('click', () => {
-        if (sellPendingIndex === -1 || sellPendingIndex >= player.inventory.length) return;
-        const item = player.inventory[sellPendingIndex];
-        player.score += item.price;
-        player.inventory.splice(sellPendingIndex, 1);
-        scoreEl.textContent = player.score;
-        savePlayerData();
-        renderInventory();
-        sellModal.style.display = 'none';
-        sellPendingIndex = -1;
-        setStatus(`✅ +${item.price} очков!`);
-      });
-
       setInterval(savePlayerData, 30000);
     })();
   </script>
