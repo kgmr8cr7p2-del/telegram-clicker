@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>🎮 CS2 Кликер + Инвентарь</title>
+  <title>🎮 CS2 Кликер + Кейсы</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * {
@@ -20,7 +20,7 @@
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       color: white;
       min-height: 100vh;
       display: flex;
@@ -32,29 +32,37 @@
 
     .container {
       text-align: center;
-      background: rgba(0, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.35);
       backdrop-filter: blur(10px);
       border-radius: 20px;
       padding: 20px;
       max-width: 380px;
       width: 100%;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       margin-bottom: 20px;
     }
 
     h1 {
       font-size: 20px;
       margin-bottom: 10px;
+      color: #4fc3f7;
     }
 
     .score {
       font-size: 24px;
       font-weight: bold;
       margin: 10px 0;
+      color: gold;
+    }
+
+    .case-count {
+      font-size: 16px;
+      margin: 8px 0;
+      color: #aaffaa;
     }
 
     .click-btn,
-    .case-btn,
+    .open-case-btn,
     .inv-btn {
       width: 120px;
       height: 120px;
@@ -75,9 +83,15 @@
       box-shadow: 0 6px 18px rgba(255, 82, 0, 0.4);
     }
 
-    .case-btn {
+    .open-case-btn {
       background: linear-gradient(135deg, #00b09b, #96c93d);
       box-shadow: 0 6px 18px rgba(0, 176, 155, 0.4);
+    }
+
+    .open-case-btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .inv-btn {
@@ -90,7 +104,7 @@
     }
 
     .click-btn:active,
-    .case-btn:active,
+    .open-case-btn:active,
     .inv-btn:active {
       transform: scale(0.94);
     }
@@ -122,30 +136,30 @@
 
     .roulette-container {
       width: 100%;
-      height: 100px;
+      height: 120px;
       overflow: hidden;
       border-radius: 10px;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.25);
     }
 
     .roulette-track {
       display: flex;
       align-items: center;
-      height: 100px;
+      height: 120px;
       transition: transform 0.1s linear;
     }
 
     .skin-item {
-      min-width: 80px;
-      height: 80px;
-      margin: 0 4px;
+      min-width: 90px;
+      height: 100px;
+      margin: 0 6px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       padding: 4px;
       font-size: 10px;
-      border-radius: 6px;
+      border-radius: 8px;
       background: rgba(255, 255, 255, 0.1);
       text-align: center;
       color: white;
@@ -154,14 +168,22 @@
       text-overflow: ellipsis;
     }
 
+    .skin-item img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      margin-bottom: 4px;
+      border-radius: 4px;
+    }
+
     .skin-quality {
       font-size: 8px;
-      opacity: 0.7;
+      opacity: 0.8;
       margin-top: 2px;
     }
 
     .highlight {
-      transform: scale(1.12);
+      transform: scale(1.15);
       box-shadow: 0 0 16px gold;
       z-index: 10;
       position: relative;
@@ -171,7 +193,7 @@
     .result-box {
       margin-top: 15px;
       padding: 12px;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.4);
       border-radius: 10px;
       display: none;
     }
@@ -189,7 +211,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.9);
       z-index: 100;
       padding: 20px;
       overflow-y: auto;
@@ -219,21 +241,35 @@
     }
 
     .inv-item {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 12px;
+      background: rgba(30, 30, 40, 0.7);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
       text-align: left;
-      border-left: 3px solid #4b69ff;
+      border-left: 4px solid #4b69ff;
+      display: flex;
+      align-items: center;
     }
 
     .inv-item.stattrak { border-left-color: gold; }
     .inv-item.souvenir { border-left-color: #00ffcc; }
 
+    .inv-item img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      margin-right: 12px;
+      border-radius: 4px;
+    }
+
+    .inv-item-info {
+      flex: 1;
+    }
+
     .inv-item-name {
       font-weight: bold;
       font-size: 14px;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .inv-item-meta {
@@ -247,12 +283,12 @@
       color: white;
       border: none;
       border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 11px;
+      padding: 4px 10px;
+      font-size: 12px;
       cursor: pointer;
-      margin-top: 4px;
-      width: 100%;
+      margin-top: 6px;
       font-weight: bold;
+      width: auto;
     }
 
     .sell-btn:active {
@@ -275,7 +311,7 @@
     }
 
     .sell-content {
-      background: rgba(30,30,50,0.9);
+      background: rgba(20,20,30,0.95);
       border-radius: 16px;
       padding: 20px;
       text-align: center;
@@ -312,10 +348,11 @@
 </head>
 <body>
   <div class="container">
-    <h1>🎮 CS2 Кликер + Инвентарь</h1>
+    <h1>🎮 CS2 Кликер + Кейсы</h1>
     <div class="score">Очки: <span id="score">0</span></div>
+    <div class="case-count">Кейсов: <span id="caseCount">0</span></div>
     <button class="click-btn" id="clickBtn">КЛИК!</button>
-    <button class="case-btn" id="caseBtn">Кейс (10)</button>
+    <button class="open-case-btn" id="openCaseBtn" disabled>Открыть кейс</button>
     <button class="inv-btn" id="invBtn">Инвентарь</button>
     <div class="status" id="status">Загрузка...</div>
 
@@ -357,7 +394,7 @@
 
   <script>
     // ===== НАСТРОЙКИ =====
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzbNf-4nX4y7DV0unVOFsW8L2UX6wy3e1nPY75wpkrsbTDvAFnV4lZ4ruOTAo5QIRuf/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwa5Xl9TyUGpH7rITh2J_s3ER656u3rqYeIW2v6fMMIZURavVXCg_H-fVM_Xgm0yD56/exec";
 
     // ===== CS2 ДАННЫЕ =====
     const QUALITIES = [
@@ -377,17 +414,52 @@
       { name: "Тайное", color: "#eb4b4b" }
     ];
 
-    const WEAPONS = [
-      { name: "P250 | Bone Mask", rarity: 0 },
-      { name: "FAMAS | Djinn", rarity: 1 },
-      { name: "AK-47 | Redline", rarity: 2 },
-      { name: "M4A4 | Howl", rarity: 3 },
-      { name: "Desert Eagle | Blaze", rarity: 4 },
-      { name: "AWP | Dragon Lore", rarity: 5 },
-      { name: "USP-S | Kill Confirmed", rarity: 2 },
-      { name: "Glock-18 | Fade", rarity: 3 },
-      { name: "XM1014 | Heaven Guard", rarity: 1 },
-      { name: "Five-SeveN | Hyper Beast", rarity: 4 }
+    const CASES = [
+      {
+        name: "Chroma Case",
+        weapons: [
+          { name: "MP9 | Deadly Poison", rarity: 2, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/64fx64f" },
+          { name: "P250 | Muertos", rarity: 2, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/64fx64f" }
+        ]
+      },
+      {
+        name: "Gamma Case",
+        weapons: [
+          { name: "Nova | Hyper Beast", rarity: 2, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/64fx64f" },
+          { name: "USP-S | Cyrex", rarity: 3, img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/64fx64f" }
+        ]
+      },
+      // === ТВОЙ КАСТОМНЫЙ КЕЙС ===
+      {
+        name: "CyberPunk Case",
+        weapons: [
+          { 
+            name: "AWP | Dragon Lore", 
+            rarity: 5, 
+            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/128fx128f" 
+          },
+          { 
+            name: "AK-47 | Vulcan", 
+            rarity: 4, 
+            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/128fx128f" 
+          },
+          { 
+            name: "M4A4 | Howl", 
+            rarity: 5, 
+            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0vL3dzRY7dG0mYi0k_jkI7LWl25V18l4jeHVu9v0jBq1-hJpYW37JtfGc1I5M17Z-FC7xOztgZK17ZiYzHY3viE/128fx128f" 
+          },
+          { 
+            name: "Desert Eagle | Blaze", 
+            rarity: 4, 
+            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfAR17OL3YQJD_9W7m5a0mvLwOq7cqWdQ68jj0L-DptqijQXk-hVvZ23wcIKVJlQ7N1yD_VK_xO7p1JS4uJ3KzC5juHc/128fx128f" 
+          },
+          { 
+            name: "Glock-18 | Fade", 
+            rarity: 3, 
+            img: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotygjQa3-hBqZT77d4DDJlRvNQ7T-FDrwOnv15-9u5rMnyRm7nN1-z-DyGo/128fx128f" 
+          }
+        ]
+      }
     ];
 
     // ===== ГЛОБАЛЬНЫЙ СОСТОЯНИЕ =====
@@ -395,6 +467,8 @@
       id: null,
       name: "Гость",
       score: 0,
+      caseProgress: 0,
+      cases: [],
       isLoaded: false,
       inventory: []
     };
@@ -403,9 +477,10 @@
 
     // ===== DOM =====
     const scoreEl = document.getElementById('score');
+    const caseCountEl = document.getElementById('caseCount');
     const statusEl = document.getElementById('status');
     const clickBtn = document.getElementById('clickBtn');
-    const caseBtn = document.getElementById('caseBtn');
+    const openCaseBtn = document.getElementById('openCaseBtn');
     const invBtn = document.getElementById('invBtn');
     const invModal = document.getElementById('invModal');
     const invList = document.getElementById('invList');
@@ -445,17 +520,27 @@
     function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
       const el = document.createElement('div');
       el.className = 'skin-item';
-      el.style.backgroundColor = rarity.color + '25';
-      el.innerHTML = `<div>${weapon.name}</div><div class="skin-quality">${quality.name}</div>`;
+      el.style.backgroundColor = rarity.color + '30';
+      
+      if (weapon.img) {
+        el.innerHTML = `
+          <img src="${weapon.img}" alt="${weapon.name}">
+          <div>${weapon.name}</div>
+          <div class="skin-quality">${quality.name}</div>
+        `;
+      } else {
+        el.innerHTML = `<div>${weapon.name}</div><div class="skin-quality">${quality.name}</div>`;
+      }
+      
       if (statTrak) el.style.borderTop = '2px solid gold';
       if (souvenir) el.style.borderBottom = '2px solid #00ffcc';
       return el;
     }
 
-    function generateRouletteSkins(count = 50) {
+    function generateCaseSkins(caseType, count) {
       const skins = [];
       for (let i = 0; i < count; i++) {
-        const weapon = WEAPONS[getRandomInt(0, WEAPONS.length - 1)];
+        const weapon = caseType.weapons[getRandomInt(0, caseType.weapons.length - 1)];
         const rarity = RARITIES[weapon.rarity];
         const quality = QUALITIES[getRandomInt(0, QUALITIES.length - 1)];
         const statTrak = Math.random() < 0.08;
@@ -480,61 +565,138 @@
       const data = await res.json();
       if (data.success) {
         player.score = data.found ? (parseInt(data.score) || 0) : 0;
-        player.name = data.name || player.name;
+        player.caseProgress = data.caseProgress || 0;
+        player.cases = data.cases ? JSON.parse(data.cases) : [];
         player.inventory = data.inventory ? JSON.parse(data.inventory) : [];
         player.isLoaded = true;
+        updateCaseUI();
         return true;
       }
       throw new Error("GAS error");
     }
 
-    function saveScoreToGAS() {
+    function savePlayerData() {
       if (!player.id || !player.isLoaded) return;
-      const img = new Image();
-      const params = new URLSearchParams({
-        action: "updateScore",
+      
+      const img1 = new Image();
+      const params1 = new URLSearchParams({
+        action: "updatePlayer",
         id: player.id,
-        score: player.score
+        score: player.score,
+        caseProgress: player.caseProgress,
+        cases: JSON.stringify(player.cases)
       });
-      img.src = `${GAS_URL}?${params}&_=${Date.now()}`;
-    }
+      img1.src = `${GAS_URL}?${params1}&_=${Date.now()}`;
 
-    function saveInventoryToGAS() {
-      if (!player.id || !player.isLoaded) return;
-      const img = new Image();
-      const params = new URLSearchParams({
+      const img2 = new Image();
+      const params2 = new URLSearchParams({
         action: "updateInventory",
         id: player.id,
         inventory: JSON.stringify(player.inventory)
       });
-      img.src = `${GAS_URL}?${params}&_=${Date.now()}`;
+      img2.src = `${GAS_URL}?${params2}&_=${Date.now()}`;
     }
 
-    // ===== ИНВЕНТАРЬ =====
-    function addItemToInventory(itemData) {
-      const price = calculateItemPrice(
-        itemData.weapon.name,
-        itemData.quality.fullName,
-        itemData.rarity.name,
-        itemData.statTrak,
-        itemData.souvenir
-      );
-
-      const newItem = {
-        id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
-        weapon: itemData.weapon.name,
-        quality: itemData.quality.name,
-        qualityFullName: itemData.quality.fullName,
-        rarity: itemData.rarity.name,
-        statTrak: itemData.statTrak,
-        souvenir: itemData.souvenir,
-        price: price,
-        timestamp: Date.now()
-      };
-      player.inventory.push(newItem);
-      saveInventoryToGAS();
+    // ===== КЕЙСЫ =====
+    function giveRandomCase() {
+      player.cases = [];
+      const caseType = CASES[Math.floor(Math.random() * CASES.length)];
+      player.cases.push(caseType.name);
+      setStatus(`🎁 Получен ${caseType.name}!`);
+      updateCaseUI();
+      savePlayerData();
     }
 
+    function updateCaseUI() {
+      caseCountEl.textContent = player.cases.length;
+      openCaseBtn.disabled = (player.cases.length === 0 || player.score < 10);
+    }
+
+    function openCase() {
+      if (player.cases.length === 0 || player.score < 10) return;
+
+      const caseName = player.cases.pop();
+      const caseType = CASES.find(c => c.name === caseName);
+      if (!caseType) return;
+
+      player.score -= 10;
+      scoreEl.textContent = player.score;
+      updateCaseUI();
+      savePlayerData();
+      setStatus("Крутим...");
+
+      resultBox.style.display = 'none';
+
+      const preSpin = generateCaseSkins(caseType, 30);
+      const weapon = caseType.weapons[getRandomInt(0, caseType.weapons.length - 1)];
+      const rarity = RARITIES[weapon.rarity];
+      const quality = QUALITIES[getRandomInt(0, QUALITIES.length - 1)];
+      const statTrak = Math.random() < 0.08;
+      const souvenir = !statTrak && Math.random() < 0.03;
+      const winSkin = { weapon, quality, rarity, statTrak, souvenir };
+      const postSpin = generateCaseSkins(caseType, 15);
+      const fullList = [...preSpin, winSkin, ...postSpin];
+      renderRoulette(fullList);
+
+      setTimeout(() => {
+        const itemWidth = 102; // 90 + 2*6 margin
+        const winIndex = preSpin.length;
+        const containerWidth = document.querySelector('.roulette-container').offsetWidth;
+        const targetCenter = winIndex * itemWidth + itemWidth / 2;
+        const scrollLeft = targetCenter - containerWidth / 2;
+
+        rouletteTrack.style.transition = 'none';
+        rouletteTrack.style.transform = 'translateX(0)';
+        rouletteTrack.offsetHeight;
+        rouletteTrack.style.transition = 'transform 3s cubic-bezier(0.16, 1, 0.3, 1)';
+        rouletteTrack.style.transform = `translateX(${-scrollLeft}px)`;
+
+        setTimeout(() => {
+          isSpinning = false;
+          const items = rouletteTrack.querySelectorAll('.skin-item');
+          items.forEach(el => el.classList.remove('highlight'));
+          if (items[winIndex]) items[winIndex].classList.add('highlight');
+
+          resultName.textContent = weapon.name;
+          resultQuality.textContent = quality.fullName;
+          resultQuality.style.color = quality.color;
+          resultRarity.textContent = rarity.name;
+          resultRarity.style.color = rarity.color;
+
+          const mods = [];
+          if (statTrak) mods.push("StatTrak™");
+          if (souvenir) mods.push("Сувенир");
+          resultMod.textContent = mods.join(" | ");
+          resultMod.style.display = mods.length ? 'block' : 'none';
+          resultBox.style.display = 'block';
+
+          const price = calculateItemPrice(
+            weapon.name,
+            quality.fullName,
+            rarity.name,
+            statTrak,
+            souvenir
+          );
+          const newItem = {
+            id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+            weapon: weapon.name,
+            quality: quality.name,
+            qualityFullName: quality.fullName,
+            rarity: rarity.name,
+            statTrak: statTrak,
+            souvenir: souvenir,
+            price: price,
+            img: weapon.img,
+            timestamp: Date.now()
+          };
+          player.inventory.push(newItem);
+          savePlayerData();
+          setStatus("✅ Предмет сохранён!");
+        }, 3100);
+      }, 50);
+    }
+
+    // ===== ИНВЕНТАРЬ И ПРОДАЖА =====
     function renderInventory() {
       if (!player.isLoaded) {
         invList.innerHTML = "Загрузка...";
@@ -556,10 +718,13 @@
 
         html += `
           <div class="inv-item ${item.statTrak ? 'stattrak' : ''} ${item.souvenir ? 'souvenir' : ''}">
-            <div class="inv-item-name">${item.weapon}</div>
-            <div class="inv-item-meta">${item.qualityFullName} • ${item.rarity}${modText}</div>
-            <div style="font-size:13px; color:gold; margin:4px 0;">💰 Цена: ${item.price} очков</div>
-            <button class="sell-btn" data-index="${index}">Продать</button>
+            ${item.img ? `<img src="${item.img}" alt="${item.weapon}">` : ''}
+            <div class="inv-item-info">
+              <div class="inv-item-name">${item.weapon}</div>
+              <div class="inv-item-meta">${item.qualityFullName} • ${item.rarity}${modText}</div>
+              <div style="font-size:13px; color:gold;">💰 Цена: ${item.price} очков</div>
+              <button class="sell-btn" data-index="${index}">Продать</button>
+            </div>
           </div>
         `;
       });
@@ -583,81 +748,15 @@
       sellModal.style.display = 'flex';
     }
 
-    // ===== РУЛЕТКА =====
-    async function spinRoulette() {
-      if (isSpinning || player.score < 10) {
-        if (player.score < 10) setStatus("❌ Нужно 10 очков!");
-        return;
-      }
-
-      isSpinning = true;
-      player.score -= 10;
-      scoreEl.textContent = player.score;
-      saveScoreToGAS();
-      setStatus("Крутим...");
-
-      resultBox.style.display = 'none';
-
-      const preSpin = generateRouletteSkins(30);
-      const weapon = WEAPONS[getRandomInt(0, WEAPONS.length - 1)];
-      const rarity = RARITIES[weapon.rarity];
-      const quality = QUALITIES[getRandomInt(0, QUALITIES.length - 1)];
-      const statTrak = Math.random() < 0.08;
-      const souvenir = !statTrak && Math.random() < 0.03;
-      const winSkin = { weapon, quality, rarity, statTrak, souvenir };
-      const postSpin = generateRouletteSkins(15);
-      const fullList = [...preSpin, winSkin, ...postSpin];
-      renderRoulette(fullList);
-
-      await new Promise(r => setTimeout(r, 50));
-
-      const itemWidth = 88;
-      const winIndex = preSpin.length;
-      const containerWidth = document.querySelector('.roulette-container').offsetWidth;
-      const targetCenter = winIndex * itemWidth + itemWidth / 2;
-      const scrollLeft = targetCenter - containerWidth / 2;
-
-      // 🔁 Фикс повторной анимации
-      rouletteTrack.style.transition = 'none';
-      rouletteTrack.style.transform = 'translateX(0)';
-      rouletteTrack.offsetHeight; // reflow
-      rouletteTrack.style.transition = 'transform 3s cubic-bezier(0.16, 1, 0.3, 1)';
-      rouletteTrack.style.transform = `translateX(${-scrollLeft}px)`;
-
-      setTimeout(() => {
-        isSpinning = false;
-        const items = rouletteTrack.querySelectorAll('.skin-item');
-        items.forEach(el => el.classList.remove('highlight'));
-        if (items[winIndex]) items[winIndex].classList.add('highlight');
-
-        resultName.textContent = weapon.name;
-        resultQuality.textContent = quality.fullName;
-        resultQuality.style.color = quality.color;
-        resultRarity.textContent = rarity.name;
-        resultRarity.style.color = rarity.color;
-
-        const mods = [];
-        if (statTrak) mods.push("StatTrak™");
-        if (souvenir) mods.push("Сувенир");
-        resultMod.textContent = mods.join(" | ");
-        resultMod.style.display = mods.length ? 'block' : 'none';
-        resultBox.style.display = 'block';
-
-        addItemToInventory(winSkin);
-        setStatus("✅ Предмет сохранён!");
-      }, 3100);
-    }
-
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     (async () => {
       const tg = window.Telegram?.WebApp;
-	  if (tg?.initDataUnsafe?.user) {
-		const user = tg.initDataUnsafe.user;
-		player.id = String(user.id);
-		// Используем username с @, если есть, иначе имя
-		player.name = user.username 
-		? '@' + user.username 
-		: (user.first_name || "Игрок") + (user.last_name ? " " + user.last_name : "");
+      if (tg?.initDataUnsafe?.user) {
+        const user = tg.initDataUnsafe.user;
+        player.id = String(user.id);
+        player.name = user.username 
+          ? '@' + user.username 
+          : (user.first_name || "Игрок") + (user.last_name ? " " + user.last_name : "");
         try { tg.expand(); } catch (e) {}
         setStatus("Подключение...");
         try {
@@ -678,15 +777,26 @@
       }
 
       scoreEl.textContent = player.score;
-      renderRoulette(generateRouletteSkins(25));
+      caseCountEl.textContent = player.cases.length;
+      renderRoulette(generateCaseSkins(CASES[0], 25));
 
       clickBtn.addEventListener('click', () => {
         player.score += 1;
         scoreEl.textContent = player.score;
-        if (player.score % 5 === 0) saveScoreToGAS();
+
+        if (player.cases.length === 0) {
+          player.caseProgress += 1;
+          if (player.caseProgress >= 20) {
+            player.caseProgress = 0;
+            giveRandomCase();
+          }
+        }
+
+        if (player.score % 5 === 0) savePlayerData();
+        updateCaseUI();
       });
 
-      caseBtn.addEventListener('click', spinRoulette);
+      openCaseBtn.addEventListener('click', openCase);
       invBtn.addEventListener('click', () => {
         renderInventory();
         invModal.style.display = 'block';
@@ -704,20 +814,14 @@
         player.score += item.price;
         player.inventory.splice(sellPendingIndex, 1);
         scoreEl.textContent = player.score;
-        saveScoreToGAS();
-        saveInventoryToGAS();
+        savePlayerData();
         renderInventory();
         sellModal.style.display = 'none';
         sellPendingIndex = -1;
         setStatus(`✅ +${item.price} очков!`);
       });
 
-      setInterval(() => {
-        if (player.isLoaded) {
-          saveScoreToGAS();
-          saveInventoryToGAS();
-        }
-      }, 30000);
+      setInterval(savePlayerData, 30000);
     })();
   </script>
 </body>
