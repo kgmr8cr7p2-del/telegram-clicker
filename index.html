@@ -69,7 +69,6 @@
       box-shadow: 0 6px 20px rgba(0, 130, 255, 0.8);
     }
 
-    /* Модальное окно */
     .modal {
       position: fixed;
       top: 0;
@@ -196,6 +195,14 @@
     .info-value {
       color: #fff;
     }
+
+    .rarity-common       { background: #b0c3d9; color: #000; }
+    .rarity-industrial   { background: #5e9dc6; color: #fff; }
+    .rarity-mil-spec     { background: #4b69ff; color: #fff; }
+    .rarity-restricted   { background: #8847ff; color: #fff; }
+    .rarity-classified   { background: #d32ce6; color: #fff; }
+    .rarity-covert       { background: #eb4b4b; color: #fff; }
+    .rarity-rare         { background: #ffd700; color: #000; }
   </style>
 </head>
 <body>
@@ -208,7 +215,6 @@
   </div>
   <button class="spin-btn" id="spinBtn">Открыть кейс</button>
 
-  <!-- Модальное окно -->
   <div class="modal" id="resultModal">
     <div class="modal-content">
       <div class="modal-title">🎉 Поздравляем!</div>
@@ -225,8 +231,8 @@
   </div>
 
   <script>
-    // === Настройки ===
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxsSGXXkVcPUs8MnjnRjD8fyYrCtZPevhUBYijAfjiRf47nB9DoH_P_wFK4_Jp2dHEz/exec"; // ← ЗАМЕНИ!
+    // ⚠️ ЗАМЕНИ ЭТОТ URL НА СВОЙ ИЗ GOOGLE APPS SCRIPT!
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby4uf9S7X_vUGWfDQRf3EeY58AGyXkiNwC9XxSfBN1hqoXPxOI-1WQc5gfguNMhcBAU/exec";
     const CASE_COST_STARS = 1;
 
     const RARITY_CLASSES = {
@@ -249,21 +255,18 @@
       rare: "Редкое"
     };
 
-    // === Telegram ===
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.expand();
       tg.ready();
     }
 
-    // === Игровой баланс (в реальности — из GAS) ===
-    let player = {
-      id: tg?.initDataUnsafe?.user?.id || 'guest_123',
-      score: 0,
-      stars: 5 // для теста — начни с 5 звёзд
+    const player = {
+      id: tg?.initDataUnsafe?.user?.id || 'guest_' + Math.floor(Math.random() * 10000),
+      stars: 0,
+      score: 0
     };
 
-    // DOM
     const spinBtn = document.getElementById('spinBtn');
     const scoreDisplay = document.getElementById('scoreDisplay');
     const starsDisplay = document.getElementById('starsDisplay');
@@ -278,19 +281,39 @@
 
     let currentResult = null;
 
-    // Обновить UI
     function updateUI() {
       scoreDisplay.textContent = player.score;
       starsDisplay.textContent = player.stars;
       spinBtn.disabled = player.stars < CASE_COST_STARS;
     }
 
-    // === Открытие кейса ===
+    async function fetchBalance() {
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: player.id,
+            action: "get_balance"
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          player.stars = data.stars;
+          player.score = data.score;
+          updateUI();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (err) {
+        console.error("Balance error:", err);
+        tg?.showAlert?.("Не удалось загрузить данные");
+      }
+    }
+
     async function openCase() {
       if (player.stars < CASE_COST_STARS) return;
-
-      player.stars -= CASE_COST_STARS;
-      updateUI();
+      spinBtn.disabled = true;
       spinBtn.textContent = "Открываем...";
 
       try {
@@ -302,17 +325,17 @@
             action: "open_case"
           })
         });
-
         const data = await response.json();
         if (data.error) throw new Error(data.error);
-
         currentResult = data.item;
         showResultModal();
+        await fetchBalance();
       } catch (err) {
+        tg?.showAlert?.("Ошибка: " + (err.message || "сервер"));
         console.error(err);
-        tg?.showAlert?.("Ошибка: " + err.message);
-        player.stars += CASE_COST_STARS; // возврат при ошибке
-        updateUI();
+      } finally {
+        spinBtn.textContent = "Открыть кейс";
+        spinBtn.disabled = false;
       }
     }
 
@@ -330,50 +353,39 @@
         name: item.name,
         rarity: rarityName,
         wear: item.wear,
-        description: item.info
+        description: item.info || "Нет описания"
       };
 
       infoPopup.classList.remove('active');
       modal.classList.add('active');
-      spinBtn.textContent = "Открыть кейс";
     }
 
-    // === Продажа / сохранение ===
     async function handleUserChoice(action) {
-      const item = currentResult;
-      if (!item) return;
-
-      // Отправка в GAS (для записи в инвентарь/продажи)
+      if (!currentResult) return;
       try {
         await fetch(GAS_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user_id: player.id,
-            item_id: item.id,
+            item_id: currentResult.id,
             action: action
           })
         });
+        if (action === "sell") {
+          const earned = Math.max(1, Math.floor(currentResult.base_price * 0.7));
+          tg?.showAlert?.(`✅ Продано за ${earned} ⭐!`);
+        } else {
+          tg?.showAlert?.("✅ Сохранено!");
+        }
+        await fetchBalance();
       } catch (e) {
-        console.warn("Не удалось отправить выбор:", e);
+        tg?.showAlert?.("⚠️ Не удалось отправить");
       }
-
-      if (action === "sell") {
-        // Начисление звёзд (в реальности — из GAS, но для демо — локально)
-        const earned = Math.max(1, Math.floor(item.base_price * 0.7)); // 70% от базовой цены
-        player.stars += earned;
-        tg?.showAlert?.(`✅ Продано за ${earned} ⭐!`);
-      } else {
-        tg?.showAlert?.("✅ Предмет в инвентаре!");
-      }
-
-      updateUI();
       modal.classList.remove('active');
     }
 
-    // === Слушатели ===
     spinBtn.addEventListener('click', openCase);
-
     infoBtn.addEventListener('click', () => {
       const item = window.currentItemForInfo;
       if (!item) return;
@@ -382,22 +394,17 @@
         <div class="info-row"><span class="info-label">Редкость:</span> <span class="info-value">${item.rarity}</span></div>
         <div class="info-row"><span class="info-label">Качество:</span> <span class="info-value">${item.wear}</span></div>
         <div class="info-row" style="margin-top:10px;"><span class="info-label">Описание:</span></div>
-        <div>${item.description || "Информация недоступна."}</div>
+        <div>${item.description}</div>
       `;
       infoPopup.classList.toggle('active');
     });
-
     sellBtn.addEventListener('click', () => handleUserChoice("sell"));
     keepBtn.addEventListener('click', () => handleUserChoice("keep"));
-
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active');
-      }
+      if (e.target === modal) modal.classList.remove('active');
     });
 
-    // Инициализация
-    updateUI();
+    fetchBalance();
   </script>
 </body>
 </html>
