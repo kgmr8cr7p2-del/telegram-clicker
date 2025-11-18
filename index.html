@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -63,8 +64,7 @@
     .click-btn,
     .open-case-btn,
     .inv-btn,
-    .upgrade-miner-btn,
-    .toggle-mining-btn {
+    .upgrade-miner-btn {
       width: 120px;
       height: 120px;
       font-size: 16px;
@@ -107,19 +107,10 @@
       border-radius: 12px;
       font-size: 14px;
     }
-    .toggle-mining-btn {
-      background: linear-gradient(135deg, #4caf50, #8bc34a);
-      box-shadow: 0 6px 18px rgba(76, 175, 80, 0.4);
-      width: auto;
-      padding: 8px 20px;
-      border-radius: 12px;
-      font-size: 14px;
-    }
     .click-btn:active,
     .open-case-btn:active,
     .inv-btn:active,
-    .upgrade-miner-btn:active,
-    .toggle-mining-btn:active {
+    .upgrade-miner-btn:active {
       transform: scale(0.94);
     }
     .status {
@@ -380,6 +371,7 @@
       { name: "Тайное", color: "#eb4b4b" },
       { name: "Нож", color: "#ffd700" }
     ];
+
     function getWeightedRandomWeapon(weapons) {
       const totalWeight = weapons.reduce((sum, w) => sum + (w.weight || 1), 0);
       let random = Math.random() * totalWeight;
@@ -389,7 +381,8 @@
       }
       return weapons[0];
     }
-    const CASES = [
+
+        const CASES = [
       {
         name: "Gallery Case",
         weapons: [
@@ -540,23 +533,26 @@
   ]
 }
     ];
-let player = {
-  id: null,
-  name: "Гость",
-  score: 0,
-  miningRate: 0,
-  miningFraction: 0, // для точного онлайн-майнинга (целые очки)
-  lastActive: Date.now(), // ← будет обновляться ТОЛЬКО при уходе из приложения
-  caseProgress: 0,
-  cases: [],
-  isLoaded: false,
-  inventory: []
-};
+
+    let player = {
+      id: null,
+      name: "Гость",
+      score: 0,
+      miningRate: 0,
+      miningFraction: 0, // ← для точного онлайн-майнинга
+      lastActive: Date.now(),
+      caseProgress: 0,
+      cases: [],
+      isLoaded: false,
+      inventory: []
+    };
+
     let isSpinning = false;
     let isMiningActive = true;
     let miningIntervalId = null;
     let upgradeCost = 10;
     const upgradeCostMultiplier = 1.5;
+
     const scoreEl = document.getElementById('score');
     const miningRateEl = document.getElementById('miningRate');
     const caseCountEl = document.getElementById('caseCount');
@@ -584,89 +580,93 @@ let player = {
       statusEl.textContent = text;
       statusEl.style.color = isError ? '#ff9999' : '#aaffaa';
     }
-function savePlayerOnExit() {
-  if (!player.id || !player.isLoaded) return;
-  player.lastActive = Date.now(); // фиксируем момент ухода
-  const params = new URLSearchParams({
-    action: "updatePlayer",
-    id: player.id,
-    score: player.score,
-    miningRate: player.miningRate,
-    miningFraction: player.miningFraction,
-    lastActive: player.lastActive, // ← теперь сохраняем
-    caseProgress: player.caseProgress,
-    cases: JSON.stringify(player.cases)
-  });
-  // Используем navigator.sendBeacon для надёжной отправки при закрытии
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(`${GAS_URL}`, params);
-  } else {
-    // fallback (менее надёжно)
-    fetch(`${GAS_URL}`, { method: 'POST', body: params, keepalive: true });
-  }
-}
+
+    // Сохранение — НЕ обновляем lastActive здесь
     function savePlayerData() {
-  if (!player.id || !player.isLoaded) return;
-  const params = new URLSearchParams({
-    action: "updatePlayer",
-    id: player.id,
-    score: player.score,
-    miningRate: player.miningRate,
-    miningFraction: player.miningFraction,
-    // ⚠️ НЕ обновляем lastActive здесь!
-    caseProgress: player.caseProgress,
-    cases: JSON.stringify(player.cases)
-  });
-  fetch(`${GAS_URL}?${params}&_=${Date.now()}`).catch(err => console.error("Ошибка сохранения:", err));
+      if (!player.id || !player.isLoaded) return;
+      const params = new URLSearchParams({
+        action: "updatePlayer",
+        id: player.id,
+        score: player.score,
+        miningRate: player.miningRate,
+        miningFraction: player.miningFraction,
+        // ⚠️ lastActive НЕ сохраняем здесь!
+        caseProgress: player.caseProgress,
+        cases: JSON.stringify(player.cases)
+      });
+      fetch(`${GAS_URL}?${params}&_=${Date.now()}`).catch(err => console.error("Ошибка сохранения:", err));
 
-  const params2 = new URLSearchParams({
-    action: "updateInventory",
-    id: player.id,
-    inventory: JSON.stringify(player.inventory)
-  });
-  fetch(`${GAS_URL}?${params2}&_=${Date.now()}`).catch(err => console.error("Ошибка сохранения инвентаря:", err));
-}
-
-    async function loadPlayerFromGAS() {
-  const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.success) {
-    player.score = data.found ? (parseInt(data.score) || 0) : 0;
-    player.miningRate = data.miningRate || 0;
-    player.miningFraction = data.miningFraction || 0;
-    player.lastActive = data.lastActive ? parseInt(data.lastActive) : Date.now();
-    player.caseProgress = data.caseProgress || 0;
-    player.cases = data.cases ? JSON.parse(data.cases) : [];
-    player.inventory = data.inventory ? JSON.parse(data.inventory) : [];
-    player.isLoaded = true;
-
-    // --- Расчёт оффлайн-дохода ---
-    const now = Date.now();
-    const timeOffline = (now - player.lastActive) / 1000; // секунды
-    const offlineEarnings = Math.floor(player.miningRate * timeOffline);
-
-    if (offlineEarnings > 0) {
-      player.score += offlineEarnings;
-      setStatus(`временно отсутствовали, мы добыли ${offlineEarnings} монет!`, false);
+      const params2 = new URLSearchParams({
+        action: "updateInventory",
+        id: player.id,
+        inventory: JSON.stringify(player.inventory)
+      });
+      fetch(`${GAS_URL}?${params2}&_=${Date.now()}`).catch(err => console.error("Ошибка сохранения инвентаря:", err));
     }
 
-    // Обновляем lastActive только ПОСЛЕ расчёта
-    player.lastActive = now;
-    savePlayerData(); // сохраняем score и сбрасываем lastActive (до следующего ухода)
-    updateUI();
-    return true;
-  }
-  throw new Error("GAS error");
-}
+    // Специальное сохранение при уходе
+    function savePlayerOnExit() {
+      if (!player.id || !player.isLoaded) return;
+      player.lastActive = Date.now();
+      const params = new URLSearchParams({
+        action: "updatePlayer",
+        id: player.id,
+        score: player.score,
+        miningRate: player.miningRate,
+        miningFraction: player.miningFraction,
+        lastActive: player.lastActive,
+        caseProgress: player.caseProgress,
+        cases: JSON.stringify(player.cases)
+      });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(GAS_URL, params);
+      } else {
+        fetch(GAS_URL, { method: 'POST', body: params, keepalive: true });
+      }
+    }
+
+    async function loadPlayerFromGAS() {
+      const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success) {
+        player.score = data.found ? (parseInt(data.score) || 0) : 0;
+        player.miningRate = data.miningRate || 0;
+        player.miningFraction = data.miningFraction || 0;
+        let lastActive = data.lastActive ? parseInt(data.lastActive) : Date.now();
+        // Защита от битых дат (1970 или будущее)
+        if (lastActive < 1000000000000 || lastActive > Date.now() + 86400000) {
+          lastActive = Date.now();
+        }
+        player.lastActive = lastActive;
+        player.caseProgress = data.caseProgress || 0;
+        player.cases = data.cases ? JSON.parse(data.cases) : [];
+        player.inventory = data.inventory ? JSON.parse(data.inventory) : [];
+        player.isLoaded = true;
+
+        // Расчёт оффлайн-дохода
+        const now = Date.now();
+        const timeOffline = (now - player.lastActive) / 1000; // сек
+        const offlineEarnings = Math.floor(player.miningRate * timeOffline);
+        if (offlineEarnings > 0) {
+          player.score += offlineEarnings;
+          setStatus(`временно отсутствовали, мы добыли ${offlineEarnings} монет!`);
+        }
+        player.lastActive = now;
+        savePlayerData();
+        updateUI();
+        return true;
+      }
+      throw new Error("GAS error");
+    }
 
     function updateUI() {
-        if (!player.isLoaded) return;
-        scoreEl.textContent = Math.floor(player.score); // гарантия целого
-        miningRateEl.textContent = Math.floor(player.miningRate); // целая скорость
-        caseCountEl.textContent = player.cases.length;
-        upgradeCostEl.textContent = upgradeCost;
-        openCaseBtn.disabled = (player.cases.length === 0 || player.score < 10);
+      if (!player.isLoaded) return;
+      scoreEl.textContent = Math.floor(player.score);
+      miningRateEl.textContent = Math.floor(player.miningRate);
+      caseCountEl.textContent = player.cases.length;
+      upgradeCostEl.textContent = upgradeCost;
+      openCaseBtn.disabled = (player.cases.length === 0 || player.score < 10);
     }
 
     function processMining() {
@@ -681,16 +681,16 @@ function savePlayerOnExit() {
     }
 
     function upgradeMiner() {
-        if (player.score < upgradeCost) {
-            setStatus("Недостаточно монет для улучшения!", true);
-            return;
-        }
-        player.score -= upgradeCost;
-        player.miningRate += 1;
-        upgradeCost = Math.floor(upgradeCost * upgradeCostMultiplier);
-        savePlayerData();
-        updateUI();
-        setStatus(`Майнер улучшен! Скорость: ${Math.floor(player.miningRate)}/сек`);
+      if (player.score < upgradeCost) {
+        setStatus("Недостаточно монет для улучшения!", true);
+        return;
+      }
+      player.score -= upgradeCost;
+      player.miningRate += 1;
+      upgradeCost = Math.floor(upgradeCost * upgradeCostMultiplier);
+      savePlayerData();
+      updateUI();
+      setStatus(`Майнер улучшен! Скорость: ${Math.floor(player.miningRate)}/сек`);
     }
 
     function giveRandomCase() {
@@ -700,6 +700,86 @@ function savePlayerOnExit() {
       setStatus(`🎁 Получен ${caseType.name}!`);
       updateUI();
       savePlayerData();
+    }
+
+    // --- ОСТАЛЬНЫЕ ФУНКЦИИ (openCase, getWeightedQuality и т.д.) ---
+    // Они остаются без изменений — копируй их из твоего исходного файла
+
+    function getWeightedQuality(weapon, isStatTrak) {
+      const weightsSource = weapon.qualityWeights;
+      if (!weightsSource) {
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
+      }
+      const weights = isStatTrak ? weightsSource.statTrak : weightsSource.base;
+      if (!weights) {
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
+      }
+      const qualities = Object.keys(weights);
+      if (qualities.length === 0) {
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
+      }
+      const total = qualities.reduce((sum, q) => sum + weights[q], 0);
+      let rand = Math.random() * total;
+      for (const q of qualities) {
+        rand -= weights[q];
+        if (rand <= 0) {
+          return {
+            name: q,
+            fullName: QUALITIES.find(qual => qual.name === q)?.fullName || q,
+            color: QUALITIES.find(qual => qual.name === q)?.color || "#fff"
+          };
+        }
+      }
+      const lastQualName = qualities[qualities.length - 1];
+      return {
+        name: lastQualName,
+        fullName: QUALITIES.find(qual => qual.name === lastQualName)?.fullName || lastQualName,
+        color: QUALITIES.find(qual => qual.name === lastQualName)?.color || "#fff"
+      };
+    }
+
+    function getPrice(weapon, qualityName, isStatTrak) {
+      return isStatTrak
+        ? weapon.prices.statTrak[qualityName]
+        : weapon.prices.base[qualityName];
+    }
+
+    function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
+      const el = document.createElement('div');
+      el.className = 'skin-item';
+      el.style.backgroundColor = rarity.color + '30';
+      if (weapon.img) {
+        el.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
+      } else {
+        el.innerHTML = `<div style="width:60px;height:60px;background:rgba(255,255,255,0.1);border-radius:4px;"></div>`;
+      }
+      if (statTrak) el.style.borderTop = '2px solid gold';
+      if (souvenir) el.style.borderBottom = '2px solid #00ffcc';
+      return el;
+    }
+
+    function generateCaseSkins(caseType, count) {
+      const skins = [];
+      for (let i = 0; i < count; i++) {
+        const weapon = getWeightedRandomWeapon(caseType.weapons);
+        const rarity = RARITIES[weapon.rarity];
+        const statTrak = weapon.canBeStatTrak ? (Math.random() < 0.10) : false;
+        const quality = getWeightedQuality(weapon, statTrak);
+        const souvenir = false;
+        skins.push({ weapon, quality, rarity, statTrak, souvenir });
+      }
+      return skins;
+    }
+
+    function renderRoulette(skins) {
+      rouletteTrack.innerHTML = '';
+      skins.forEach(skin => {
+        const el = generateSkinItem(skin.weapon, skin.quality, skin.rarity, skin.statTrak, skin.souvenir);
+        rouletteTrack.appendChild(el);
+      });
     }
 
     function openCase() {
@@ -782,83 +862,6 @@ function savePlayerOnExit() {
       }, 100);
     }
 
-    function getWeightedQuality(weapon, isStatTrak) {
-      const weightsSource = weapon.qualityWeights;
-      if (!weightsSource) {
-        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
-        return defaultQual;
-      }
-      const weights = isStatTrak ? weightsSource.statTrak : weightsSource.base;
-      if (!weights) {
-        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
-        return defaultQual;
-      }
-      const qualities = Object.keys(weights);
-      if (qualities.length === 0) {
-        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
-        return defaultQual;
-      }
-      const total = qualities.reduce((sum, q) => sum + weights[q], 0);
-      let rand = Math.random() * total;
-      for (const q of qualities) {
-        rand -= weights[q];
-        if (rand <= 0) {
-          return {
-            name: q,
-            fullName: QUALITIES.find(qual => qual.name === q)?.fullName || q,
-            color: QUALITIES.find(qual => qual.name === q)?.color || "#fff"
-          };
-        }
-      }
-      const lastQualName = qualities[qualities.length - 1];
-      return {
-        name: lastQualName,
-        fullName: QUALITIES.find(qual => qual.name === lastQualName)?.fullName || lastQualName,
-        color: QUALITIES.find(qual => qual.name === lastQualName)?.color || "#fff"
-      };
-    }
-
-    function getPrice(weapon, qualityName, isStatTrak) {
-      return isStatTrak
-        ? weapon.prices.statTrak[qualityName]
-        : weapon.prices.base[qualityName];
-    }
-
-    function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
-      const el = document.createElement('div');
-      el.className = 'skin-item';
-      el.style.backgroundColor = rarity.color + '30';
-      if (weapon.img) {
-        el.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
-      } else {
-        el.innerHTML = `<div style="width:60px;height:60px;background:rgba(255,255,255,0.1);border-radius:4px;"></div>`;
-      }
-      if (statTrak) el.style.borderTop = '2px solid gold';
-      if (souvenir) el.style.borderBottom = '2px solid #00ffcc';
-      return el;
-    }
-
-    function generateCaseSkins(caseType, count) {
-      const skins = [];
-      for (let i = 0; i < count; i++) {
-        const weapon = getWeightedRandomWeapon(caseType.weapons);
-        const rarity = RARITIES[weapon.rarity];
-        const statTrak = weapon.canBeStatTrak ? (Math.random() < 0.10) : false;
-        const quality = getWeightedQuality(weapon, statTrak);
-        const souvenir = false;
-        skins.push({ weapon, quality, rarity, statTrak, souvenir });
-      }
-      return skins;
-    }
-
-    function renderRoulette(skins) {
-      rouletteTrack.innerHTML = '';
-      skins.forEach(skin => {
-        const el = generateSkinItem(skin.weapon, skin.quality, skin.rarity, skin.statTrak, skin.souvenir);
-        rouletteTrack.appendChild(el);
-      });
-    }
-
     function renderInventory() {
       if (!player.isLoaded) {
         invList.innerHTML = "Загрузка...";
@@ -904,6 +907,7 @@ function savePlayerOnExit() {
       });
     }
 
+    // --- ИНИЦИАЛИЗАЦИЯ ---
     (async () => {
       const tg = window.Telegram?.WebApp;
       if (tg?.initDataUnsafe?.user) {
@@ -922,7 +926,6 @@ function savePlayerOnExit() {
           player.isLoaded = true;
           player.inventory = [];
           player.lastActive = Date.now();
-          player.miningFraction = 0; // инициализация
           setStatus("⚠️ Офлайн-режим", true);
         }
       } else {
@@ -931,12 +934,14 @@ function savePlayerOnExit() {
         player.isLoaded = true;
         player.inventory = [];
         player.lastActive = Date.now();
-        player.miningFraction = 0; // инициализация
         setStatus("🧪 Тестовый режим", true);
       }
+
       updateUI();
       renderRoulette(generateCaseSkins(CASES[0], 25));
+
       miningIntervalId = setInterval(processMining, 100);
+
       clickBtn.addEventListener('click', () => {
         player.score += 1;
         updateUI();
@@ -949,6 +954,7 @@ function savePlayerOnExit() {
         }
         if (player.score % 5 === 0) savePlayerData();
       });
+
       openCaseBtn.addEventListener('click', openCase);
       invBtn.addEventListener('click', () => {
         renderInventory();
@@ -958,6 +964,11 @@ function savePlayerOnExit() {
         invModal.style.display = 'none';
       });
       upgradeMinerBtn.addEventListener('click', upgradeMiner);
+
+      // Сохраняем прогресс при уходе
+      window.addEventListener('beforeunload', savePlayerOnExit);
+      window.addEventListener('pagehide', savePlayerOnExit); // для Telegram Mini Apps
+
       setInterval(savePlayerData, 10000);
     })();
   </script>
