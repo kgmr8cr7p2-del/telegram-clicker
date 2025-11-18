@@ -311,7 +311,6 @@
       </div>
     </div>
   </div>
-
   <!-- МОДАЛЬНОЕ ОКНО ВЫПАВШЕГО СКИНА -->
   <div class="result-modal" id="resultModal">
     <div class="result-modal-content">
@@ -328,7 +327,6 @@
       </div>
     </div>
   </div>
-
   <!-- ИНВЕНТАРЬ -->
   <div class="inventory-modal" id="invModal">
     <div class="inventory-header">
@@ -337,10 +335,8 @@
     </div>
     <div id="invList">Загрузка...</div>
   </div>
-
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwa5Xl9TyUGpH7rITh2J_s3ER656u3rqYeIW2v6fMMIZURavVXCg_H-fVM_Xgm0yD56/exec";
-
     const QUALITIES = [
       { name: "FN", fullName: "Прямо с завода", color: "#b0c3d9" },
       { name: "MW", fullName: "Немного поношенное", color: "#5e92f3" },
@@ -348,7 +344,6 @@
       { name: "WW", fullName: "Поношенное", color: "#8847ff" },
       { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" }
     ];
-
     const RARITIES = [
       { name: "Ширпотреб", color: "#b0c3d9" },
       { name: "Промышленное", color: "#5e92f3" },
@@ -358,7 +353,6 @@
       { name: "Тайное", color: "#eb4b4b" },
       { name: "Нож", color: "#ffd700" }
     ];
-
     // Взвешенный выбор скина
     function getWeightedRandomWeapon(weapons) {
       const totalWeight = weapons.reduce((sum, w) => sum + (w.weight || 1), 0);
@@ -369,7 +363,6 @@
       }
       return weapons[0];
     }
-
     const CASES = [
       {
         name: "Gallery Case",
@@ -380,17 +373,6 @@
           { name: "PP-Bizon | Wood Block", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/PP-Bizon%20Wood%20Block%20Camo.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 20000000, MW: 100000000, WW: 270000000, FT: 420000000, BS: 190000000 } }, prices: { base: { BS: 1.05, FT: 1.23, WW: 1.4, MW: 1.56, FN: 4.36 } } },
           { name: "Nova | Marsh Grass", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/360fx360f.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 35000000, MW: 130000000, WW: 240000000, FT: 390000000, BS: 210000000 } }, prices: { base: { BS: 1.12, FT: 1.19, WW: 1.24, MW: 1.46, FN: 4.65 } } },
           { name: "Tec-9 | Army Mesh", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Tec-9%20Army%20Mesh.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 15000000, MW: 90000000, WW: 280000000, FT: 430000000, BS: 190000000 } }, prices: { base: { BS: 1.06, FT: 1.28, WW: 1.85, MW: 3.21, FN: 4.27 } } },
-          { name: "FAMAS | Afterimage", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/FAMAS%20Afterimage.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 28000000, MW: 115000000, WW: 255000000, FT: 405000000, BS: 200000000 } }, prices: { base: { BS: 1.1, FT: 1.45, WW: 1.33, MW: 2.1, FN: 5.8 } } },
-          { name: "Glock-18 | Blue Sliver", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Glock-18%20Blue%20Sliver.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 32000000, MW: 125000000, WW: 245000000, FT: 395000000, BS: 205000000 } }, prices: { base: { BS: 1.08, FT: 1.22, WW: 1.31, MW: 1.95, FN: 6.4 } } },
-          { name: "P250 | Sand Dune", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/P250%20Sand%20Dune.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 22000000, MW: 105000000, WW: 265000000, FT: 415000000, BS: 190000000 } }, prices: { base: { BS: 1.04, FT: 1.15, WW: 1.27, MW: 1.78, FN: 4.92 } } },
-          { name: "MP7 | Army Recon", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/MP7%20Army%20Recon.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 40000000, MW: 140000000, WW: 230000000, FT: 380000000, BS: 210000000 } }, prices: { base: { BS: 1.09, FT: 1.3, WW: 1.25, MW: 1.88, FN: 5.21 } } },
-          { name: "Negev | Dazzle", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Negev%20Dazzle.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 18000000, MW: 95000000, WW: 275000000, FT: 425000000, BS: 190000000 } }, prices: { base: { BS: 1.02, FT: 1.26, WW: 1.38, MW: 2.05, FN: 5.45 } } },
-          { name: "Sawed-Off | Amber Fade", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Sawed-Off%20Amber%20Fade.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 33000000, MW: 128000000, WW: 242000000, FT: 388000000, BS: 210000000 } }, prices: { base: { BS: 1.11, FT: 1.35, WW: 1.29, MW: 2.33, FN: 6.77 } } },
-          { name: "XM1014 | Bone Machine", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/XM1014%20Bone%20Machine.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 24000000, MW: 108000000, WW: 262000000, FT: 412000000, BS: 190000000 } }, prices: { base: { BS: 1.07, FT: 1.24, WW: 1.42, MW: 2.18, FN: 5.03 } } },
-          { name: "CZ75-Auto | Tacticat", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/CZ75-Auto%20Tacticat.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 27000000, MW: 113000000, WW: 257000000, FT: 407000000, BS: 200000000 } }, prices: { base: { BS: 1.05, FT: 1.19, WW: 1.34, MW: 1.81, FN: 4.78 } } },
-          { name: "Five-SeveN | Forest Night", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Five-SeveN%20Forest%20Night.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 26000000, MW: 112000000, WW: 258000000, FT: 408000000, BS: 200000000 } }, prices: { base: { BS: 1.03, FT: 1.27, WW: 1.36, MW: 1.92, FN: 5.11 } } },
-          { name: "MAC-10 | Candy Apple", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/MAC-10%20Candy%20Apple.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 31000000, MW: 127000000, WW: 243000000, FT: 387000000, BS: 212000000 } }, prices: { base: { BS: 1.1, FT: 1.33, WW: 1.28, MW: 2.01, FN: 5.95 } } },
-
           // === ОСТАЛЬНЫЕ СКИНЫ ===
           { name: "Desert Eagle | Calligraffiti", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_deagle_deagle_calligraff_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14, FT: 22, WW: 17, MW: 52, FN: 180 }, statTrak: { BS: 77, FT: 83, WW: 73, MW: 136, FN: 731 } } },
           { name: "AUG | Luxe Trim", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_aug_aug_puffer_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14.12, FT: 22.55, WW: 17.34, MW: 52.94, FN: 180.58 }, statTrak: { BS: 77.31, FT: 83.06, WW: 73.83, MW: 136.95, FN: 731.08 } } },
@@ -407,7 +389,6 @@
           { name: "AK-47 | The Outsiders", weight: 1, rarity: 4, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_ak47_ak47_t_bus_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 290900, MW: 2327400, WW: 2327400, FT: 3200100, BS: 1551600 }, statTrak: { FN: 28800, MW: 230200, WW: 230200, FT: 316500, BS: 153500 } }, prices: { base: { BS: 862.00, FT: 968.89, WW: 925.85, MW: 1001.64, FN: 12895.52 }, statTrak: { BS: 2186.03, FT: 2403.53, WW: 2167.03, MW: 4616.87, FN: 15630.47 } } },
           { name: "Glock-18 | Gold Toof", weight: 1, rarity: 5, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_glock_glock_chomper_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 87300, MW: 698200, WW: 698200, FT: 960000, BS: 465500 }, statTrak: { FN: 8600, MW: 69100, WW: 69100, FT: 94900, BS: 46000 } }, prices: { base: { BS: 3800.42, FT: 3702.07, WW: 3957.06, MW: 4683.11, FN: 24226.75 }, statTrak: { BS: 4460.54, FT: 4438.09, WW: 5645.35, MW: 11359.44, FN: 27515.38 } } },
           { name: "M4A1-S | Vaporwave", weight: 1, rarity: 5, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_silencer_m4a1s_vaporwave_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 87300, MW: 698200, WW: 698200, FT: 960000, BS: 465500 }, statTrak: { FN: 8600, MW: 69100, WW: 69100, FT: 94900, BS: 46000 } }, prices: { base: { BS: 4951.33, FT: 7463.20, WW: 6802.90, MW: 16419.38, FN: 43481.00 }, statTrak: { BS: 10281.76, FT: 12900.24, WW: 10402.62, MW: 27971.90, FN: 62867.38 } } },
-
           // === НОЖИ (с весом 0.25 → в 4 раза реже) ===
           { name: "Kukri Knife | Forest DDPAT", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJkISbluPLPr7Vn35cppUijr6QrNnxjQHi-kU9Zzj0IoeUcQU-ZlHV-VS6kLznhcPp6pnPyXN9-n513dCDn2U.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 6535.68, FT: 7216.66, WW: 7501.12, MW: 8525.18, FN: 20800.06 }, statTrak: { BS: 7826.96, FT: 9062.38, WW: 8826.54, MW: 12226.26, FN: 25710.01 } } },
           { name: "Kukri Knife | Boreal Forest", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJko-ZkuTgDLnehG5Q5Pp5j-jX7MKm2w3l-BI9YW2mLISccgc2Yw3Y-Fi9x7y9gZS96p7NmnEyuiUq4i3egVXp1mMdBESn.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7240.80, FT: 7166.67, WW: 6709.81, MW: 8421.74, FN: 17274.48 }, statTrak: { BS: 8161.42, FT: 8307.86, WW: 9859.56, MW: 10492.26, FN: 20239.76 } } },
@@ -422,7 +403,6 @@
         ]
       }
     ];
-
     let player = {
       id: null,
       name: "Гость",
@@ -433,7 +413,6 @@
       inventory: []
     };
     let isSpinning = false;
-
     const scoreEl = document.getElementById('score');
     const caseCountEl = document.getElementById('caseCount');
     const statusEl = document.getElementById('status');
@@ -453,15 +432,39 @@
     const resultModalPrice = document.getElementById('resultModalPrice');
     const resultSellBtn = document.getElementById('resultSellBtn');
     const resultKeepBtn = document.getElementById('resultKeepBtn');
-
     function setStatus(text, isError = false) {
       statusEl.textContent = text;
       statusEl.style.color = isError ? '#ff9999' : '#aaffaa';
     }
-
     function getWeightedQuality(weapon, isStatTrak) {
-      const weights = isStatTrak ? weapon.qualityWeights.statTrak : weapon.qualityWeights.base;
+      // Проверяем, существует ли qualityWeights и нужный подключ (base или statTrak)
+      const weightsSource = weapon.qualityWeights; // Сначала получаем объект
+      if (!weightsSource) {
+        console.error("qualityWeights отсутствует у скина:", weapon.name); // Лог для отладки
+        // Возвращаем значение по умолчанию, например, BS
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
+      }
+
+      const weights = isStatTrak ? weightsSource.statTrak : weightsSource.base; // Теперь обращаемся к подключу
+
+      if (!weights) {
+         console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} отсутствует у скина:`, weapon.name); // Лог для отладки
+         // Возвращаем значение по умолчанию
+         const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+         return defaultQual;
+      }
+
+      // Теперь weights гарантированно объект
       const qualities = Object.keys(weights);
+      if (qualities.length === 0) {
+        console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} пуст у скина:`, weapon.name); // Лог для отладки
+        // Возвращаем значение по умолчанию
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
+      }
+
+      // Остальная логика взвешенного выбора
       const total = qualities.reduce((sum, q) => sum + weights[q], 0);
       let rand = Math.random() * total;
       for (const q of qualities) {
@@ -474,15 +477,19 @@
           };
         }
       }
-      return QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+      // Если цикл закончился, вероятно, все веса были 0 или что-то пошло не так, возвращаем последний возможный
+      const lastQualName = qualities[qualities.length - 1];
+      return {
+        name: lastQualName,
+        fullName: QUALITIES.find(qual => qual.name === lastQualName)?.fullName || lastQualName,
+        color: QUALITIES.find(qual => qual.name === lastQualName)?.color || "#fff"
+      };
     }
-
     function getPrice(weapon, qualityName, isStatTrak) {
       return isStatTrak 
         ? weapon.prices.statTrak[qualityName] 
         : weapon.prices.base[qualityName];
     }
-
     function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
       const el = document.createElement('div');
       el.className = 'skin-item';
@@ -496,7 +503,6 @@
       if (souvenir) el.style.borderBottom = '2px solid #00ffcc';
       return el;
     }
-
     function generateCaseSkins(caseType, count) {
       const skins = [];
       for (let i = 0; i < count; i++) {
@@ -509,7 +515,6 @@
       }
       return skins;
     }
-
     function renderRoulette(skins) {
       rouletteTrack.innerHTML = '';
       skins.forEach(skin => {
@@ -517,7 +522,6 @@
         rouletteTrack.appendChild(el);
       });
     }
-
     async function loadPlayerFromGAS() {
       const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
       const res = await fetch(url);
@@ -533,7 +537,6 @@
       }
       throw new Error("GAS error");
     }
-
     function savePlayerData() {
       if (!player.id || !player.isLoaded) return;
       const img1 = new Image();
@@ -553,7 +556,6 @@
       });
       img2.src = `${GAS_URL}?${params2}&_=${Date.now()}`;
     }
-
     function giveRandomCase() {
       player.cases = [];
       const caseType = CASES[Math.floor(Math.random() * CASES.length)];
@@ -562,12 +564,10 @@
       updateCaseUI();
       savePlayerData();
     }
-
     function updateCaseUI() {
       caseCountEl.textContent = player.cases.length;
       openCaseBtn.disabled = (player.cases.length === 0 || player.score < 10);
     }
-
     function openCase() {
       if (player.cases.length === 0 || player.score < 10) return;
       const caseName = player.cases.pop();
@@ -593,20 +593,17 @@
         const containerWidth = document.querySelector('.roulette-container').offsetWidth;
         const targetCenter = winIndex * itemWidth + itemWidth / 2;
         const scrollLeft = targetCenter - containerWidth / 2;
-
         // Исправленный reflow для мобильных устройств
         rouletteTrack.style.transition = 'none';
         rouletteTrack.style.transform = 'translateX(0)';
         void rouletteTrack.offsetWidth; // Надёжный способ
         rouletteTrack.style.transition = 'transform 3s ease-out';
         rouletteTrack.style.transform = `translateX(${-scrollLeft}px)`;
-
         setTimeout(() => {
           isSpinning = false;
           const items = rouletteTrack.querySelectorAll('.skin-item');
           items.forEach(el => el.classList.remove('highlight'));
           if (items[winIndex]) items[winIndex].classList.add('highlight');
-
           // Заполняем модальное окно
           if (weapon.img) {
             resultModalImg.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
@@ -618,14 +615,12 @@
           resultModalQuality.style.color = quality.color;
           resultModalRarity.textContent = RARITIES[weapon.rarity].name;
           resultModalRarity.style.color = RARITIES[weapon.rarity].color;
-
           const mods = [];
           if (statTrak) mods.push("StatTrak™");
           resultModalMod.textContent = mods.join(" | ");
           resultModalMod.style.display = mods.length ? 'block' : 'none';
           resultModalPrice.textContent = price;
           resultModal.style.display = 'flex';
-
           // Обработчики кнопок
           resultSellBtn.onclick = () => {
             player.score += price;
@@ -655,7 +650,6 @@
         }, 3100);
       }, 100); // Увеличена задержка для стабильности на мобилках
     }
-
     function renderInventory() {
       if (!player.isLoaded) {
         invList.innerHTML = "Загрузка...";
@@ -700,7 +694,6 @@
         });
       });
     }
-
     (async () => {
       const tg = window.Telegram?.WebApp;
       if (tg?.initDataUnsafe?.user) {
