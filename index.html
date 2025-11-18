@@ -330,8 +330,6 @@
     <button class="open-case-btn" id="openCaseBtn" disabled>Открыть кейс</button>
     <button class="inv-btn" id="invBtn">Инвентарь</button>
     <button class="upgrade-miner-btn" id="upgradeMinerBtn">Улучшить Майнер (Цена: <span id="upgradeCost">10</span>)</button>
-    <!-- Кнопка для демонстрации, не обязательна -->
-    <!-- <button class="toggle-mining-btn" id="toggleMiningBtn">Майнинг: Вкл</button> -->
     <div class="status" id="status">Загрузка...</div>
     <div class="roulette-wrapper">
       <div class="roulette-arrow">▼</div>
@@ -365,7 +363,7 @@
     <div id="invList">Загрузка...</div>
   </div>
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzcpNxbNG5ApkOsGh9VymsfdGbKbZfMojdSVCf9U1I6kTqGGx0py9BmHLE-RyR4UhhX/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxYqAq8vAlb8TFFB8GZoZAo9jwVQYL1LjHRCjTmiv8P0K9Tg9q8LMlYkNumXbfWlnfT/exec";
     const QUALITIES = [
       { name: "FN", fullName: "Прямо с завода", color: "#b0c3d9" },
       { name: "MW", fullName: "Немного поношенное", color: "#5e92f3" },
@@ -382,7 +380,6 @@
       { name: "Тайное", color: "#eb4b4b" },
       { name: "Нож", color: "#ffd700" }
     ];
-    // Взвешенный выбор скина
     function getWeightedRandomWeapon(weapons) {
       const totalWeight = weapons.reduce((sum, w) => sum + (w.weight || 1), 0);
       let random = Math.random() * totalWeight;
@@ -396,61 +393,170 @@
       {
         name: "Gallery Case",
         weapons: [
-          // === 15 ДЕШЁВЫХ СКИНОВ (ШИРПОТРЕБ) ===
           { name: "UMP-45 | Green Swirl", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/UMP-45%20Green%20Swirl.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 30000000, MW: 120000000, WW: 250000000, FT: 400000000, BS: 200000000 } }, prices: { base: { BS: 1.12, FT: 1.52, WW: 1.23, MW: 2.49, FN: 6.29 } } },
           { name: "MAG-7 | Rust Coat", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/MAG-7%20%20Rust%20Coat.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 25000000, MW: 110000000, WW: 260000000, FT: 410000000, BS: 200000000 } }, prices: { base: { BS: 1.2, FT: 1.11, WW: 1.45, MW: 1.67, FN: 14.97 } } },
           { name: "PP-Bizon | Wood Block", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/PP-Bizon%20Wood%20Block%20Camo.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 20000000, MW: 100000000, WW: 270000000, FT: 420000000, BS: 190000000 } }, prices: { base: { BS: 1.05, FT: 1.23, WW: 1.4, MW: 1.56, FN: 4.36 } } },
           { name: "Nova | Marsh Grass", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/360fx360f.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 35000000, MW: 130000000, WW: 240000000, FT: 390000000, BS: 210000000 } }, prices: { base: { BS: 1.12, FT: 1.19, WW: 1.24, MW: 1.46, FN: 4.65 } } },
           { name: "Tec-9 | Army Mesh", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Tec-9%20Army%20Mesh.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 15000000, MW: 90000000, WW: 280000000, FT: 430000000, BS: 190000000 } }, prices: { base: { BS: 1.06, FT: 1.28, WW: 1.85, MW: 3.21, FN: 4.27 } } },
-          // === ОСТАЛЬНЫЕ СКИНЫ ===
-          { name: "Desert Eagle | Calligraffiti", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_deagle_deagle_calligraff_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14, FT: 22, WW: 17, MW: 52, FN: 180 }, statTrak: { BS: 77, FT: 83, WW: 73, MW: 136, FN: 731 } } },
-          { name: "AUG | Luxe Trim", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_aug_aug_puffer_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14.12, FT: 22.55, WW: 17.34, MW: 52.94, FN: 180.58 }, statTrak: { BS: 77.31, FT: 83.06, WW: 73.83, MW: 136.95, FN: 731.08 } } },
-          { name: "SCAR-20 | Trail Blazer", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_scar20_scar20_fury_topo_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14.31, FT: 20.47, WW: 45.64, MW: 15.67, FN: 116.10 }, statTrak: { BS: 20.83, FT: 33.87, WW: 59.77, MW: 72.73, FN: 198.26 } } },
-          { name: "MP5-SD | Statics", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_mp5sd_mp5_statics_blue_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 15.76, FT: 22.64, WW: 16.57, MW: 51.80, FN: 154.93 }, statTrak: { BS: 21.84, FT: 32.69, WW: 22.38, MW: 79.06, FN: 265.30 } } },
-          { name: "M249 | Hypnosis", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m249_m249_hypnosis_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 19.38, FT: 27.08, WW: 64.94, MW: 21.74, FN: 1365.5 }, statTrak: { BS: 77.34, FT: 83.32, WW: 136.3, MW: 72.73, FN: 731.0 } } },
-          { name: "R8 Revolver | Tango", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_revolver_r8_roses_and_guns_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 20.74, FT: 23.46, WW: 20.01, MW: 51.71, FN: 172.40 }, statTrak: { BS: 29.07, FT: 32.69, WW: 43.65, MW: 96.18, FN: 400.00 } } },
-          { name: "Dual Berettas | Hydro Strike", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_elite_dual_elite_hydro_strike_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 72.90, FT: 104.87, WW: 102.33, MW: 268.94, FN: 746.49 }, statTrak: { BS: 144.63, FT: 205.16, WW: 279.29, MW: 477.55, FN: 1089.57 } } },
-          { name: "P90 | Randy Rush", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_p90_p90_randy_rush_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 77.16, FT: 73.99, WW: 90.56, MW: 182.74, FN: 579.26 }, statTrak: { BS: 131.95, FT: 136.29, WW: 153.68, MW: 324.11, FN: 1046.47 } } },
-          { name: "MAC-10 | Saibā Oni", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_mac10_mac10_ozaki_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 83.50, FT: 106.50, WW: 163.64, MW: 289.63, FN: 696.50 }, statTrak: { BS: 344.80, FT: 368.94, WW: 351.70, MW: 631.00, FN: 1343.00 } } },
-          { name: "M4A4 | Turbine", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_m4a4_fusion_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 89.47, FT: 128.87, WW: 156.67, MW: 422.38, FN: 2958.38 }, statTrak: { BS: 243.08, FT: 315.49, WW: 367.21, MW: 832.69, FN: 2606.69 } } },
-          { name: "SSG 08 | Rapid Transit", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_ssg08_ssg08_transit_white_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 93.91, FT: 100.70, WW: 138.74, MW: 348.25, FN: 1087.84 }, statTrak: { BS: 203.43, FT: 251.70, WW: 408.59, MW: 982.68, FN: 2053.28 } } },
-          { name: "P250 | Epicenter", weight: 1, rarity: 4, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_p250_p250_impact_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 290900, MW: 2327400, WW: 2327400, FT: 3200100, BS: 1551600 }, statTrak: { FN: 28800, MW: 230200, WW: 230200, FT: 316500, BS: 153500 } }, prices: { base: { BS: 544.78, FT: 656.84, WW: 601.68, MW: 1405.06, FN: 3856.59 }, statTrak: { BS: 1146.46, FT: 1132.67, WW: 1163.70, MW: 2151.55, FN: 5485.77 } } },
-          { name: "AK-47 | The Outsiders", weight: 1, rarity: 4, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_ak47_ak47_t_bus_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 290900, MW: 2327400, WW: 2327400, FT: 3200100, BS: 1551600 }, statTrak: { FN: 28800, MW: 230200, WW: 230200, FT: 316500, BS: 153500 } }, prices: { base: { BS: 862.00, FT: 968.89, WW: 925.85, MW: 1001.64, FN: 12895.52 }, statTrak: { BS: 2186.03, FT: 2403.53, WW: 2167.03, MW: 4616.87, FN: 15630.47 } } },
-          { name: "Glock-18 | Gold Toof", weight: 1, rarity: 5, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_glock_glock_chomper_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 87300, MW: 698200, WW: 698200, FT: 960000, BS: 465500 }, statTrak: { FN: 8600, MW: 69100, WW: 69100, FT: 94900, BS: 46000 } }, prices: { base: { BS: 3800.42, FT: 3702.07, WW: 3957.06, MW: 4683.11, FN: 24226.75 }, statTrak: { BS: 4460.54, FT: 4438.09, WW: 5645.35, MW: 11359.44, FN: 27515.38 } } },
-          { name: "M4A1-S | Vaporwave", weight: 1, rarity: 5, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_silencer_m4a1s_vaporwave_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 87300, MW: 698200, WW: 698200, FT: 960000, BS: 465500 }, statTrak: { FN: 8600, MW: 69100, WW: 69100, FT: 94900, BS: 46000 } }, prices: { base: { BS: 4951.33, FT: 7463.20, WW: 6802.90, MW: 16419.38, FN: 43481.00 }, statTrak: { BS: 10281.76, FT: 12900.24, WW: 10402.62, MW: 27971.90, FN: 62867.38 } } },
-          // === НОЖИ (с весом 0.25 → в 4 раза реже) ===
-          { name: "Kukri Knife | Forest DDPAT", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJkISbluPLPr7Vn35cppUijr6QrNnxjQHi-kU9Zzj0IoeUcQU-ZlHV-VS6kLznhcPp6pnPyXN9-n513dCDn2U.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 6535.68, FT: 7216.66, WW: 7501.12, MW: 8525.18, FN: 20800.06 }, statTrak: { BS: 7826.96, FT: 9062.38, WW: 8826.54, MW: 12226.26, FN: 25710.01 } } },
-          { name: "Kukri Knife | Boreal Forest", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJko-ZkuTgDLnehG5Q5Pp5j-jX7MKm2w3l-BI9YW2mLISccgc2YQ7T8wS7xb-6hcXuuZjKn3EyuyV34y3egVXp1mMdBESn.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7240.80, FT: 7166.67, WW: 6709.81, MW: 8421.74, FN: 17274.48 }, statTrak: { BS: 8161.42, FT: 8307.86, WW: 9859.56, MW: 10492.26, FN: 20239.76 } } },
-          { name: "Kukri Knife | Safari Mesh", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmYWYn8jgMrXunm5Q_tw_2u-W892n31Dh_kdrYWuiLYeVcwI8aQ7T8wS7xb-6hcXuuZjKn3swsz5iuyhFCX2nfA.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7263.49, FT: 6959.79, WW: 7077.02, MW: 7868.34, FN: 13667.87 }, statTrak: { BS: 8500.12, FT: 7578.70, WW: 8344.16, MW: 9302.70, FN: 27240.92 } } },
-          { name: "Kukri Knife | Scorched", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJkIGbh_vxDLfYkWNFpsEm3bmQoYj2ilfs8hVtNT31doDHJlM2aFHV_Fe5xu7q08S7vpXKwXR9-n51QqUUfjU.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7599.71, FT: 7267.38, WW: 7506.02, MW: 10007.10, FN: 22597.64 }, statTrak: { BS: 9132.43, FT: 8745.87, WW: 10602.60, MW: 12943.79, FN: 127577.86 } } },
-          { name: "Kukri Knife | Night Stripe", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmomMn-PnJ6nYhm5u4MBwnPCP99Xw3wC3-kJoazz7INWRIwA-YA2ErFG_xr3m18e76ZyYzC1nvCMrtmGdwUL-hTTBrg.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 8040.74, FT: 7463.20, WW: 9226.85, MW: 10126.85, FN: 42515.56 }, statTrak: { BS: 9505.34, FT: 8948.36, WW: 10173.05, MW: 14039.26, FN: 25156.61 } } },
-          { name: "Kukri Knife | Blue Steel", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2JloyekvPLO77QgHIf6ZNw27uYrYmligDh_UptYGincYTBcQY7Y1-EqFK-ku67gJ-66ZyfwGwj5HeBE36zUg.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 10407.79, FT: 12218.99, MW: 13878.20, WW: 11492.66, FN: 21253.47 }, statTrak: { BS: 15186.72, FT: 14207.61, MW: 15703.72, WW: 13425.23, FN: 34316.22 } } },
-          { name: "Kukri Knife | Crimson Web", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Kukri%20Blood%20Web.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 10723.28, FT: 13700.63, MW: 20644.90, WW: 13217.91, FN: 108879.22 }, statTrak: { BS: 11994.27, FT: 16301.80, MW: 23155.04, WW: 21789.98, FN: 160916.44 } } },
-          { name: "Kukri Knife | Case Hardened", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2Jm4mHkvPLO77QgHIfvMYpiLCXoNSnjQy1rkc-NTzxco-TcldrYF7R_lW5we7qhcPuuZSbm2wj5HeA7vBDmQ.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 15009.14, FT: 16550.40, MW: 19779.45, WW: 15554.93, FN: 30957.87 }, statTrak: { BS: 17885.58, FT: 20782.82, MW: 21582.76, WW: 19157.09, FN: 84701.84 } } },
-          { name: "Kukri Knife | Fade", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97d2JkoGPksj4OrzZgiUE6ZwmjOqXpYnz2Vew-RY5NWv1IdCXe1Q7NFqB_Fe5kue8hZK8vc_J1zI97Wo4QJnu.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 33908.13, FN: 28446.00 }, statTrak: { MW: 54604.87, FN: 35218.22 } } },
-          { name: "Kukri Knife | Slaughter", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97dGJjoWJhfbLP7LWnn8fvZIgjrGYpo-m3wbmqBU6NmmmLYaTIQFqMAzR8gfrx-rs1JK77pWdmmwj5HfC17GeYA.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 90000000, MW: 716000000, FT: 985000000 }, statTrak: { FN: 9000000, MW: 71000000, FT: 97000000 } }, prices: { base: { FT: 18102.00, MW: 19945.16, FN: 22714.39 }, statTrak: { FT: 22553.86, MW: 26134.99, FN: 26987.50 } } }
+          { name: "Desert Eagle | Calligraffiti", weight: 0.9, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_deagle_deagle_calligraff_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14, FT: 22, WW: 17, MW: 52, FN: 180 }, statTrak: { BS: 77, FT: 83, WW: 73, MW: 136, FN: 731 } } },
+          { name: "AUG | Luxe Trim", weight: 0.9, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_aug_aug_puffer_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14.12, FT: 22.55, WW: 17.34, MW: 52.94, FN: 180.58 }, statTrak: { BS: 77.31, FT: 83.06, WW: 73.83, MW: 136.95, FN: 731.08 } } },
+          { name: "SCAR-20 | Trail Blazer", weight: 0.9, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_scar20_scar20_fury_topo_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 14.31, FT: 20.47, WW: 45.64, MW: 15.67, FN: 116.10 }, statTrak: { BS: 20.83, FT: 33.87, WW: 59.77, MW: 72.73, FN: 198.26 } } },
+          { name: "MP5-SD | Statics", weight: 0.9, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_mp5sd_mp5_statics_blue_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 15.76, FT: 22.64, WW: 16.57, MW: 51.80, FN: 154.93 }, statTrak: { BS: 21.84, FT: 32.69, WW: 22.38, MW: 79.06, FN: 265.30 } } },
+          { name: "M249 | Hypnosis", weight: 0.9, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m249_m249_hypnosis_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 19.38, FT: 27.08, WW: 64.94, MW: 21.74, FN: 1365.5 }, statTrak: { BS: 77.34, FT: 83.32, WW: 136.3, MW: 72.73, FN: 731.0 } } },
+          { name: "R8 Revolver | Tango", weight: 0.9, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_revolver_r8_roses_and_guns_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, WW: 2493610, FT: 3428710, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, WW: 246620, FT: 339100, BS: 164410 } }, prices: { base: { BS: 20.74, FT: 23.46, WW: 20.01, MW: 51.71, FN: 172.40 }, statTrak: { BS: 29.07, FT: 32.69, WW: 43.65, MW: 96.18, FN: 400.00 } } },
+          { name: "Dual Berettas | Hydro Strike", weight: 0.75, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_elite_dual_elite_hydro_strike_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 72.90, FT: 104.87, WW: 102.33, MW: 268.94, FN: 746.49 }, statTrak: { BS: 144.63, FT: 205.16, WW: 279.29, MW: 477.55, FN: 1089.57 } } },
+          { name: "P90 | Randy Rush", weight: 0.75, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_p90_p90_randy_rush_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 77.16, FT: 73.99, WW: 90.56, MW: 182.74, FN: 579.26 }, statTrak: { BS: 131.95, FT: 136.29, WW: 153.68, MW: 324.11, FN: 1046.47 } } },
+          { name: "MAC-10 | Saibā Oni", weight: 0.75, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_mac10_mac10_ozaki_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 83.50, FT: 106.50, WW: 163.64, MW: 289.63, FN: 696.50 }, statTrak: { BS: 344.80, FT: 368.94, WW: 351.70, MW: 631.00, FN: 1343.00 } } },
+          { name: "M4A4 | Turbine", weight: 0.65, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_m4a4_fusion_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 89.47, FT: 128.87, WW: 156.67, MW: 422.38, FN: 2958.38 }, statTrak: { BS: 243.08, FT: 315.49, WW: 367.21, MW: 832.69, FN: 2606.69 } } },
+          { name: "SSG 08 | Rapid Transit", weight: 0.65, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_ssg08_ssg08_transit_white_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, WW: 6982100, FT: 9600400, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, WW: 690500, FT: 949500, BS: 460400 } }, prices: { base: { BS: 93.91, FT: 100.70, WW: 138.74, MW: 348.25, FN: 1087.84 }, statTrak: { BS: 203.43, FT: 251.70, WW: 408.59, MW: 982.68, FN: 2053.28 } } },
+          { name: "P250 | Epicenter", weight: 0.65, rarity: 4, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_p250_p250_impact_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 290900, MW: 2327400, WW: 2327400, FT: 3200100, BS: 1551600 }, statTrak: { FN: 28800, MW: 230200, WW: 230200, FT: 316500, BS: 153500 } }, prices: { base: { BS: 544.78, FT: 656.84, WW: 601.68, MW: 1405.06, FN: 3856.59 }, statTrak: { BS: 1146.46, FT: 1132.67, WW: 1163.70, MW: 2151.55, FN: 5485.77 } } },
+          { name: "AK-47 | The Outsiders", weight: 0.65, rarity: 4, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_ak47_ak47_t_bus_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 290900, MW: 2327400, WW: 2327400, FT: 3200100, BS: 1551600 }, statTrak: { FN: 28800, MW: 230200, WW: 230200, FT: 316500, BS: 153500 } }, prices: { base: { BS: 862.00, FT: 968.89, WW: 925.85, MW: 1001.64, FN: 12895.52 }, statTrak: { BS: 2186.03, FT: 2403.53, WW: 2167.03, MW: 4616.87, FN: 15630.47 } } },
+          { name: "Glock-18 | Gold Toof", weight: 0.5, rarity: 5, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_glock_glock_chomper_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 87300, MW: 698200, WW: 698200, FT: 960000, BS: 465500 }, statTrak: { FN: 8600, MW: 69100, WW: 69100, FT: 94900, BS: 46000 } }, prices: { base: { BS: 3800.42, FT: 3702.07, WW: 3957.06, MW: 4683.11, FN: 24226.75 }, statTrak: { BS: 4460.54, FT: 4438.09, WW: 5645.35, MW: 11359.44, FN: 27515.38 } } },
+          { name: "M4A1-S | Vaporwave", weight: 0.5, rarity: 5, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_silencer_m4a1s_vaporwave_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 87300, MW: 698200, WW: 698200, FT: 960000, BS: 465500 }, statTrak: { FN: 8600, MW: 69100, WW: 69100, FT: 94900, BS: 46000 } }, prices: { base: { BS: 4951.33, FT: 7463.20, WW: 6802.90, MW: 16419.38, FN: 43481.00 }, statTrak: { BS: 10281.76, FT: 12900.24, WW: 10402.62, MW: 27971.90, FN: 62867.38 } } },
+          { name: "Kukri Knife | Forest DDPAT", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJkISbluPLPr7Vn35cppUijr6QrNnxjQHi-kU9Zzj0IoeUcQU-ZlHV-VS6kLznhcPp6pnPyXN9-n513dCDn2U.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 6535.68, FT: 7216.66, WW: 7501.12, MW: 8525.18, FN: 20800.06 }, statTrak: { BS: 7826.96, FT: 9062.38, WW: 8826.54, MW: 12226.26, FN: 25710.01 } } },
+          { name: "Kukri Knife | Boreal Forest", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Kukri%20Knife%20%20Boreal%20Forest.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7240.80, FT: 7166.67, WW: 6709.81, MW: 8421.74, FN: 17274.48 }, statTrak: { BS: 8161.42, FT: 8307.86, WW: 9859.56, MW: 10492.26, FN: 20239.76 } } },
+          { name: "Kukri Knife | Safari Mesh", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmYWYn8jgMrXunm5Q_tw_2u-W892n31Dh_kdrYWuiLYeVcwI8aQ7T8wS7xb-6hcXuuZjKn3swsz5iuyhFCX2nfA.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7263.49, FT: 6959.79, WW: 7077.02, MW: 7868.34, FN: 13667.87 }, statTrak: { BS: 8500.12, FT: 7578.70, WW: 8344.16, MW: 9302.70, FN: 27240.92 } } },
+          { name: "Kukri Knife | Scorched", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJkIGbh_vxDLfYkWNFpsEm3bmQoYj2ilfs8hVtNT31doDHJlM2aFHV_Fe5xu7q08S7vpXKwXR9-n51QqUUfjU.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7599.71, FT: 7267.38, WW: 7506.02, MW: 10007.10, FN: 22597.64 }, statTrak: { BS: 9132.43, FT: 8745.87, WW: 10602.60, MW: 12943.79, FN: 127577.86 } } },
+          { name: "Kukri Knife | Night Stripe", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmomMn-PnJ6nYhm5u4MBwnPCP99Xw3wC3-kJoazz7INWRIwA-YA2ErFG_xr3m18e76ZyYzC1nvCMrtmGdwUL-hTTBrg.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 8040.74, FT: 7463.20, WW: 9226.85, MW: 10126.85, FN: 42515.56 }, statTrak: { BS: 9505.34, FT: 8948.36, WW: 10173.05, MW: 14039.26, FN: 25156.61 } } },
+          { name: "Kukri Knife | Blue Steel", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2JloyekvPLO77QgHIf6ZNw27uYrYmligDh_UptYGincYTBcQY7Y1-EqFK-ku67gJ-66ZyfwGwj5HeBE36zUg.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 10407.79, FT: 12218.99, MW: 13878.20, WW: 11492.66, FN: 21253.47 }, statTrak: { BS: 15186.72, FT: 14207.61, MW: 15703.72, WW: 13425.23, FN: 34316.22 } } },
+          { name: "Kukri Knife | Crimson Web", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Kukri%20Blood%20Web.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 10723.28, FT: 13700.63, MW: 20644.90, WW: 13217.91, FN: 108879.22 }, statTrak: { BS: 11994.27, FT: 16301.80, MW: 23155.04, WW: 21789.98, FN: 160916.44 } } },
+          { name: "Kukri Knife | Case Hardened", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2Jm4mHkvPLO77QgHIfvMYpiLCXoNSnjQy1rkc-NTzxco-TcldrYF7R_lW5we7qhcPuuZSbm2wj5HeA7vBDmQ.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 15009.14, FT: 16550.40, MW: 19779.45, WW: 15554.93, FN: 30957.87 }, statTrak: { BS: 17885.58, FT: 20782.82, MW: 21582.76, WW: 19157.09, FN: 84701.84 } } },
+          { name: "Kukri Knife | Fade", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97d2JkoGPksj4OrzZgiUE6ZwmjOqXpYnz2Vew-RY5NWv1IdCXe1Q7NFqB_Fe5kue8hZK8vc_J1zI97Wo4QJnu.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 33908.13, FN: 28446.00 }, statTrak: { MW: 54604.87, FN: 35218.22 } } },
+          { name: "Kukri Knife | Slaughter", weight: 0.1, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97dGJjoWJhfbLP7LWnn8fvZIgjrGYpo-m3wbmqBU6NmmmLYaTIQFqMAzR8gfrx-rs1JK77pWdmmwj5HfC17GeYA.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 90000000, MW: 716000000, FT: 985000000 }, statTrak: { FN: 9000000, MW: 71000000, FT: 97000000 } }, prices: { base: { FT: 18102.00, MW: 19945.16, FN: 22714.39 }, statTrak: { FT: 22553.86, MW: 26134.99, FN: 26987.50 } } }
         ]
-      }
-    ];
-    let player = {
-      id: null,
-      name: "Гость",
-      score: 0,
-      miningRate: 0, // Скорость добычи монет в секунду
-      lastActive: Date.now(), // Время последней активности
-      offlineEarnings: 0, // Накопленные оффлайн-монеты
-      caseProgress: 0,
-      cases: [],
-      isLoaded: false,
-      inventory: []
-    };
-    let isSpinning = false;
-    // Автомайнинг
-    let isMiningActive = true; // Всегда активен в фоне, но можно отключить
-    let miningIntervalId = null;
-    let upgradeCost = 10; // Начальная стоимость улучшения
-    const upgradeCostMultiplier = 1.5; // Множитель стоимости
+      },
+		{
+  name: "Operation Riptide Case",
+  weapons: [
+    // === ОГНЕСТРЕЛЬНОЕ ОРУЖИЕ ===
 
+    // AK-47
+    { name: "AK-47 | Leet Museo", weight: 1, rarity: 4, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/AK-47%20Leet%20Museo.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 290900, MW: 2327400, FT: 3200100, WW: 2327400, BS: 1551600 }, statTrak: { FN: 28800, MW: 230200, FT: 316500, WW: 230200, BS: 153500 } }, prices: { base: { BS: 8579.07, FT: 27243.08, WW: 12852.23, MW: 41523.90, FN: 80761.72 }, statTrak: { BS: 9429.00, FT: 10079.89, WW: 7459.55, MW: 16503.07, FN: 41708.66 } } },
+
+    // AUG
+    { name: "AUG | Plague", weight: 1, rarity: 1, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/AUG%20Plague.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 15000000, MW: 100000000, FT: 430000000, WW: 280000000, BS: 190000000 }, statTrak: { FN: 28800, MW: 230200, FT: 316500, WW: 230200, BS: 153500 } }, prices: { base: { BS: 47.03, FT: 54.59, WW: 68.03, MW: 142.77, FN: 245.24 }, statTrak: { BS: 54.59, FT: 72.23, WW: 111.70, MW: 209.12, FN: 424.12 } } },
+
+    // Desert Eagle
+    { name: "Desert Eagle | Ocean Drive", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/Desert%20Eagle%20Ocean%20Drive.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, FT: 9600400, WW: 6982100, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 5602.94, FT: 7565.39, WW: 5865.55, MW: 13237.96, FN: 41472.47 }, statTrak: { BS: 6056.84, FT: 7598.95, WW: 6024.96, MW: 12461.04, FN: 38641.63 } } },
+
+    // Dual Berettas
+    { name: "Dual Berettas | Tread", weight: 1, rarity: 1, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/Dual%20Berettas%20Tread.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 15000000, MW: 100000000, FT: 430000000, WW: 280000000, BS: 190000000 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 42.83, FT: 55.43, WW: 47.03, MW: 163.76, FN: 410.67 }, statTrak: { BS: 48.71, FT: 68.86, WW: 47.03, MW: 237.67, FN: 617.26 } } },
+
+    // FAMAS
+    { name: "FAMAS | ZX Spectron", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/FAMAS%20ZX%20Spectron.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, FT: 3428710, WW: 2493610, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, FT: 339100, WW: 246620, BS: 164410 } }, prices: { base: { BS: 221.72, FT: 318.30, WW: 225.92, MW: 576.98, FN: 1557.08 }, statTrak: { BS: 459.40, FT: 531.63, WW: 491.31, MW: 1060.73, FN: 2616.13 } } },
+
+    // Five-SeveN
+    { name: "Five-SeveN | Boost Protocol", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/Five-SeveN%20Boost%20Protocol.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, FT: 3428710, WW: 2493610 }, statTrak: { FN: 30830, MW: 246620, FT: 339100, WW: 246620 } }, prices: { base: { WW: 272.94, FT: 269.58, MW: 421.58, FN: 991.82 }, statTrak: { WW: 602.98, FT: 533.28, MW: 889.36, FN: 1417.60 } } },
+
+    // G3SG1
+    { name: "G3SG1 | Keeping Tabs", weight: 1, rarity: 1, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/G3SG1%20Keeping%20Tabs.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 15000000, MW: 100000000, FT: 430000000, WW: 280000000, BS: 190000000 }, statTrak: { FN: 30830, MW: 246620, FT: 339100, WW: 246620, BS: 164410 } }, prices: { base: { BS: 46.19, FT: 49.55, WW: 54.59, MW: 150.33, FN: 356.10 }, statTrak: { BS: 50.39, FT: 65.51, WW: 60.47, MW: 206.60, FN: 393.05 } } },
+
+    // Glock-18
+    { name: "Glock-18 | Snack Attack", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/Glock-18%20Snack%20Attack.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, FT: 9600400, WW: 6982100, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 1396.96, FT: 2032.09, WW: 1484.22, MW: 4962.77, FN: 22551.02 }, statTrak: { BS: 1256.84, FT: 1671.32, WW: 1308.02, MW: 3132.04, FN: 10986.05 } } },
+
+    // M4A4
+    { name: "M4A4 | Spider Lily", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/M4A4%20Spider%20Lily.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, FT: 9600400, WW: 6982100, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 388.46, FT: 769.38, WW: 491.66, MW: 2441.53, FN: 12431.67 }, statTrak: { BS: 591.50, FT: 1242.58, WW: 686.31, MW: 2862.72, FN: 7961.40 } } },
+
+    // MAC-10
+    { name: "MAC-10 | Toybox", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/MAC-10%20Toybox.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, FT: 3428710, WW: 2493610, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, FT: 339100, WW: 246620, BS: 164410 } }, prices: { base: { BS: 1387.37, FT: 2039.06, WW: 1633.43, MW: 3483.53, FN: 7121.59 }, statTrak: { BS: 1086.72, FT: 1339.50, WW: 1207.65, MW: 2451.41, FN: 6476.62 } } },
+
+    // MAG-7
+    { name: "MAG-7 | BI83 Spectrum", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/MAG-7%20BI83%20Spectrum.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 30000000, MW: 120000000, FT: 400000000, WW: 250000000, BS: 200000000 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 109.18, FT: 114.21, WW: 199.87, MW: 180.56, FN: 463.58 }, statTrak: { BS: 227.59, FT: 191.48, WW: 267.06, MW: 325.85, FN: 723.92 } } },
+
+    // MP7
+    { name: "MP7 | Guerrilla", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/MP7%20Guerrilla.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 30000000, MW: 120000000, FT: 400000000, WW: 250000000, BS: 200000000 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 38.63, FT: 54.59, WW: 46.19, MW: 133.54, FN: 473.68 }, statTrak: { BS: 51.23, FT: 83.99, WW: 54.59, MW: 241.88, FN: 601.33 } } },
+
+    // MP9
+    { name: "MP9 | Mount Fuji", weight: 1, rarity: 1, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/MP9%20Mount%20Fuji.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 15000000, MW: 100000000, FT: 430000000, WW: 280000000, BS: 190000000 }, statTrak: { FN: 30830, MW: 246620, FT: 339100, WW: 246620, BS: 164410 } }, prices: { base: { BS: 298.99, FT: 552.62, WW: 391.37, MW: 937.27, FN: 1874.55 }, statTrak: { BS: 764.26, FT: 891.08, WW: 811.30, MW: 1727.57, FN: 3225.87 } } },
+
+    // PP-Bizon
+    { name: "PP-Bizon | Lumen", weight: 1, rarity: 0, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/PP-Bizon%20Lumen.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 30000000, MW: 120000000, FT: 400000000, WW: 250000000, BS: 200000000 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 48.71, FT: 57.11, WW: 54.59, MW: 121.77, FN: 352.72 }, statTrak: { BS: 55.43, FT: 79.78, WW: 91.54, MW: 279.66, FN: 657.57 } } },
+
+    // SSG 08
+    { name: "SSG 08 | Turbo Peek", weight: 1, rarity: 3, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/SSG%2008%20Turbo%20Peek.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 872800, MW: 6982100, FT: 9600400, WW: 6982100, BS: 4654700 }, statTrak: { FN: 86300, MW: 690500, FT: 949500, WW: 690500, BS: 460400 } }, prices: { base: { BS: 1509.39, FT: 1802.20, WW: 1433.04, MW: 3215.94, FN: 7357.31 }, statTrak: { BS: 2305.61, FT: 2431.46, WW: 1539.59, MW: 4391.40, FN: 8226.53 } } },
+
+    // USP-S
+    { name: "USP-S | Black Lotus", weight: 1, rarity: 2, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/USP-S%20Black%20Lotus.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 311700, MW: 2493610, FT: 3428710, WW: 2493610, BS: 1662400 }, statTrak: { FN: 30830, MW: 246620, FT: 339100, WW: 246620, BS: 164410 } }, prices: { base: { BS: 75.59, FT: 126.82, WW: 94.90, MW: 289.75, FN: 1741.85 }, statTrak: { BS: 298.15, FT: 440.08, WW: 337.62, MW: 843.21, FN: 3938.90 } } },
+
+    // XM1014
+    { name: "XM1014 | Watchdog", weight: 1, rarity: 1, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/XM1014%20Watchdog.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 15000000, MW: 100000000, FT: 430000000, WW: 280000000, BS: 190000000 }, statTrak: { FN: 30830, MW: 246620, FT: 339100, WW: 246620, BS: 164410 } }, prices: { base: { BS: 60.47, FT: 87.34, WW: 62.15, MW: 141.93, FN: 508.11 }, statTrak: { BS: 125.98, FT: 180.57, WW: 125.14, MW: 451.84, FN: 2092.91 } } },
+
+    // === НОЖИ (вес = 0.25) ===
+
+    // ★ Bowie Knife
+    { name: "★ Bowie Knife | Autotronic", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Autotronic.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 9251.81, FT: 9189.72, WW: 10406.29, MW: 11299.00, FN: 16505.09 }, statTrak: { BS: 8450.55, FT: 12065.86, WW: 9584.06, MW: 10355.11, FN: 15984.06 } } },
+    { name: "★ Bowie Knife | Bright Water", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Bright%20Water.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 7683.69, FT: 6320.29, WW: 6389.09, MW: 6831.25, FN: 7688.73 }, statTrak: { BS: 7653.49, FT: 8971.58, WW: 6192.76, MW: 8625.06, FN: 10678.97 } } },
+    { name: "★ Bowie Knife | Gamma Doppler (Emerald)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Gamma%20Doppler%20Emerald.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 149141.52, FN: 66553.13 }, statTrak: { FN: 188124.87 } } },
+    { name: "★ Bowie Knife | Gamma Doppler (Phase 1)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Gamma%20Doppler%20Phase%201.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 44112.84, FN: 25277.82 }, statTrak: { MW: 32915.36, FN: 25941.48 } } },
+    { name: "★ Bowie Knife | Gamma Doppler (Phase 2)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Gamma%20Doppler%20Phase%202.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 34544.77, FN: 25877.09 }, statTrak: { MW: 33508.45, FN: 27650.77 } } },
+    { name: "★ Bowie Knife | Gamma Doppler (Phase 3)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Gamma%20Doppler%20Phase%203.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 28358.68, FN: 24481.59 }, statTrak: { MW: 33375.98, FN: 21796.75 } } },
+    { name: "★ Bowie Knife | Gamma Doppler (Phase 4)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Gamma%20Doppler%20Phase%204.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 37067.56, FN: 24047.14 }, statTrak: { MW: 35956.49, FN: 27360.19 } } },
+    { name: "★ Bowie Knife | Lore", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Bowie%20Knife%20Lore.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 10148.71, FT: 10440.69, WW: 7932.04, MW: 12252.12, FN: 16078.03 }, statTrak: { BS: 9791.29, FT: 12657.37, WW: 7693.76, MW: 17134.35, FN: 15044.36 } } },
+
+    // ★ Butterfly Knife
+    { name: "★ Butterfly Knife | Autotronic", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Autotronic.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 73588.41, FT: 93451.61, WW: 81565.77, MW: 111756.97, FN: 168447.55 }, statTrak: { BS: 66505.45, FT: 88086.06, WW: 105224.08, MW: 106886.91, FN: 158138.87 } } },
+    { name: "★ Butterfly Knife | Black Laminate", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Black%20Laminate.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 58749.44, FT: 67502.04, WW: 62924.38, MW: 72432.09, FN: 90878.65 }, statTrak: { BS: 58683.16, FT: 62588.77, WW: 60005.45, MW: 66928.99, FN: 99101.83 } } },
+    { name: "★ Butterfly Knife | Bright Water", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Bright%20Water.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 50595.91, FT: 53796.74, WW: 52528.99, MW: 58395.38, FN: 67388.77 }, statTrak: { BS: 48640.16, FT: 52736.23, WW: 48521.86, MW: 61262.29, FN: 67929.10 } } },
+    { name: "★ Butterfly Knife | Freehand", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Freehand.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 55544.24, FT: 59503.11, WW: 57206.22, MW: 64796.43, FN: 72596.60 }, statTrak: { BS: 53270.87, FT: 57595.90, WW: 77895.80, MW: 65081.13, FN: 75551.89 } } },
+    { name: "★ Butterfly Knife | Gamma Doppler (Emerald)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Gamma%20Doppler%20Emerald.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 1130511.17, FN: 1160996.30 }, statTrak: { MW: 1388920.92, FN: 1227416.92 } } },
+    { name: "★ Butterfly Knife | Gamma Doppler (Phase 1)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Gamma%20Doppler%20Phase%201.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 407687.78, FN: 222000.60 }, statTrak: { FN: 214670.73 } } },
+    { name: "★ Butterfly Knife | Gamma Doppler (Phase 2)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Gamma%20Doppler%20Phase%202.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 202814.28, FN: 292321.31 }, statTrak: { MW: 226748.89, FN: 249471.65 } } },
+    { name: "★ Butterfly Knife | Gamma Doppler (Phase 3)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Gamma%20Doppler%20Phase%203.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 183827.99, FN: 233072.24 }, statTrak: { FN: 213037.42 } } },
+    { name: "★ Butterfly Knife | Gamma Doppler (Phase 4)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Gamma%20Doppler%20Phase%204.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 251355.34, FN: 226312.19 }, statTrak: { MW: 311296.83, FN: 205783.01 } } },
+    { name: "★ Butterfly Knife | Lore", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Butterfly%20Knife%20Lore.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 53983.84, FT: 68909.90, WW: 107968.53, MW: 108935.91, FN: 252793.27 }, statTrak: { BS: 54014.89, FT: 67721.02, WW: 67639.64, MW: 110457.88, FN: 288537.78 } } },
+
+    // ★ Falchion Knife
+    { name: "★ Falchion Knife | Autotronic", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Autotronic.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 10592.53, FT: 10516.95, WW: 10175.15, MW: 11966.46, FN: 16356.99 }, statTrak: { BS: 9921.52, FT: 13444.53, WW: 9812.35, MW: 14959.55, FN: 16018.55 } } },
+    { name: "★ Falchion Knife | Black Laminate", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Black%20Laminate.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 6971.27, FT: 6768.87, WW: 7273.60, MW: 7829.56, FN: 11593.59 }, statTrak: { BS: 6486.70, FT: 8531.64, WW: 6651.30, MW: 11019.16, FN: 10907.46 } } },
+    { name: "★ Falchion Knife | Bright Water", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Bright%20Water.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 7653.49, FT: 7155.11, WW: 7343.05, MW: 7916.10, FN: 8992.55 }, statTrak: { BS: 6865.65, FT: 8322.18, WW: 7205.45, MW: 8364.97, FN: 12124.59 } } },
+    { name: "★ Falchion Knife | Gamma Doppler (Emerald)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Gamma%20Doppler%20Emerald.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 106638.69, FN: 66609.33 }, statTrak: { FN: 142800.20 } } },
+    { name: "★ Falchion Knife | Gamma Doppler (Phase 1)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Gamma%20Doppler%20Phase%201.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 44112.84, FN: 25277.82 }, statTrak: { MW: 32915.36, FN: 25941.48 } } },
+    { name: "★ Falchion Knife | Gamma Doppler (Phase 2)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Gamma%20Doppler%20Phase%202.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 34544.77, FN: 25877.09 }, statTrak: { MW: 33508.45, FN: 27650.77 } } },
+    { name: "★ Falchion Knife | Gamma Doppler (Phase 3)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Gamma%20Doppler%20Phase%203.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 28358.68, FN: 24481.59 }, statTrak: { MW: 33375.98, FN: 21796.75 } } },
+    { name: "★ Falchion Knife | Gamma Doppler (Phase 4)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Gamma%20Doppler%20Phase%204.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 37067.56, FN: 24047.14 }, statTrak: { MW: 35956.49, FN: 27360.19 } } },
+    { name: "★ Falchion Knife | Lore", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Falchion%20Knife%20Lore.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 10148.71, FT: 10440.69, WW: 7932.04, MW: 12252.12, FN: 16078.03 }, statTrak: { BS: 9791.29, FT: 12657.37, WW: 7693.76, MW: 17134.35, FN: 15044.36 } } },
+
+    // ★ Huntsman Knife
+    { name: "★ Huntsman Knife | Autotronic", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Autotronic.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 10294.40, FT: 10721.86, WW: 9992.07, MW: 13209.38, FN: 20383.05 }, statTrak: { BS: 9331.98, FT: 11190.48, WW: 10134.84, MW: 14999.86, FN: 19962.30 } } },
+    { name: "★ Huntsman Knife | Black Laminate", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Black%20Laminate.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 7105.98, FT: 7264.71, WW: 7117.73, MW: 8319.56, FN: 16024.35 }, statTrak: { BS: 9125.82, FT: 8619.39, WW: 10221.82, MW: 7661.96, FN: 14942.62 } } },
+    { name: "★ Huntsman Knife | Bright Water", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Bright%20Water.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 7791.76, FT: 6518.61, WW: 7208.10, MW: 7293.76, FN: 8391.39 }, statTrak: { BS: 7635.56, FT: 7612.88, WW: 6884.77, MW: 8486.29, FN: 10252.41 } } },
+    { name: "★ Huntsman Knife | Freehand", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Freehand.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 7145.95, FT: 7323.99, WW: 8572.79, MW: 8151.20, FN: 9213.56 }, statTrak: { BS: 6931.80, FT: 8888.56, WW: 7910.18, MW: 9927.40, FN: 12715.57 } } },
+    { name: "★ Huntsman Knife | Gamma Doppler (Emerald)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Gamma%20Doppler%20Emerald.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 185934.09, FN: 82542.47 }, statTrak: { FN: 176948.11 } } },
+    { name: "★ Huntsman Knife | Gamma Doppler (Phase 1)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Gamma%20Doppler%20Phase%201.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 30149.20, FN: 24085.77 }, statTrak: { FN: 22496.85 } } },
+    { name: "★ Huntsman Knife | Gamma Doppler (Phase 2)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Gamma%20Doppler%20Phase%202.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 35310.75, FN: 27651.39 }, statTrak: { MW: 34251.91, FN: 32002.51 } } },
+    { name: "★ Huntsman Knife | Gamma Doppler (Phase 3)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Gamma%20Doppler%20Phase%203.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { FN: 24147.66 }, statTrak: { MW: 35993.70, FN: 29732.98 } } },
+    { name: "★ Huntsman Knife | Gamma Doppler (Phase 4)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Gamma%20Doppler%20Phase%204.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 44735.04, FN: 25151.49 }, statTrak: { MW: 43393.86, FN: 31738.13 } } },
+    { name: "★ Huntsman Knife | Lore", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Huntsman%20Knife%20Lore.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 9687.22, FT: 10093.68, WW: 10299.44, MW: 12231.84, FN: 16174.75 }, statTrak: { BS: 8774.34, FT: 12332.62, WW: 9726.69, MW: 17913.16, FN: 29855.27 } } },
+
+    // ★ Shadow Daggers
+    { name: "★ Shadow Daggers | Black Laminate", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Black%20Laminate.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 5054.82, FT: 5178.27, WW: 5076.66, MW: 5027.95, FN: 7507.07 }, statTrak: { BS: 6170.93, FT: 6854.53, WW: 6687.41, MW: 6814.22, FN: 7377.74 } } },
+    { name: "★ Shadow Daggers | Bright Water", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Bright%20Water.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 5793.39, FT: 4940.95, WW: 5114.63, MW: 5211.12, FN: 5625.59 }, statTrak: { BS: 5878.13, FT: 5739.70, WW: 4950.18, MW: 6517.46, FN: 7610.70 } } },
+    { name: "★ Shadow Daggers | Gamma Doppler (Emerald)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Gamma%20Doppler%20Emerald.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { FN: 28836.08 }, statTrak: { FN: 26264.50 } } },
+    { name: "★ Shadow Daggers | Gamma Doppler (Phase 1)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Gamma%20Doppler%20Phase%201.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 19416.46, FN: 10873.62 }, statTrak: { MW: 22343.78, FN: 19462.61 } } },
+    { name: "★ Shadow Daggers | Gamma Doppler (Phase 2)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Gamma%20Doppler%20Phase%202.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 18122.70, FN: 11059.88 }, statTrak: { FN: 14211.22 } } },
+    { name: "★ Shadow Daggers | Gamma Doppler (Phase 3)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Gamma%20Doppler%20Phase%203.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 17703.20, FN: 10996.12 }, statTrak: { MW: 23324.59, FN: 13590.35 } } },
+    { name: "★ Shadow Daggers | Gamma Doppler (Phase 4)", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Gamma%20Doppler%20Phase%204.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000 }, statTrak: { FN: 20000000, MW: 157000000 } }, prices: { base: { MW: 19737.81, FN: 10824.96 }, statTrak: { MW: 19146.30, FN: 13618.04 } } },
+    { name: "★ Shadow Daggers | Lore", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Operation%20Riptide%20Case/%E2%98%85%20Shadow%20Daggers%20Lore.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 199000000, MW: 1591000000, FT: 1591000000, WW: 1591000000, BS: 770000000 }, statTrak: { FN: 20000000, MW: 157000000, FT: 157000000, WW: 157000000, BS: 76000000 } }, prices: { base: { BS: 6432.11, FT: 6534.57, WW: 6714.29, MW: 7724.58, FN: 14272.58 }, statTrak: { BS: 6205.36, FT: 8002.56, WW: 9248.00, MW: 9833.34, FN: 14029.04 } } }
+  ]
+}
+    ];
+let player = {
+  id: null,
+  name: "Гость",
+  score: 0,
+  miningRate: 0,
+  miningFraction: 0, // для точного онлайн-майнинга (целые очки)
+  lastActive: Date.now(), // ← будет обновляться ТОЛЬКО при уходе из приложения
+  caseProgress: 0,
+  cases: [],
+  isLoaded: false,
+  inventory: []
+};
+    let isSpinning = false;
+    let isMiningActive = true;
+    let miningIntervalId = null;
+    let upgradeCost = 10;
+    const upgradeCostMultiplier = 1.5;
     const scoreEl = document.getElementById('score');
     const miningRateEl = document.getElementById('miningRate');
     const caseCountEl = document.getElementById('caseCount');
@@ -459,7 +565,6 @@
     const openCaseBtn = document.getElementById('openCaseBtn');
     const invBtn = document.getElementById('invBtn');
     const upgradeMinerBtn = document.getElementById('upgradeMinerBtn');
-    const toggleMiningBtn = document.getElementById('toggleMiningBtn'); // Кнопка для демонстрации
     const upgradeCostEl = document.getElementById('upgradeCost');
     const invModal = document.getElementById('invModal');
     const invList = document.getElementById('invList');
@@ -479,88 +584,100 @@
       statusEl.textContent = text;
       statusEl.style.color = isError ? '#ff9999' : '#aaffaa';
     }
-
+function savePlayerOnExit() {
+  if (!player.id || !player.isLoaded) return;
+  player.lastActive = Date.now(); // фиксируем момент ухода
+  const params = new URLSearchParams({
+    action: "updatePlayer",
+    id: player.id,
+    score: player.score,
+    miningRate: player.miningRate,
+    miningFraction: player.miningFraction,
+    lastActive: player.lastActive, // ← теперь сохраняем
+    caseProgress: player.caseProgress,
+    cases: JSON.stringify(player.cases)
+  });
+  // Используем navigator.sendBeacon для надёжной отправки при закрытии
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(`${GAS_URL}`, params);
+  } else {
+    // fallback (менее надёжно)
+    fetch(`${GAS_URL}`, { method: 'POST', body: params, keepalive: true });
+  }
+}
     function savePlayerData() {
-      if (!player.id || !player.isLoaded) return;
-      // Сохранение через fetch для надежности
-      const params = new URLSearchParams({
-        action: "updatePlayer",
-        id: player.id,
-        score: player.score,
-        miningRate: player.miningRate,
-        lastActive: player.lastActive,
-        caseProgress: player.caseProgress,
-        cases: JSON.stringify(player.cases)
-      });
-      fetch(`${GAS_URL}?${params}&_=${Date.now()}`)
-        .then(() => {
-            // console.log("Данные игрока сохранены.");
-        })
-        .catch(err => console.error("Ошибка сохранения:", err));
+  if (!player.id || !player.isLoaded) return;
+  const params = new URLSearchParams({
+    action: "updatePlayer",
+    id: player.id,
+    score: player.score,
+    miningRate: player.miningRate,
+    miningFraction: player.miningFraction,
+    // ⚠️ НЕ обновляем lastActive здесь!
+    caseProgress: player.caseProgress,
+    cases: JSON.stringify(player.cases)
+  });
+  fetch(`${GAS_URL}?${params}&_=${Date.now()}`).catch(err => console.error("Ошибка сохранения:", err));
 
-      const params2 = new URLSearchParams({
-        action: "updateInventory",
-        id: player.id,
-        inventory: JSON.stringify(player.inventory)
-      });
-      fetch(`${GAS_URL}?${params2}&_=${Date.now()}`)
-        .then(() => {
-            // console.log("Инвентарь сохранен.");
-        })
-        .catch(err => console.error("Ошибка сохранения инвентаря:", err));
-    }
+  const params2 = new URLSearchParams({
+    action: "updateInventory",
+    id: player.id,
+    inventory: JSON.stringify(player.inventory)
+  });
+  fetch(`${GAS_URL}?${params2}&_=${Date.now()}`).catch(err => console.error("Ошибка сохранения инвентаря:", err));
+}
 
     async function loadPlayerFromGAS() {
-      const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        player.score = data.found ? (parseInt(data.score) || 0) : 0;
-        player.miningRate = data.miningRate || 0;
-        player.lastActive = data.lastActive || Date.now();
-        player.caseProgress = data.caseProgress || 0;
-        player.cases = data.cases ? JSON.parse(data.cases) : [];
-        player.inventory = data.inventory ? JSON.parse(data.inventory) : [];
-        player.isLoaded = true;
+  const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.success) {
+    player.score = data.found ? (parseInt(data.score) || 0) : 0;
+    player.miningRate = data.miningRate || 0;
+    player.miningFraction = data.miningFraction || 0;
+    player.lastActive = data.lastActive ? parseInt(data.lastActive) : Date.now();
+    player.caseProgress = data.caseProgress || 0;
+    player.cases = data.cases ? JSON.parse(data.cases) : [];
+    player.inventory = data.inventory ? JSON.parse(data.inventory) : [];
+    player.isLoaded = true;
 
-        // --- Вычисление оффлайн-дохода ---
-        const now = Date.now();
-        const timeOffline = (now - player.lastActive) / 1000; // в секундах
-        const offlineEarnings = Math.floor(player.miningRate * timeOffline);
-        if (offlineEarnings > 0) {
-            player.score += offlineEarnings;
-            setStatus(`временно отсутствовали, мы добыли ${offlineEarnings} монет!`, false);
-            player.lastActive = now; // Обновляем время
-            savePlayerData(); // Сохраняем обновленный score и lastActive
-        } else {
-             player.lastActive = now; // Обновляем время, даже если ничего не добыто
-             savePlayerData();
-        }
-        // --- /Вычисление оффлайн-дохода ---
+    // --- Расчёт оффлайн-дохода ---
+    const now = Date.now();
+    const timeOffline = (now - player.lastActive) / 1000; // секунды
+    const offlineEarnings = Math.floor(player.miningRate * timeOffline);
 
-        updateUI();
-        return true;
-      }
-      throw new Error("GAS error");
+    if (offlineEarnings > 0) {
+      player.score += offlineEarnings;
+      setStatus(`временно отсутствовали, мы добыли ${offlineEarnings} монет!`, false);
     }
+
+    // Обновляем lastActive только ПОСЛЕ расчёта
+    player.lastActive = now;
+    savePlayerData(); // сохраняем score и сбрасываем lastActive (до следующего ухода)
+    updateUI();
+    return true;
+  }
+  throw new Error("GAS error");
+}
 
     function updateUI() {
         if (!player.isLoaded) return;
-        scoreEl.textContent = player.score;
-        miningRateEl.textContent = player.miningRate.toFixed(2);
+        scoreEl.textContent = Math.floor(player.score); // гарантия целого
+        miningRateEl.textContent = Math.floor(player.miningRate); // целая скорость
         caseCountEl.textContent = player.cases.length;
         upgradeCostEl.textContent = upgradeCost;
         openCaseBtn.disabled = (player.cases.length === 0 || player.score < 10);
     }
 
     function processMining() {
-        if (!isMiningActive) return;
-        player.score += player.miningRate / 10; // Добавляем 1/10 от скорости за тик (10 тиков в сек)
-        updateUI();
-        // Сохраняем раз в 5 секунд, чтобы не перегружать сеть
-        if (player.score % 5 < player.miningRate / 10) {
-            savePlayerData();
-        }
+      if (!isMiningActive) return;
+      player.miningFraction += player.miningRate / 10;
+      if (player.miningFraction >= 1) {
+        const whole = Math.floor(player.miningFraction);
+        player.score += whole;
+        player.miningFraction -= whole;
+      }
+      updateUI();
     }
 
     function upgradeMiner() {
@@ -569,21 +686,11 @@
             return;
         }
         player.score -= upgradeCost;
-        player.miningRate += 1; // Увеличиваем базовую скорость на 1
-        upgradeCost = Math.floor(upgradeCost * upgradeCostMultiplier); // Увеличиваем стоимость
+        player.miningRate += 1;
+        upgradeCost = Math.floor(upgradeCost * upgradeCostMultiplier);
         savePlayerData();
         updateUI();
-        setStatus(`Майнер улучшен! Скорость: ${player.miningRate.toFixed(2)}/сек`);
-    }
-
-    function toggleMining() {
-        isMiningActive = !isMiningActive;
-        toggleMiningBtn.textContent = `Майнинг: ${isMiningActive ? 'Вкл' : 'Выкл'}`;
-        if (isMiningActive) {
-            miningIntervalId = setInterval(processMining, 100);
-        } else {
-            clearInterval(miningIntervalId);
-        }
+        setStatus(`Майнер улучшен! Скорость: ${Math.floor(player.miningRate)}/сек`);
     }
 
     function giveRandomCase() {
@@ -619,10 +726,9 @@
         const containerWidth = document.querySelector('.roulette-container').offsetWidth;
         const targetCenter = winIndex * itemWidth + itemWidth / 2;
         const scrollLeft = targetCenter - containerWidth / 2;
-        // Исправленный reflow для мобильных устройств
         rouletteTrack.style.transition = 'none';
         rouletteTrack.style.transform = 'translateX(0)';
-        void rouletteTrack.offsetWidth; // Надёжный способ
+        void rouletteTrack.offsetWidth;
         rouletteTrack.style.transition = 'transform 3s ease-out';
         rouletteTrack.style.transform = `translateX(${-scrollLeft}px)`;
         setTimeout(() => {
@@ -630,7 +736,6 @@
           const items = rouletteTrack.querySelectorAll('.skin-item');
           items.forEach(el => el.classList.remove('highlight'));
           if (items[winIndex]) items[winIndex].classList.add('highlight');
-          // Заполняем модальное окно
           if (weapon.img) {
             resultModalImg.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
           } else {
@@ -647,7 +752,7 @@
           resultModalMod.style.display = mods.length ? 'block' : 'none';
           resultModalPrice.textContent = price;
           resultModal.style.display = 'flex';
-          // Обработчики кнопок
+
           resultSellBtn.onclick = () => {
             player.score += price;
             updateUI();
@@ -674,34 +779,25 @@
             setStatus("✅ Предмет сохранён в инвентарь!");
           };
         }, 3100);
-      }, 100); // Увеличена задержка для стабильности на мобилках
+      }, 100);
     }
 
     function getWeightedQuality(weapon, isStatTrak) {
-      // Проверяем, существует ли qualityWeights и нужный подключ (base или statTrak)
-      const weightsSource = weapon.qualityWeights; // Сначала получаем объект
+      const weightsSource = weapon.qualityWeights;
       if (!weightsSource) {
-        console.error("qualityWeights отсутствует у скина:", weapon.name); // Лог для отладки
-        // Возвращаем значение по умолчанию, например, BS
         const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
         return defaultQual;
       }
-      const weights = isStatTrak ? weightsSource.statTrak : weightsSource.base; // Теперь обращаемся к подключу
+      const weights = isStatTrak ? weightsSource.statTrak : weightsSource.base;
       if (!weights) {
-         console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} отсутствует у скина:`, weapon.name); // Лог для отладки
-         // Возвращаем значение по умолчанию
-         const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
-         return defaultQual;
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
       }
-      // Теперь weights гарантированно объект
       const qualities = Object.keys(weights);
       if (qualities.length === 0) {
-        console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} пуст у скина:`, weapon.name); // Лог для отладки
-        // Возвращаем значение по умолчанию
         const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
         return defaultQual;
       }
-      // Остальная логика взвешенного выбора
       const total = qualities.reduce((sum, q) => sum + weights[q], 0);
       let rand = Math.random() * total;
       for (const q of qualities) {
@@ -714,7 +810,6 @@
           };
         }
       }
-      // Если цикл закончился, вероятно, все веса были 0 или что-то пошло не так, возвращаем последний возможный
       const lastQualName = qualities[qualities.length - 1];
       return {
         name: lastQualName,
@@ -826,7 +921,8 @@
           console.error("GAS load failed", e);
           player.isLoaded = true;
           player.inventory = [];
-          player.lastActive = Date.now(); // Устанавливаем текущее время
+          player.lastActive = Date.now();
+          player.miningFraction = 0; // инициализация
           setStatus("⚠️ Офлайн-режим", true);
         }
       } else {
@@ -834,15 +930,13 @@
         player.name = "Тест";
         player.isLoaded = true;
         player.inventory = [];
-        player.lastActive = Date.now(); // Устанавливаем текущее время
+        player.lastActive = Date.now();
+        player.miningFraction = 0; // инициализация
         setStatus("🧪 Тестовый режим", true);
       }
       updateUI();
       renderRoulette(generateCaseSkins(CASES[0], 25));
-
-      // Запуск майнинга
       miningIntervalId = setInterval(processMining, 100);
-
       clickBtn.addEventListener('click', () => {
         player.score += 1;
         updateUI();
@@ -853,10 +947,8 @@
             giveRandomCase();
           }
         }
-        // Сохраняем раз в 5 кликов или если score делится на 5
         if (player.score % 5 === 0) savePlayerData();
       });
-
       openCaseBtn.addEventListener('click', openCase);
       invBtn.addEventListener('click', () => {
         renderInventory();
@@ -866,9 +958,6 @@
         invModal.style.display = 'none';
       });
       upgradeMinerBtn.addEventListener('click', upgradeMiner);
-      // toggleMiningBtn.addEventListener('click', toggleMining); // Кнопка для демонстрации
-
-      // Планируем сохранение раз в 30 секунд
       setInterval(savePlayerData, 10000);
     })();
   </script>
