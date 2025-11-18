@@ -50,6 +50,11 @@
       margin: 10px 0;
       color: gold;
     }
+    .mining-rate {
+      font-size: 16px;
+      margin: 8px 0;
+      color: #aaffaa;
+    }
     .case-count {
       font-size: 16px;
       margin: 8px 0;
@@ -57,7 +62,9 @@
     }
     .click-btn,
     .open-case-btn,
-    .inv-btn {
+    .inv-btn,
+    .upgrade-miner-btn,
+    .toggle-mining-btn {
       width: 120px;
       height: 120px;
       font-size: 16px;
@@ -92,9 +99,27 @@
       border-radius: 12px;
       font-size: 14px;
     }
+    .upgrade-miner-btn {
+      background: linear-gradient(135deg, #ff6f00, #ff8f00);
+      box-shadow: 0 6px 18px rgba(255, 111, 0, 0.4);
+      width: auto;
+      padding: 8px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+    .toggle-mining-btn {
+      background: linear-gradient(135deg, #4caf50, #8bc34a);
+      box-shadow: 0 6px 18px rgba(76, 175, 80, 0.4);
+      width: auto;
+      padding: 8px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
     .click-btn:active,
     .open-case-btn:active,
-    .inv-btn:active {
+    .inv-btn:active,
+    .upgrade-miner-btn:active,
+    .toggle-mining-btn:active {
       transform: scale(0.94);
     }
     .status {
@@ -299,10 +324,14 @@
   <div class="container">
     <h1>🎮 CS2 Кликер + Gallery Case</h1>
     <div class="score">Очки: <span id="score">0</span></div>
+    <div class="mining-rate">Майнинг: <span id="miningRate">0</span> в сек</div>
     <div class="case-count">Кейсов: <span id="caseCount">0</span></div>
     <button class="click-btn" id="clickBtn">КЛИК!</button>
     <button class="open-case-btn" id="openCaseBtn" disabled>Открыть кейс</button>
     <button class="inv-btn" id="invBtn">Инвентарь</button>
+    <button class="upgrade-miner-btn" id="upgradeMinerBtn">Улучшить Майнер (Цена: <span id="upgradeCost">10</span>)</button>
+    <!-- Кнопка для демонстрации, не обязательна -->
+    <!-- <button class="toggle-mining-btn" id="toggleMiningBtn">Майнинг: Вкл</button> -->
     <div class="status" id="status">Загрузка...</div>
     <div class="roulette-wrapper">
       <div class="roulette-arrow">▼</div>
@@ -336,7 +365,7 @@
     <div id="invList">Загрузка...</div>
   </div>
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwa5Xl9TyUGpH7rITh2J_s3ER656u3rqYeIW2v6fMMIZURavVXCg_H-fVM_Xgm0yD56/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzcpNxbNG5ApkOsGh9VymsfdGbKbZfMojdSVCf9U1I6kTqGGx0py9BmHLE-RyR4UhhX/exec";
     const QUALITIES = [
       { name: "FN", fullName: "Прямо с завода", color: "#b0c3d9" },
       { name: "MW", fullName: "Немного поношенное", color: "#5e92f3" },
@@ -391,10 +420,10 @@
           { name: "M4A1-S | Vaporwave", weight: 1, rarity: 5, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/weapon_m4a1_silencer_m4a1s_vaporwave_light_png.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 87300, MW: 698200, WW: 698200, FT: 960000, BS: 465500 }, statTrak: { FN: 8600, MW: 69100, WW: 69100, FT: 94900, BS: 46000 } }, prices: { base: { BS: 4951.33, FT: 7463.20, WW: 6802.90, MW: 16419.38, FN: 43481.00 }, statTrak: { BS: 10281.76, FT: 12900.24, WW: 10402.62, MW: 27971.90, FN: 62867.38 } } },
           // === НОЖИ (с весом 0.25 → в 4 раза реже) ===
           { name: "Kukri Knife | Forest DDPAT", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJkISbluPLPr7Vn35cppUijr6QrNnxjQHi-kU9Zzj0IoeUcQU-ZlHV-VS6kLznhcPp6pnPyXN9-n513dCDn2U.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 6535.68, FT: 7216.66, WW: 7501.12, MW: 8525.18, FN: 20800.06 }, statTrak: { BS: 7826.96, FT: 9062.38, WW: 8826.54, MW: 12226.26, FN: 25710.01 } } },
-          { name: "Kukri Knife | Boreal Forest", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJko-ZkuTgDLnehG5Q5Pp5j-jX7MKm2w3l-BI9YW2mLISccgc2Yw3Y-Fi9x7y9gZS96p7NmnEyuiUq4i3egVXp1mMdBESn.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7240.80, FT: 7166.67, WW: 6709.81, MW: 8421.74, FN: 17274.48 }, statTrak: { BS: 8161.42, FT: 8307.86, WW: 9859.56, MW: 10492.26, FN: 20239.76 } } },
+          { name: "Kukri Knife | Boreal Forest", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR95MWJko-ZkuTgDLnehG5Q5Pp5j-jX7MKm2w3l-BI9YW2mLISccgc2YQ7T8wS7xb-6hcXuuZjKn3EyuyV34y3egVXp1mMdBESn.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7240.80, FT: 7166.67, WW: 6709.81, MW: 8421.74, FN: 17274.48 }, statTrak: { BS: 8161.42, FT: 8307.86, WW: 9859.56, MW: 10492.26, FN: 20239.76 } } },
           { name: "Kukri Knife | Safari Mesh", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmYWYn8jgMrXunm5Q_tw_2u-W892n31Dh_kdrYWuiLYeVcwI8aQ7T8wS7xb-6hcXuuZjKn3swsz5iuyhFCX2nfA.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7263.49, FT: 6959.79, WW: 7077.02, MW: 7868.34, FN: 13667.87 }, statTrak: { BS: 8500.12, FT: 7578.70, WW: 8344.16, MW: 9302.70, FN: 27240.92 } } },
           { name: "Kukri Knife | Scorched", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJkIGbh_vxDLfYkWNFpsEm3bmQoYj2ilfs8hVtNT31doDHJlM2aFHV_Fe5xu7q08S7vpXKwXR9-n51QqUUfjU.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 7599.71, FT: 7267.38, WW: 7506.02, MW: 10007.10, FN: 22597.64 }, statTrak: { BS: 9132.43, FT: 8745.87, WW: 10602.60, MW: 12943.79, FN: 127577.86 } } },
-          { name: "Kukri Knife | Night Stripe", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmomMn-PnJ6nYhm5u4MBwnPCP99Xw3wC3-kJoazz7INWRIwA-YA2ErFG_xr3m18e76ZnBySNnvCMrtmGdwUL-hTTBrg.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 8040.74, FT: 7463.20, WW: 9226.85, MW: 10126.85, FN: 42515.56 }, statTrak: { BS: 9505.34, FT: 8948.36, WW: 10173.05, MW: 14039.26, FN: 25156.61 } } },
+          { name: "Kukri Knife | Night Stripe", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR9_8yJmomMn-PnJ6nYhm5u4MBwnPCP99Xw3wC3-kJoazz7INWRIwA-YA2ErFG_xr3m18e76ZyYzC1nvCMrtmGdwUL-hTTBrg.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 8040.74, FT: 7463.20, WW: 9226.85, MW: 10126.85, FN: 42515.56 }, statTrak: { BS: 9505.34, FT: 8948.36, WW: 10173.05, MW: 14039.26, FN: 25156.61 } } },
           { name: "Kukri Knife | Blue Steel", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2JloyekvPLO77QgHIf6ZNw27uYrYmligDh_UptYGincYTBcQY7Y1-EqFK-ku67gJ-66ZyfwGwj5HeBE36zUg.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 10407.79, FT: 12218.99, MW: 13878.20, WW: 11492.66, FN: 21253.47 }, statTrak: { BS: 15186.72, FT: 14207.61, MW: 15703.72, WW: 13425.23, FN: 34316.22 } } },
           { name: "Kukri Knife | Crimson Web", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/Kukri%20Blood%20Web.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 10723.28, FT: 13700.63, MW: 20644.90, WW: 13217.91, FN: 108879.22 }, statTrak: { BS: 11994.27, FT: 16301.80, MW: 23155.04, WW: 21789.98, FN: 160916.44 } } },
           { name: "Kukri Knife | Case Hardened", weight: 0.25, rarity: 6, img: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/Gallery%20case/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2ObDYzR97c2Jm4mHkvPLO77QgHIfvMYpiLCXoNSnjQy1rkc-NTzxco-TcldrYF7R_lW5we7qhcPuuZSbm2wj5HeA7vBDmQ.png?raw=true", canBeStatTrak: true, qualityWeights: { base: { FN: 54000000, MW: 430000000, WW: 430000000, FT: 591000000, BS: 286000000 }, statTrak: { FN: 5000000, MW: 42000000, WW: 42000000, FT: 58000000, BS: 28000000 } }, prices: { base: { BS: 15009.14, FT: 16550.40, MW: 19779.45, WW: 15554.93, FN: 30957.87 }, statTrak: { BS: 17885.58, FT: 20782.82, MW: 21582.76, WW: 19157.09, FN: 84701.84 } } },
@@ -407,18 +436,31 @@
       id: null,
       name: "Гость",
       score: 0,
+      miningRate: 0, // Скорость добычи монет в секунду
+      lastActive: Date.now(), // Время последней активности
+      offlineEarnings: 0, // Накопленные оффлайн-монеты
       caseProgress: 0,
       cases: [],
       isLoaded: false,
       inventory: []
     };
     let isSpinning = false;
+    // Автомайнинг
+    let isMiningActive = true; // Всегда активен в фоне, но можно отключить
+    let miningIntervalId = null;
+    let upgradeCost = 10; // Начальная стоимость улучшения
+    const upgradeCostMultiplier = 1.5; // Множитель стоимости
+
     const scoreEl = document.getElementById('score');
+    const miningRateEl = document.getElementById('miningRate');
     const caseCountEl = document.getElementById('caseCount');
     const statusEl = document.getElementById('status');
     const clickBtn = document.getElementById('clickBtn');
     const openCaseBtn = document.getElementById('openCaseBtn');
     const invBtn = document.getElementById('invBtn');
+    const upgradeMinerBtn = document.getElementById('upgradeMinerBtn');
+    const toggleMiningBtn = document.getElementById('toggleMiningBtn'); // Кнопка для демонстрации
+    const upgradeCostEl = document.getElementById('upgradeCost');
     const invModal = document.getElementById('invModal');
     const invList = document.getElementById('invList');
     const closeInv = document.getElementById('closeInv');
@@ -432,150 +474,134 @@
     const resultModalPrice = document.getElementById('resultModalPrice');
     const resultSellBtn = document.getElementById('resultSellBtn');
     const resultKeepBtn = document.getElementById('resultKeepBtn');
+
     function setStatus(text, isError = false) {
       statusEl.textContent = text;
       statusEl.style.color = isError ? '#ff9999' : '#aaffaa';
     }
-    function getWeightedQuality(weapon, isStatTrak) {
-      // Проверяем, существует ли qualityWeights и нужный подключ (base или statTrak)
-      const weightsSource = weapon.qualityWeights; // Сначала получаем объект
-      if (!weightsSource) {
-        console.error("qualityWeights отсутствует у скина:", weapon.name); // Лог для отладки
-        // Возвращаем значение по умолчанию, например, BS
-        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
-        return defaultQual;
-      }
 
-      const weights = isStatTrak ? weightsSource.statTrak : weightsSource.base; // Теперь обращаемся к подключу
-
-      if (!weights) {
-         console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} отсутствует у скина:`, weapon.name); // Лог для отладки
-         // Возвращаем значение по умолчанию
-         const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
-         return defaultQual;
-      }
-
-      // Теперь weights гарантированно объект
-      const qualities = Object.keys(weights);
-      if (qualities.length === 0) {
-        console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} пуст у скина:`, weapon.name); // Лог для отладки
-        // Возвращаем значение по умолчанию
-        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
-        return defaultQual;
-      }
-
-      // Остальная логика взвешенного выбора
-      const total = qualities.reduce((sum, q) => sum + weights[q], 0);
-      let rand = Math.random() * total;
-      for (const q of qualities) {
-        rand -= weights[q];
-        if (rand <= 0) {
-          return {
-            name: q,
-            fullName: QUALITIES.find(qual => qual.name === q)?.fullName || q,
-            color: QUALITIES.find(qual => qual.name === q)?.color || "#fff"
-          };
-        }
-      }
-      // Если цикл закончился, вероятно, все веса были 0 или что-то пошло не так, возвращаем последний возможный
-      const lastQualName = qualities[qualities.length - 1];
-      return {
-        name: lastQualName,
-        fullName: QUALITIES.find(qual => qual.name === lastQualName)?.fullName || lastQualName,
-        color: QUALITIES.find(qual => qual.name === lastQualName)?.color || "#fff"
-      };
-    }
-    function getPrice(weapon, qualityName, isStatTrak) {
-      return isStatTrak 
-        ? weapon.prices.statTrak[qualityName] 
-        : weapon.prices.base[qualityName];
-    }
-    function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
-      const el = document.createElement('div');
-      el.className = 'skin-item';
-      el.style.backgroundColor = rarity.color + '30';
-      if (weapon.img) {
-        el.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
-      } else {
-        el.innerHTML = `<div style="width:60px;height:60px;background:rgba(255,255,255,0.1);border-radius:4px;"></div>`;
-      }
-      if (statTrak) el.style.borderTop = '2px solid gold';
-      if (souvenir) el.style.borderBottom = '2px solid #00ffcc';
-      return el;
-    }
-    function generateCaseSkins(caseType, count) {
-      const skins = [];
-      for (let i = 0; i < count; i++) {
-        const weapon = getWeightedRandomWeapon(caseType.weapons);
-        const rarity = RARITIES[weapon.rarity];
-        const statTrak = weapon.canBeStatTrak ? (Math.random() < 0.10) : false;
-        const quality = getWeightedQuality(weapon, statTrak);
-        const souvenir = false;
-        skins.push({ weapon, quality, rarity, statTrak, souvenir });
-      }
-      return skins;
-    }
-    function renderRoulette(skins) {
-      rouletteTrack.innerHTML = '';
-      skins.forEach(skin => {
-        const el = generateSkinItem(skin.weapon, skin.quality, skin.rarity, skin.statTrak, skin.souvenir);
-        rouletteTrack.appendChild(el);
+    function savePlayerData() {
+      if (!player.id || !player.isLoaded) return;
+      // Сохранение через fetch для надежности
+      const params = new URLSearchParams({
+        action: "updatePlayer",
+        id: player.id,
+        score: player.score,
+        miningRate: player.miningRate,
+        lastActive: player.lastActive,
+        caseProgress: player.caseProgress,
+        cases: JSON.stringify(player.cases)
       });
+      fetch(`${GAS_URL}?${params}&_=${Date.now()}`)
+        .then(() => {
+            // console.log("Данные игрока сохранены.");
+        })
+        .catch(err => console.error("Ошибка сохранения:", err));
+
+      const params2 = new URLSearchParams({
+        action: "updateInventory",
+        id: player.id,
+        inventory: JSON.stringify(player.inventory)
+      });
+      fetch(`${GAS_URL}?${params2}&_=${Date.now()}`)
+        .then(() => {
+            // console.log("Инвентарь сохранен.");
+        })
+        .catch(err => console.error("Ошибка сохранения инвентаря:", err));
     }
+
     async function loadPlayerFromGAS() {
       const url = `${GAS_URL}?action=getPlayer&id=${encodeURIComponent(player.id)}&name=${encodeURIComponent(player.name)}&_=${Date.now()}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
         player.score = data.found ? (parseInt(data.score) || 0) : 0;
+        player.miningRate = data.miningRate || 0;
+        player.lastActive = data.lastActive || Date.now();
         player.caseProgress = data.caseProgress || 0;
         player.cases = data.cases ? JSON.parse(data.cases) : [];
         player.inventory = data.inventory ? JSON.parse(data.inventory) : [];
         player.isLoaded = true;
-        updateCaseUI();
+
+        // --- Вычисление оффлайн-дохода ---
+        const now = Date.now();
+        const timeOffline = (now - player.lastActive) / 1000; // в секундах
+        const offlineEarnings = Math.floor(player.miningRate * timeOffline);
+        if (offlineEarnings > 0) {
+            player.score += offlineEarnings;
+            setStatus(`временно отсутствовали, мы добыли ${offlineEarnings} монет!`, false);
+            player.lastActive = now; // Обновляем время
+            savePlayerData(); // Сохраняем обновленный score и lastActive
+        } else {
+             player.lastActive = now; // Обновляем время, даже если ничего не добыто
+             savePlayerData();
+        }
+        // --- /Вычисление оффлайн-дохода ---
+
+        updateUI();
         return true;
       }
       throw new Error("GAS error");
     }
-    function savePlayerData() {
-      if (!player.id || !player.isLoaded) return;
-      const img1 = new Image();
-      const params1 = new URLSearchParams({
-        action: "updatePlayer",
-        id: player.id,
-        score: player.score,
-        caseProgress: player.caseProgress,
-        cases: JSON.stringify(player.cases)
-      });
-      img1.src = `${GAS_URL}?${params1}&_=${Date.now()}`;
-      const img2 = new Image();
-      const params2 = new URLSearchParams({
-        action: "updateInventory",
-        id: player.id,
-        inventory: JSON.stringify(player.inventory)
-      });
-      img2.src = `${GAS_URL}?${params2}&_=${Date.now()}`;
+
+    function updateUI() {
+        if (!player.isLoaded) return;
+        scoreEl.textContent = player.score;
+        miningRateEl.textContent = player.miningRate.toFixed(2);
+        caseCountEl.textContent = player.cases.length;
+        upgradeCostEl.textContent = upgradeCost;
+        openCaseBtn.disabled = (player.cases.length === 0 || player.score < 10);
     }
+
+    function processMining() {
+        if (!isMiningActive) return;
+        player.score += player.miningRate / 10; // Добавляем 1/10 от скорости за тик (10 тиков в сек)
+        updateUI();
+        // Сохраняем раз в 5 секунд, чтобы не перегружать сеть
+        if (player.score % 5 < player.miningRate / 10) {
+            savePlayerData();
+        }
+    }
+
+    function upgradeMiner() {
+        if (player.score < upgradeCost) {
+            setStatus("Недостаточно монет для улучшения!", true);
+            return;
+        }
+        player.score -= upgradeCost;
+        player.miningRate += 1; // Увеличиваем базовую скорость на 1
+        upgradeCost = Math.floor(upgradeCost * upgradeCostMultiplier); // Увеличиваем стоимость
+        savePlayerData();
+        updateUI();
+        setStatus(`Майнер улучшен! Скорость: ${player.miningRate.toFixed(2)}/сек`);
+    }
+
+    function toggleMining() {
+        isMiningActive = !isMiningActive;
+        toggleMiningBtn.textContent = `Майнинг: ${isMiningActive ? 'Вкл' : 'Выкл'}`;
+        if (isMiningActive) {
+            miningIntervalId = setInterval(processMining, 100);
+        } else {
+            clearInterval(miningIntervalId);
+        }
+    }
+
     function giveRandomCase() {
       player.cases = [];
       const caseType = CASES[Math.floor(Math.random() * CASES.length)];
       player.cases.push(caseType.name);
       setStatus(`🎁 Получен ${caseType.name}!`);
-      updateCaseUI();
+      updateUI();
       savePlayerData();
     }
-    function updateCaseUI() {
-      caseCountEl.textContent = player.cases.length;
-      openCaseBtn.disabled = (player.cases.length === 0 || player.score < 10);
-    }
+
     function openCase() {
       if (player.cases.length === 0 || player.score < 10) return;
       const caseName = player.cases.pop();
       const caseType = CASES.find(c => c.name === caseName);
       if (!caseType) return;
       player.score -= 10;
-      scoreEl.textContent = player.score;
-      updateCaseUI();
+      updateUI();
       savePlayerData();
       setStatus("Крутим...");
       const preSpin = generateCaseSkins(caseType, 30);
@@ -624,7 +650,7 @@
           // Обработчики кнопок
           resultSellBtn.onclick = () => {
             player.score += price;
-            scoreEl.textContent = player.score;
+            updateUI();
             savePlayerData();
             resultModal.style.display = 'none';
             setStatus(`✅ +${price} ₽!`);
@@ -650,6 +676,94 @@
         }, 3100);
       }, 100); // Увеличена задержка для стабильности на мобилках
     }
+
+    function getWeightedQuality(weapon, isStatTrak) {
+      // Проверяем, существует ли qualityWeights и нужный подключ (base или statTrak)
+      const weightsSource = weapon.qualityWeights; // Сначала получаем объект
+      if (!weightsSource) {
+        console.error("qualityWeights отсутствует у скина:", weapon.name); // Лог для отладки
+        // Возвращаем значение по умолчанию, например, BS
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
+      }
+      const weights = isStatTrak ? weightsSource.statTrak : weightsSource.base; // Теперь обращаемся к подключу
+      if (!weights) {
+         console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} отсутствует у скина:`, weapon.name); // Лог для отладки
+         // Возвращаем значение по умолчанию
+         const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+         return defaultQual;
+      }
+      // Теперь weights гарантированно объект
+      const qualities = Object.keys(weights);
+      if (qualities.length === 0) {
+        console.error(`qualityWeights.${isStatTrak ? 'statTrak' : 'base'} пуст у скина:`, weapon.name); // Лог для отладки
+        // Возвращаем значение по умолчанию
+        const defaultQual = QUALITIES.find(q => q.name === "BS") || { name: "BS", fullName: "Закалённое в боях", color: "#d32ce6" };
+        return defaultQual;
+      }
+      // Остальная логика взвешенного выбора
+      const total = qualities.reduce((sum, q) => sum + weights[q], 0);
+      let rand = Math.random() * total;
+      for (const q of qualities) {
+        rand -= weights[q];
+        if (rand <= 0) {
+          return {
+            name: q,
+            fullName: QUALITIES.find(qual => qual.name === q)?.fullName || q,
+            color: QUALITIES.find(qual => qual.name === q)?.color || "#fff"
+          };
+        }
+      }
+      // Если цикл закончился, вероятно, все веса были 0 или что-то пошло не так, возвращаем последний возможный
+      const lastQualName = qualities[qualities.length - 1];
+      return {
+        name: lastQualName,
+        fullName: QUALITIES.find(qual => qual.name === lastQualName)?.fullName || lastQualName,
+        color: QUALITIES.find(qual => qual.name === lastQualName)?.color || "#fff"
+      };
+    }
+
+    function getPrice(weapon, qualityName, isStatTrak) {
+      return isStatTrak
+        ? weapon.prices.statTrak[qualityName]
+        : weapon.prices.base[qualityName];
+    }
+
+    function generateSkinItem(weapon, quality, rarity, statTrak = false, souvenir = false) {
+      const el = document.createElement('div');
+      el.className = 'skin-item';
+      el.style.backgroundColor = rarity.color + '30';
+      if (weapon.img) {
+        el.innerHTML = `<img src="${weapon.img}" alt="${weapon.name}">`;
+      } else {
+        el.innerHTML = `<div style="width:60px;height:60px;background:rgba(255,255,255,0.1);border-radius:4px;"></div>`;
+      }
+      if (statTrak) el.style.borderTop = '2px solid gold';
+      if (souvenir) el.style.borderBottom = '2px solid #00ffcc';
+      return el;
+    }
+
+    function generateCaseSkins(caseType, count) {
+      const skins = [];
+      for (let i = 0; i < count; i++) {
+        const weapon = getWeightedRandomWeapon(caseType.weapons);
+        const rarity = RARITIES[weapon.rarity];
+        const statTrak = weapon.canBeStatTrak ? (Math.random() < 0.10) : false;
+        const quality = getWeightedQuality(weapon, statTrak);
+        const souvenir = false;
+        skins.push({ weapon, quality, rarity, statTrak, souvenir });
+      }
+      return skins;
+    }
+
+    function renderRoulette(skins) {
+      rouletteTrack.innerHTML = '';
+      skins.forEach(skin => {
+        const el = generateSkinItem(skin.weapon, skin.quality, skin.rarity, skin.statTrak, skin.souvenir);
+        rouletteTrack.appendChild(el);
+      });
+    }
+
     function renderInventory() {
       if (!player.isLoaded) {
         invList.innerHTML = "Загрузка...";
@@ -686,7 +800,7 @@
           if (confirm(`Продать ${item.weapon} за ${item.price} ₽?`)) {
             player.score += item.price;
             player.inventory.splice(index, 1);
-            scoreEl.textContent = player.score;
+            updateUI();
             savePlayerData();
             renderInventory();
             setStatus(`✅ +${item.price} ₽!`);
@@ -694,13 +808,14 @@
         });
       });
     }
+
     (async () => {
       const tg = window.Telegram?.WebApp;
       if (tg?.initDataUnsafe?.user) {
         const user = tg.initDataUnsafe.user;
         player.id = String(user.id);
-        player.name = user.username 
-          ? '@' + user.username 
+        player.name = user.username
+          ? '@' + user.username
           : (user.first_name || "Игрок") + (user.last_name ? " " + user.last_name : "");
         try { tg.expand(); } catch (e) {}
         setStatus("Подключение...");
@@ -711,6 +826,7 @@
           console.error("GAS load failed", e);
           player.isLoaded = true;
           player.inventory = [];
+          player.lastActive = Date.now(); // Устанавливаем текущее время
           setStatus("⚠️ Офлайн-режим", true);
         }
       } else {
@@ -718,14 +834,18 @@
         player.name = "Тест";
         player.isLoaded = true;
         player.inventory = [];
+        player.lastActive = Date.now(); // Устанавливаем текущее время
         setStatus("🧪 Тестовый режим", true);
       }
-      scoreEl.textContent = player.score;
-      caseCountEl.textContent = player.cases.length;
+      updateUI();
       renderRoulette(generateCaseSkins(CASES[0], 25));
+
+      // Запуск майнинга
+      miningIntervalId = setInterval(processMining, 100);
+
       clickBtn.addEventListener('click', () => {
         player.score += 1;
-        scoreEl.textContent = player.score;
+        updateUI();
         if (player.cases.length === 0) {
           player.caseProgress += 1;
           if (player.caseProgress >= 20) {
@@ -733,9 +853,10 @@
             giveRandomCase();
           }
         }
+        // Сохраняем раз в 5 кликов или если score делится на 5
         if (player.score % 5 === 0) savePlayerData();
-        updateCaseUI();
       });
+
       openCaseBtn.addEventListener('click', openCase);
       invBtn.addEventListener('click', () => {
         renderInventory();
@@ -744,7 +865,11 @@
       closeInv.addEventListener('click', () => {
         invModal.style.display = 'none';
       });
-      setInterval(savePlayerData, 30000);
+      upgradeMinerBtn.addEventListener('click', upgradeMiner);
+      // toggleMiningBtn.addEventListener('click', toggleMining); // Кнопка для демонстрации
+
+      // Планируем сохранение раз в 30 секунд
+      setInterval(savePlayerData, 10000);
     })();
   </script>
 </body>
