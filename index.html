@@ -603,7 +603,28 @@
       });
       fetch(`${GAS_URL}?${params2}&_=${Date.now()}`).catch(err => console.error("Ошибка сохранения инвентаря:", err));
     }
+function saveOnExit() {
+  if (!player.id || !player.isLoaded) return;
+  player.lastActive = Date.now(); // фиксируем момент ухода
+  const params = new URLSearchParams({
+    action: "updatePlayer",
+    id: player.id,
+    score: player.score,
+    miningRate: player.miningRate,
+    lastActive: player.lastActive, // ✅ сохраняем только при уходе
+    caseProgress: player.caseProgress,
+    cases: JSON.stringify(player.cases)
+  });
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(GAS_URL, params);
+  } else {
+    fetch(GAS_URL, { method: 'POST', body: params, keepalive: true });
+  }
+}
 
+// Подписка на уход
+window.addEventListener('beforeunload', saveOnExit);
+window.addEventListener('pagehide', saveOnExit); // критично для Telegram Mini Apps
     // Специальное сохранение при уходе
     function savePlayerOnExit() {
       if (!player.id || !player.isLoaded) return;
