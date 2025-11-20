@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Case Drop Clicker V9</title>
+  <title>Case Drop Clicker V10 - Roulette</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
 	
@@ -19,6 +19,11 @@
       /* Цвета редкости */
       --gray: #b0c3d9; --blue: #4b69ff; --purple: #8847ff; 
       --pink: #d32ce6; --red: #eb4b4b; --gold: #ffd700;   
+
+      /* Цвета рулетки */
+      --roulette-red: #e74c3c;
+      --roulette-black: #1b1b1b; /* Теперь черный */
+      --roulette-green: #2ecc71;
     }
 
 	body {
@@ -26,15 +31,11 @@
       background-color: var(--bg-color);
       color: var(--text);
       margin: 0; padding: 0;
-      /* 1. Запрещает выделение текста */
       user-select: none; 
-      /* 2. Отключает эффект затемнения при нажатии на ссылки/кнопки в WebKit (Chrome/Safari) */
       -webkit-tap-highlight-color: transparent; 
-      /* 3. Отключает масштабирование на большинстве Android устройств */
       touch-action: manipulation; 
     }
 	{
-        /* Запрет на увеличение двойным тапом и pinch-to-zoom */
        touch-action: manipulation; 
     }
   
@@ -113,141 +114,54 @@
         background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); border-radius: 8px; overflow: hidden; 
         display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; 
         border-top: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        position: relative; /* Для позиционирования галочки */
-        cursor: pointer; /* Указываем, что можно нажимать */
+        position: relative; 
+        cursor: pointer; 
     }
     .inv-card img { width: 80%; height: 50px; object-fit: contain; margin: 10px 0; }
     .inv-sell-btn { background: #2a442a; border: 1px solid #4caf50; color: #fff; font-size: 9px; padding: 4px 10px; border-radius: 15px; cursor: pointer; margin-top: auto; }
 
     /* НОВЫЙ СТИЛЬ: для режима выбора (крафта) */
-    
-    /* Стиль для выбранной карточки */
     .inv-card.selected {
-        border: 3px solid var(--accent) !important; /* Обводка для выбранного */
+        border: 3px solid var(--accent) !important; 
         box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
     }
-
-    /* Стиль для галочки */
     .selected-tick {
-        position: absolute;
-        top: 5px; right: 5px;
-        background: var(--accent);
-        color: var(--bg-color);
-        border-radius: 50%;
-        width: 20px; height: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 14px;
-        font-weight: bold;
+        position: absolute; top: 5px; right: 5px; background: var(--accent); color: var(--bg-color);
+        border-radius: 50%; width: 20px; height: 20px; display: flex; justify-content: center;
+        align-items: center; font-size: 14px; font-weight: bold;
     }
-
-    /* Скрываем кнопку "Продать" в режиме крафта/выбора */
-    .inventory-grid.selecting .inv-sell-btn {
-        display: none;
-    }
-    .inventory-grid.selecting .inv-card {
-        padding-bottom: 12px; /* Увеличим отступ, т.к. кнопки "Продать" нет */
-    }
-
+    .inventory-grid.selecting .inv-sell-btn { display: none; }
+    .inventory-grid.selecting .inv-card { padding-bottom: 12px; }
 
     /* Case Store Main List */
     #caseStoreContent { overflow-y: auto; flex: 1; padding: 15px; }
     .case-list-item {
-        background: var(--card-bg);
-        border-radius: 12px;
-        margin-bottom: 10px;
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border: 1px solid #333;
+        background: var(--card-bg); border-radius: 12px; margin-bottom: 10px; padding: 10px;
+        display: flex; align-items: center; justify-content: space-between; border: 1px solid #333;
     }
-    .case-list-item img {
-        width: 60px;
-        height: 40px;
-        object-fit: contain;
-        margin-right: 15px;
-    }
-    .case-list-info {
-        flex-grow: 1;
-        display: flex;
-        align-items: center;
-    }
-    .case-list-info h3 {
-        margin: 0;
-        font-size: 16px;
-        color: var(--accent);
-    }
-    .case-list-info p {
-        margin: 2px 0 0;
-        font-size: 11px;
-        color: #aaa;
-    }
+    .case-list-item img { width: 60px; height: 40px; object-fit: contain; margin-right: 15px; }
+    .case-list-info { flex-grow: 1; display: flex; align-items: center; }
+    .case-list-info h3 { margin: 0; font-size: 16px; color: var(--accent); }
+    .case-list-info p { margin: 2px 0 0; font-size: 11px; color: #aaa; }
     .case-details-btn {
-        background: #3a3a3a;
-        color: #fff;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        cursor: pointer;
-        white-space: nowrap; /* Предотвращаем перенос текста на кнопке */
+        background: #3a3a3a; color: #fff; border: none; padding: 8px 12px;
+        border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; 
     }
     .case-details-btn:active { background: #444; }
 
     /* Case Details Modal (New) */
-    #caseDetailsModal {
-        z-index: 600; /* Выше чем caseStoreScreen */
+    #caseDetailsModal { z-index: 600; }
+    #caseDetailsContent { overflow-y: auto; flex: 1; padding: 15px; }
+    #caseDetailsContent h2 { text-align: center; color: var(--accent); margin-top: 0; margin-bottom: 20px; font-size: 20px; }
+    .details-item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+    .details-item-card { 
+        background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); border-radius: 8px; overflow: hidden; 
+        display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; 
+        border-top: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-align: center;
     }
-    #caseDetailsContent {
-        overflow-y: auto;
-        flex: 1;
-        padding: 15px;
-    }
-    #caseDetailsContent h2 {
-        text-align: center;
-        color: var(--accent);
-        margin-top: 0;
-        margin-bottom: 20px;
-        font-size: 20px;
-    }
-    .details-item-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 10px;
-    }
-    .details-item-card {
-        background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); 
-        border-radius: 8px; 
-        overflow: hidden; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        padding-bottom: 8px; 
-        border-top: 3px solid transparent; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        text-align: center;
-    }
-    .details-item-card img {
-        width: 80%;
-        height: 60px;
-        object-fit: contain;
-        margin: 10px 0;
-    }
-    .details-item-card span {
-        font-size: 10px;
-        font-weight: bold;
-        margin-top: auto;
-        padding: 0 5px;
-        word-break: break-word; /* Позволяет длинным именам переноситься */
-    }
-    .details-item-rarity {
-        font-size: 9px;
-        color: #aaa;
-        margin-top: 3px;
-        padding: 0 5px;
-    }
+    .details-item-card img { width: 80%; height: 60px; object-fit: contain; margin: 10px 0; }
+    .details-item-card span { font-size: 10px; font-weight: bold; margin-top: auto; padding: 0 5px; word-break: break-word; }
+    .details-item-rarity { font-size: 9px; color: #aaa; margin-top: 3px; padding: 0 5px; }
 
     /* Roulette & Drop Modal Styles (same as before) */
     .roulette-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
@@ -263,33 +177,83 @@
     .drop-stat-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 13px; color: #aaa; border-bottom: 1px solid #333; padding-bottom: 4px; }
     .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; z-index: 2000; display: none; }
     
-    /* === НОВЫЕ СТИЛИ ДЛЯ ЗАГРУЗКИ === */
+    /* === СТИЛИ ДЛЯ ЗАГРУЗКИ === */
     #loadingScreen {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(27, 27, 27, 0.95); /* Полупрозрачный фон */
-        z-index: 5000; /* Самый высокий z-index */
-        display: flex; /* Изначально видимый */
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: var(--text);
-        font-size: 16px;
-        font-weight: bold;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(27, 27, 27, 0.95); z-index: 5000; 
+        display: flex; flex-direction: column; justify-content: center;
+        align-items: center; color: var(--text); font-size: 16px; font-weight: bold;
     }
     .spinner {
-        border: 4px solid #f3f3f3; /* Светло-серый */
-        border-top: 4px solid var(--accent); /* Акцентный цвет */
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin-bottom: 15px;
+        border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); 
+        border-radius: 50%; width: 40px; height: 40px;
+        animation: spin 1s linear infinite; margin-bottom: 15px;
     }
     @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }
+    }
+    /* ============================== */
+    
+    /* === СТИЛИ ДЛЯ РУЛЕТКИ (37 СЕКТОРОВ) === */
+    .roulette-board {
+        width: 100%; max-width: 400px; margin: 0 auto;
+        border: 2px solid #555; border-radius: 10px; overflow: hidden;
+        background: #333;
+    }
+    .number-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2px;
+        padding: 2px;
+    }
+    .bet-cell {
+        background: #1b1b1b;
+        color: white;
+        text-align: center;
+        padding: 10px 5px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        position: relative;
+        border-radius: 4px;
+        transition: background 0.1s;
+    }
+    .bet-cell:active:not(.disabled) { background: #555; }
+    .bet-cell.disabled { opacity: 0.5; cursor: default; }
+
+    /* Цветные ячейки чисел */
+    .num-0 { background: var(--roulette-green); color: black; }
+    .num-red { background: var(--roulette-red); }
+    .num-black { background: var(--roulette-black); }
+    
+    /* Цветные ячейки секторов */
+    .color-cell { padding: 15px 5px; font-size: 16px; }
+    .color-red { background: var(--roulette-red); }
+    .color-black { background: var(--roulette-black); }
+    .color-low, .color-high { background: #555; }
+
+    /* Индикатор ставки */
+    .bet-indicator {
+        position: absolute; top: -5px; right: -5px;
+        background: var(--accent); color: black;
+        border-radius: 50%; width: 20px; height: 20px;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 10px; font-weight: bold;
+        box-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
+    }
+
+    #currentBetsDisplay {
+        margin-top: 15px; padding: 10px; background: #262626; border-radius: 8px;
+        max-height: 150px; overflow-y: auto;
+    }
+    .bet-line {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 5px 0; border-bottom: 1px solid #333;
+    }
+    .bet-line:last-child { border-bottom: none; }
+    .bet-remove {
+        background: var(--roulette-red); color: white; border: none;
+        border-radius: 4px; padding: 4px 8px; cursor: pointer;
     }
     /* ============================== */
   </style>
@@ -300,13 +264,90 @@
         <div class="spinner"></div>
         <span>Подключение к базе данных...</span>
     </div>
-    <div id="craftingScreen" class="full-screen-modal">
+    
+<div id="craftingScreen" class="full-screen-modal">
   <div class="modal-header">
     <span class="modal-title">🛠️ Система Крафтов</span>
     <button class="modal-close" onclick="toggleCrafting(false)">&times;</button>
   </div>
   <div id="craftingContent" class="app-container" style="padding: 15px; padding-bottom: 20px;">
     </div>
+</div>
+
+<div id="casinoScreen" class="full-screen-modal">
+  <div class="modal-header">
+    <span class="modal-title">🎰 Европейская Рулетка (0-36)</span>
+    <button class="modal-close" onclick="toggleCasino(false)">&times;</button>
+  </div>
+  
+  <div style="padding: 20px; text-align: center; overflow-y: auto; flex-grow: 1;">
+    
+    <div id="rouletteStatus" style="font-size: 16px; margin-bottom: 15px; min-height: 20px;">Сделайте ставку</div>
+    <input type="number" id="currentBetAmount" placeholder="Сумма ставки" min="1" value="100" style="padding: 10px; width: 80%; margin-bottom: 15px; border-radius: 8px; border: 1px solid #444; background: #333; color: white;">
+
+    <div class="roulette-board">
+        <div class="number-grid">
+            <div class="bet-cell num-0" style="grid-column: 1 / span 3;" onclick="addBet('number', 0, parseInt(document.getElementById('currentBetAmount').value))">
+                0 (x36) <span id="chip-number-0" class="bet-indicator" style="display:none;">0</span>
+            </div>
+
+            <div class="bet-cell num-red" onclick="addBet('number', 1, parseInt(document.getElementById('currentBetAmount').value))">1 (x36) <span id="chip-number-1" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 2, parseInt(document.getElementById('currentBetAmount').value))">2 (x36) <span id="chip-number-2" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 3, parseInt(document.getElementById('currentBetAmount').value))">3 (x36) <span id="chip-number-3" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 4, parseInt(document.getElementById('currentBetAmount').value))">4 (x36) <span id="chip-number-4" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 5, parseInt(document.getElementById('currentBetAmount').value))">5 (x36) <span id="chip-number-5" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 6, parseInt(document.getElementById('currentBetAmount').value))">6 (x36) <span id="chip-number-6" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 7, parseInt(document.getElementById('currentBetAmount').value))">7 (x36) <span id="chip-number-7" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 8, parseInt(document.getElementById('currentBetAmount').value))">8 (x36) <span id="chip-number-8" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 9, parseInt(document.getElementById('currentBetAmount').value))">9 (x36) <span id="chip-number-9" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 10, parseInt(document.getElementById('currentBetAmount').value))">10 (x36) <span id="chip-number-10" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 11, parseInt(document.getElementById('currentBetAmount').value))">11 (x36) <span id="chip-number-11" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 12, parseInt(document.getElementById('currentBetAmount').value))">12 (x36) <span id="chip-number-12" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 13, parseInt(document.getElementById('currentBetAmount').value))">13 (x36) <span id="chip-number-13" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 14, parseInt(document.getElementById('currentBetAmount').value))">14 (x36) <span id="chip-number-14" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 15, parseInt(document.getElementById('currentBetAmount').value))">15 (x36) <span id="chip-number-15" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 16, parseInt(document.getElementById('currentBetAmount').value))">16 (x36) <span id="chip-number-16" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 17, parseInt(document.getElementById('currentBetAmount').value))">17 (x36) <span id="chip-number-17" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 18, parseInt(document.getElementById('currentBetAmount').value))">18 (x36) <span id="chip-number-18" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 19, parseInt(document.getElementById('currentBetAmount').value))">19 (x36) <span id="chip-number-19" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 20, parseInt(document.getElementById('currentBetAmount').value))">20 (x36) <span id="chip-number-20" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 21, parseInt(document.getElementById('currentBetAmount').value))">21 (x36) <span id="chip-number-21" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 22, parseInt(document.getElementById('currentBetAmount').value))">22 (x36) <span id="chip-number-22" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 23, parseInt(document.getElementById('currentBetAmount').value))">23 (x36) <span id="chip-number-23" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 24, parseInt(document.getElementById('currentBetAmount').value))">24 (x36) <span id="chip-number-24" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 25, parseInt(document.getElementById('currentBetAmount').value))">25 (x36) <span id="chip-number-25" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 26, parseInt(document.getElementById('currentBetAmount').value))">26 (x36) <span id="chip-number-26" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 27, parseInt(document.getElementById('currentBetAmount').value))">27 (x36) <span id="chip-number-27" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 28, parseInt(document.getElementById('currentBetAmount').value))">28 (x36) <span id="chip-number-28" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 29, parseInt(document.getElementById('currentBetAmount').value))">29 (x36) <span id="chip-number-29" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 30, parseInt(document.getElementById('currentBetAmount').value))">30 (x36) <span id="chip-number-30" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 31, parseInt(document.getElementById('currentBetAmount').value))">31 (x36) <span id="chip-number-31" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 32, parseInt(document.getElementById('currentBetAmount').value))">32 (x36) <span id="chip-number-32" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 33, parseInt(document.getElementById('currentBetAmount').value))">33 (x36) <span id="chip-number-33" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 34, parseInt(document.getElementById('currentBetAmount').value))">34 (x36) <span id="chip-number-34" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-black" onclick="addBet('number', 35, parseInt(document.getElementById('currentBetAmount').value))">35 (x36) <span id="chip-number-35" class="bet-indicator" style="display:none;">0</span></div>
+            <div class="bet-cell num-red" onclick="addBet('number', 36, parseInt(document.getElementById('currentBetAmount').value))">36 (x36) <span id="chip-number-36" class="bet-indicator" style="display:none;">0</span></div>
+
+            <div style="grid-column: 1 / span 3; display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px;">
+                <div class="bet-cell color-cell color-low" onclick="addBet('color', 'low', parseInt(document.getElementById('currentBetAmount').value))">1-18 (x2) <span id="chip-color-low" class="bet-indicator" style="display:none;">0</span></div>
+                <div class="bet-cell color-cell num-even" style="background: #555;" onclick="addBet('color', 'even', parseInt(document.getElementById('currentBetAmount').value))">ЧЕТ (x2) <span id="chip-color-even" class="bet-indicator" style="display:none;">0</span></div>
+                <div class="bet-cell color-cell color-red" onclick="addBet('color', 'red', parseInt(document.getElementById('currentBetAmount').value))">КРАСНЫЙ (x2) <span id="chip-color-red" class="bet-indicator" style="display:none;">0</span></div>
+                <div class="bet-cell color-cell color-black" onclick="addBet('color', 'black', parseInt(document.getElementById('currentBetAmount').value))">ЧЕРНЫЙ (x2) <span id="chip-color-black" class="bet-indicator" style="display:none;">0</span></div>
+                <div class="bet-cell color-cell num-odd" style="background: #555;" onclick="addBet('color', 'odd', parseInt(document.getElementById('currentBetAmount').value))">НЕЧЕТ (x2) <span id="chip-color-odd" class="bet-indicator" style="display:none;">0</span></div>
+                <div class="bet-cell color-cell color-high" onclick="addBet('color', 'high', parseInt(document.getElementById('currentBetAmount').value))">19-36 (x2) <span id="chip-color-high" class="bet-indicator" style="display:none;">0</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <h4 style="margin-top: 20px;">Текущие ставки (<span id="betsCount">0</span>/3):</h4>
+    <div id="currentBetsDisplay">
+        <p style="color: #aaa; font-size: 12px; margin: 0;">Ставок нет. Макс. 3 ставки.</p>
+    </div>
+
+    <button id="rouletteSpinBtn" class="btn btn-buy" style="width: 100%; margin-top: 20px; padding: 15px;" onclick="startRoulette()">
+        КРУТИТЬ (Снять <span id="totalBetAmount">0</span>$)
+    </button>
+  </div>
 </div>
 <div id="notification" class="notification"></div>
 
@@ -350,7 +391,14 @@ justify-content: center; gap: 5px;">
     </button>
     <button class="btn" onclick="toggleCrafting(true)">
       🛠️ КРАФТ
-    </button> </div>
+    </button>
+    <button class="btn" onclick="toggleCasino(true)">
+      🎰 КАЗИНО (РУЛЕТКА)
+    </button>
+    <button id="dailyRewardBtn" class="btn" onclick="showDailyRewardModal()">
+      💰 ЕЖЕДНЕВНАЯ НАГРАДА
+    </button>
+    </div>
 </div>
 </div>
 
@@ -389,11 +437,43 @@ justify-content: center; gap: 5px;">
   </div>
 </div>
 
+<div id="dailyRewardModal" class="drop-modal" style="z-index: 1200; max-width: 280px;">
+    <h2 id="drTitle" style="margin: 0 0 10px 0; color: var(--accent);">Ежедневная Награда</h2>
+    <div id="drStatus" style="font-size: 14px; margin-bottom: 15px;"></div>
+    <div id="drCurrent" style="font-size: 16px; font-weight: bold; margin-bottom: 20px;"></div>
+    <button id="drButton" class="btn btn-buy" style="width: 100%;" onclick="claimDailyReward()">ЗАБРАТЬ</button>
+    <button id="drClose" class="btn" style="background:#333; width: 100%; margin-top: 5px;" onclick="document.getElementById('dailyRewardModal').style.display = 'none';">Закрыть</button>
+</div>
 <script>
   // !!! ВСТАВЬ СЮДА URL ГУГЛ СКРИПТА !!!
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzF8GaHJzOJy5Bqr0dHoz2TNvrV-tUbAC8N5cBfGXvXtfxLkB-IRUoEjjfT5MTAZh6a/exec'; 
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8S-NX65WkQOl9F0ZCXQsem8csJxN0_8-_S6r3h4KWB9Rn8Dx4KZpidHfCH610G-HB/exec'; 
 
   const DROP_THRESHOLD = 5; // Сколько кликов нужно для кейса
+
+  // =========================================================================
+  // --- НАСТРОЙКА РУЛЕТКИ (37 СЕКТОРОВ: 0-36) ---
+  // Число: [Цвет, Множитель_Полного_Возврата]
+  // Множитель 36 = Выплата 35:1 (возврат ставки + 35х чистый выигрыш)
+  // =========================================================================
+  const ROULETTE_NUMBERS = {
+    0: ['green', 36], 
+    1: ['red', 36], 2: ['black', 36], 3: ['red', 36], 4: ['black', 36], 
+    5: ['red', 36], 6: ['black', 36], 7: ['red', 36], 8: ['black', 36], 
+    9: ['red', 36], 10: ['black', 36], 11: ['black', 36], 12: ['red', 36], 
+    13: ['black', 36], 14: ['red', 36], 15: ['black', 36], 16: ['red', 36], 
+    17: ['black', 36], 18: ['red', 36], 19: ['red', 36], 20: ['black', 36], 
+    21: ['red', 36], 22: ['black', 36], 23: ['red', 36], 24: ['black', 36], 
+    25: ['red', 36], 26: ['black', 36], 27: ['red', 36], 28: ['black', 36], 
+    29: ['black', 36], 30: ['red', 36], 31: ['black', 36], 32: ['red', 36], 
+    33: ['black', 36], 34: ['red', 36], 35: ['black', 36], 36: ['red', 36], 
+  };
+  const MAX_BETS = 3; // Максимальное количество одновременных ставок
+  // =========================================================================
+  
+  // --- НАСТРОЙКА ЕЖЕДНЕВНОЙ НАГРАДЫ ---
+  const DAILY_REWARD_BASE = 100; // Базовая награда за 1-й день
+  const DAILY_REWARD_INCREMENT = 50; // Увеличение за каждый последующий день серии
+  // =========================================================================
 
   // =========================================================================
   // --- НАСТРОЙКА ШАНСОВ ВЫПАДЕНИЯ (ФИКСИРОВАННЫЕ ВЕСА) ---
@@ -476,14 +556,31 @@ justify-content: center; gap: 5px;">
     }
   ];
 
+  // =========================================================================
+  // --- БЛОК ДЛЯ ВЫПАДЕНИЯ ПРЕДМЕТОВ С КЛИКА ---
+  // =========================================================================
+  // Шанс 0.1% = 1 из 1000
+  const CLICK_DROP_CHANCE = 0.001; 
+  const SPECIAL_CLICK_DROPS = [
+      // !!! ВСТАВЬТЕ СЮДА ВАШИ ПРЕДМЕТЫ !!!
+      // Они будут иметь РЕДКОСТЬ: gray
+      // Пример: { name: "P250 | Sand Dune", basePrice: 2, image: "" },
+      // { name: "Nova | Polar Mesh", basePrice: 3, image: "" }
+  ];
+  // =========================================================================
+
   let tg = window.Telegram.WebApp; tg.expand();
   let userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 10001; 
 
-  // GLOBAL STATE
+  // GLOBAL STATE (ОБНОВЛЕННЫЙ)
   let state = {
     balance: 0, clickPower: 1, autoClick: 0, inventory: [],
     activeCase: null,  // ID выпавшего кейса
-    clicksDone: 0      // Прогресс до следующего кейса
+    clicksDone: 0,     // Прогресс до следующего кейса
+    lastRewardDay: null, // Дата последнего получения награды (timestamp)
+    rewardStreak: 0,      // Текущая серия (streak)
+    // НОВОЕ ПОЛЕ ДЛЯ РУЛЕТКИ
+    currentBets: [] // [{id: 1, type: 'number', value: 5, amount: 100}, {id: 2, type: 'color', value: 'red', amount: 50}]
   };
   let pendingItem = null;
   
@@ -516,15 +613,386 @@ justify-content: center; gap: 5px;">
         state.clicksDone = data.inventory.clicksDone || 0;
       }
 
+      // *** ЛОГИКА ДЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ ***
+      state.lastRewardDay = data.lastRewardDay || null;
+      state.rewardStreak = data.rewardStreak || 0;
+      
+      checkDailyReward(); // Проверка и выдача награды
+      // ********************************************
+      
       if (data.offlineBonus > 0) notify(`Офлайн доход: +${data.offlineBonus}$`);
       updateUI();
       
       setInterval(() => { if (state.autoClick > 0) { state.balance += state.autoClick; updateUI(); }}, 1000);
-      setInterval(saveGame, 5000);
+      setInterval(saveGameOriginal, 5000); // Используем non-debounced функцию для регулярного интервала
     } else {
         notify("Ошибка подключения к БД. Попробуйте перезапустить.");
     }
   }
+
+// --- НОВЫЕ ФУНКЦИИ ДЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ ---
+
+  function getDailyRewardValue(streak) {
+      if (streak < 1) streak = 1;
+      return DAILY_REWARD_BASE + (streak - 1) * DAILY_REWARD_INCREMENT;
+  }
+
+  function isRewardReady() {
+      if (!state.lastRewardDay) return true;
+      const now = new Date();
+      const lastRewardDate = new Date(state.lastRewardDay);
+      // Проверяем, прошло ли 24 часа
+      return (now.getTime() - lastRewardDate.getTime()) / (1000 * 60 * 60) >= 24;
+  }
+
+  function checkDailyReward() {
+      if (isRewardReady()) {
+          const now = new Date();
+          let newStreak = 1;
+          
+          if (state.lastRewardDay) {
+              const lastRewardDate = new Date(state.lastRewardDay);
+              const hoursPassed = (now.getTime() - lastRewardDate.getTime()) / (1000 * 60 * 60);
+              
+              // Если прошло меньше 48 часов (т.е. залогинился второй день подряд)
+              if (hoursPassed < 48) { 
+                  newStreak = state.rewardStreak + 1;
+              } else {
+                  notify("Серия ежедневных наград сброшена.");
+              }
+          }
+          
+          // Показываем модалку сразу при входе, если награда готова
+          showDailyRewardModal(true, newStreak);
+      }
+      // Если награда не готова, модалка не показывается автоматически, 
+      // но состояние кнопки в updateUI будет правильным.
+  }
+
+  function showDailyRewardModal(autoShow = false, calculatedStreak = null) {
+      const modal = document.getElementById('dailyRewardModal');
+      const status = document.getElementById('drStatus');
+      const current = document.getElementById('drCurrent');
+      const button = document.getElementById('drButton');
+
+      // ДОБАВЛЕННАЯ ПРОВЕРКА ОТ ОШИБКИ "Cannot set properties of null"
+      if (!modal || !status || !current || !button) {
+          console.error("DR Modal elements missing. Skipping UI update.");
+          return;
+      }
+      
+      const ready = isRewardReady();
+      const streak = calculatedStreak !== null ? calculatedStreak : state.rewardStreak;
+      const reward = getDailyRewardValue(ready ? streak : streak + 1);
+      
+      if (ready) {
+          status.innerHTML = `<span style="color: #4caf50; font-weight: bold;">Готово к получению!</span><br>Серия: ${streak} д.`;
+          current.innerText = `Награда: ${reward}$`;
+          button.style.display = 'block';
+      } else {
+          status.innerHTML = `<span style="color: #aaa;">Награда уже получена сегодня.</span><br>Текущая серия: ${state.rewardStreak} д.`;
+          current.innerText = `След. награда: ${reward}$`;
+          button.style.display = 'none';
+      }
+      
+      // Показать модалку, если это автопоказ при входе ИЛИ ручной клик
+      if (autoShow || !ready) {
+          modal.style.display = 'block';
+      } else if (ready) {
+          // Показать модалку только в случае, если ручной клик и она готова
+          modal.style.display = 'block';
+      }
+      // При ручном клике на кнопку 'Готово' всегда показываем
+      if (!autoShow && ready) modal.style.display = 'block';
+  }
+
+  window.claimDailyReward = function() {
+      if (!isRewardReady()) return; // Защита от получения
+
+      const now = new Date();
+      
+      let newStreak = 1;
+      if (state.lastRewardDay) {
+          const lastRewardDate = new Date(state.lastRewardDay);
+          const hoursPassed = (now.getTime() - lastRewardDate.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursPassed < 48) {
+              newStreak = state.rewardStreak + 1;
+          }
+      } 
+      
+      const reward = getDailyRewardValue(newStreak);
+      
+      state.balance += reward;
+      state.rewardStreak = newStreak;
+      state.lastRewardDay = now.getTime();
+      
+      saveGame(); // *** ВАЖНО: сохранение после получения награды (debounced) ***
+      updateUI();
+      document.getElementById('dailyRewardModal').style.display = 'none';
+      notify(`🎉 Награда получена: ${reward}$! Серия: ${newStreak} д.`);
+  }
+
+// --- КОНЕЦ НОВЫХ ФУНКЦИЙ ДЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ ---
+
+// --- НОВЫЕ ФУНКЦИИ ДЛЯ КАЗИНО (РУЛЕТКИ) ---
+
+  function toggleCasino(show) {
+      document.getElementById('casinoScreen').style.display = show ? 'flex' : 'none';
+      if (show) {
+          document.getElementById('rouletteStatus').innerText = "Сделайте ставку";
+          // Убедиться, что на входе в казино нет ставок, или перерисовать их
+          renderCurrentBets();
+          updateCasinoUI();
+      }
+  }
+
+  // Обновление UI рулетки (счетчик ставок, общая сумма, состояние кнопки)
+  function updateCasinoUI() {
+      const totalBet = state.currentBets.reduce((sum, bet) => sum + bet.amount, 0);
+      document.getElementById('betsCount').innerText = state.currentBets.length;
+      document.getElementById('totalBetAmount').innerText = totalBet;
+
+      const spinBtn = document.getElementById('rouletteSpinBtn');
+      if (state.currentBets.length > 0 && totalBet <= state.balance) {
+          spinBtn.disabled = false;
+          spinBtn.style.opacity = 1;
+      } else {
+          spinBtn.disabled = true;
+          spinBtn.style.opacity = 0.5;
+      }
+      
+      // Обновление чипов на поле (0-36)
+      for (let i = 0; i <= 36; i++) {
+          const chip = document.getElementById(`chip-number-${i}`);
+          const bets = state.currentBets.filter(b => b.type === 'number' && b.value === i);
+          const amount = bets.reduce((sum, b) => sum + b.amount, 0);
+          if (chip) {
+              chip.innerText = amount;
+              chip.style.display = amount > 0 ? 'flex' : 'none';
+          }
+      }
+      // Обновление чипов на секторах (color, odd, even, low, high)
+      ['red', 'black', 'odd', 'even', 'low', 'high'].forEach(sector => {
+          const chip = document.getElementById(`chip-color-${sector}`);
+          const bets = state.currentBets.filter(b => b.type === 'color' && b.value === sector);
+          const amount = bets.reduce((sum, b) => sum + b.amount, 0);
+          if (chip) {
+              chip.innerText = amount;
+              chip.style.display = amount > 0 ? 'flex' : 'none';
+          }
+      });
+  }
+
+  // Добавление ставки
+  window.addBet = function(type, value, amount) {
+      const statusDiv = document.getElementById('rouletteStatus');
+      
+      if (state.currentBets.length >= MAX_BETS) {
+          statusDiv.innerText = `Лимит: можно сделать только ${MAX_BETS} ставки.`;
+          return;
+      }
+
+      amount = parseInt(amount); // Убедимся, что это число
+      
+      if (isNaN(amount) || amount <= 0) {
+          statusDiv.innerText = "Сумма ставки должна быть больше 0";
+          return;
+      }
+      
+      // Временная проверка баланса
+      const potentialTotalBet = state.currentBets.reduce((sum, bet) => sum + bet.amount, 0) + amount;
+      if (potentialTotalBet > state.balance) {
+          statusDiv.innerText = "Недостаточно средств для этой ставки!";
+          return;
+      }
+
+      // Находим существующую ставку такого же типа/значения.
+      let existingBet = state.currentBets.find(b => b.type === type && b.value === value);
+
+      // При ставке на число разрешаем увеличение
+      if (existingBet && type === 'number') {
+          // Если ставка на число уже есть, увеличиваем ее
+          existingBet.amount += amount;
+          statusDiv.innerText = `Ставка на число ${value} увеличена до ${existingBet.amount}$`;
+      } 
+      // При ставке на сектор запрещаем увеличение, так как это занимает 1 из 3 слотов.
+      else if (existingBet && type === 'color') {
+          statusDiv.innerText = `Вы уже поставили на ${value.toUpperCase()}. Макс. 1 ставка на сектор.`;
+          return;
+      } 
+      // Если это новая ставка или ставка на новый сектор
+      else {
+          // Создаем новую ставку
+          const newBet = {
+              id: Date.now() + Math.random(),
+              type: type, // 'number' или 'color'
+              value: value, // число (0-36) или 'red', 'black', 'odd', 'even', 'low', 'high'
+              amount: amount
+          };
+          state.currentBets.push(newBet);
+          
+          let betLabel = type === 'number' ? `число ${value}` : value.toUpperCase();
+          statusDiv.innerText = `Добавлена ставка на ${betLabel}: ${amount}$`;
+      }
+      
+      // Сброс статуса
+      statusDiv.style.color = 'white'; 
+      
+      renderCurrentBets();
+      updateCasinoUI();
+  }
+
+  // Удаление ставки
+  window.removeBet = function(betId) {
+      const index = state.currentBets.findIndex(bet => bet.id === betId);
+      if (index !== -1) {
+          // Возврат денег игроку, так как ставка еще не сыграла
+          const betAmount = state.currentBets[index].amount;
+          state.currentBets.splice(index, 1);
+          
+          document.getElementById('rouletteStatus').innerText = `Ставка на ${betAmount}$ отменена.`;
+          
+          renderCurrentBets();
+          updateCasinoUI();
+      }
+  }
+
+  // Перерисовка списка текущих ставок
+  function renderCurrentBets() {
+      const display = document.getElementById('currentBetsDisplay');
+      
+      if (state.currentBets.length === 0) {
+          display.innerHTML = '<p style="color: #aaa; font-size: 12px; margin: 0;">Ставок нет. Макс. 3 ставки.</p>';
+          return;
+      }
+      
+      let html = '';
+      state.currentBets.forEach(bet => {
+          let label = '';
+          let multiplier = 0;
+          
+          if (bet.type === 'number') {
+              label = `Число: ${bet.value}`;
+              multiplier = ROULETTE_NUMBERS[bet.value][1]; // 36
+          } else {
+              label = `Сектор: ${bet.value.toUpperCase()}`;
+              multiplier = 2; // 2
+          }
+          
+          // Показываем множитель выигрыша (полный возврат)
+          html += `
+              <div class="bet-line">
+                  <span>${label} (x${multiplier}): <strong>${bet.amount}$</strong></span>
+                  <button class="bet-remove" onclick="removeBet(${bet.id})">
+                      &times;
+                  </button>
+              </div>
+          `;
+      });
+      
+      display.innerHTML = html;
+  }
+
+  // Запуск рулетки
+  window.startRoulette = function() {
+      if (state.currentBets.length === 0) {
+          document.getElementById('rouletteStatus').innerText = "Сначала сделайте ставку!";
+          return;
+      }
+      
+      const totalBet = state.currentBets.reduce((sum, bet) => sum + bet.amount, 0);
+      if (totalBet > state.balance) {
+          document.getElementById('rouletteStatus').innerText = "Недостаточно средств для всех ставок!";
+          // Отменяем запуск
+          return;
+      }
+
+      // 1. Снимаем всю сумму ставок с баланса
+      state.balance -= totalBet;
+      updateUI();
+      
+      // 2. Определяем выигрышное число (0 до 36)
+      const winningNumber = Math.floor(Math.random() * 37); 
+      
+      // 3. Расчет выигрыша
+      const result = calculateWinnings(winningNumber);
+      let netWinnings = result.totalPayout - totalBet;
+
+      // 4. Обновление баланса
+      state.balance += result.totalPayout;
+      
+      // 5. Вывод результата
+      const statusDiv = document.getElementById('rouletteStatus');
+      const winningColor = ROULETTE_NUMBERS[winningNumber][0];
+      statusDiv.style.color = netWinnings >= 0 ? '#4caf50' : '#e74c3c';
+      
+      let statusText = `Выпало: ${winningNumber} (${winningColor.toUpperCase()}). `;
+      if (netWinnings >= 0) {
+          statusText += `🎉 ВЫИГРЫШ: +${netWinnings}$ (Общая выплата: ${result.totalPayout}$)`;
+      } else {
+          statusText += `❌ ПРОИГРЫШ: ${netWinnings}$ (Потеряно: ${totalBet - result.totalPayout}$)`;
+      }
+      statusDiv.innerText = statusText;
+      
+      // 6. Очистка и сохранение
+      state.currentBets = [];
+      renderCurrentBets();
+      updateCasinoUI();
+      updateUI();
+      saveGame(); // (debounced)
+  }
+
+  // Функция расчета выигрышей
+  function calculateWinnings(winningNumber) {
+      let totalPayout = 0;
+      const winningColor = ROULETTE_NUMBERS[winningNumber][0];
+
+      state.currentBets.forEach(bet => {
+          let multiplier = 0;
+          
+          if (bet.type === 'number') {
+              // Ставка на число (0-36)
+              if (bet.value === winningNumber) {
+                  // Выплата 35:1. Полный возврат = 36х.
+                  multiplier = 36; 
+              }
+          } else if (bet.type === 'color') {
+              // Ставка на цвет (red, black)
+              if ((bet.value === 'red' && winningColor === 'red') || 
+                  (bet.value === 'black' && winningColor === 'black')) {
+                  multiplier = 2; // Выплата 1:1. Полный возврат = 2х.
+              }
+              
+              // Зеро (0) не считается ни четным, ни нечетным, ни Low/High
+              if (winningNumber !== 0) { 
+                  // Ставка на чет/нечет
+                  if (bet.value === 'odd' && winningNumber % 2 !== 0) {
+                      multiplier = 2;
+                  }
+                  if (bet.value === 'even' && winningNumber % 2 === 0) {
+                      multiplier = 2;
+                  }
+                  
+                  // Ставка на Low/High (1-18 / 19-36)
+                  if (bet.value === 'low' && winningNumber >= 1 && winningNumber <= 18) {
+                      multiplier = 2;
+                  }
+                  if (bet.value === 'high' && winningNumber >= 19 && winningNumber <= 36) {
+                      multiplier = 2;
+                  }
+              }
+          }
+          
+          totalPayout += bet.amount * multiplier;
+      });
+
+      return { totalPayout };
+  }
+
+// --- КОНЕЦ НОВЫХ ФУНКЦИЙ ДЛЯ КАЗИНО ---
+
+
 // --- ИСПРАВЛЕННАЯ ЛОГИКА КРАФТИНГА С ВЫБОРОМ ---
 
   const CRAFT_COUNT = 10; // Сколько предметов нужно для крафта
@@ -741,17 +1209,24 @@ justify-content: center; gap: 5px;">
       selectedForCrafting = [];
       
       updateUI();
-      saveGame();
+      saveGame(); // (debounced)
       renderCraftingScreen(); // Перерисовка меню крафта
       
       notify(`Скрафчен 1x ${newItem.name} (${newItem.wear})!`);
   }
   
   // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ КРАФТИНГА ---
+
   // --- CLICK & DROP LOGIC ---
   function handleClick() {
     state.balance += state.clickPower;
     
+    // *** НОВЫЙ БЛОК: 0.1% ШАНС ВЫПАДЕНИЯ ***
+    if (Math.random() < CLICK_DROP_CHANCE && SPECIAL_CLICK_DROPS.length > 0) {
+        dropSpecialClickItem();
+    }
+    // ***********************************
+
     if (!state.activeCase) {
       state.clicksDone++;
       if (state.clicksDone >= DROP_THRESHOLD) {
@@ -761,6 +1236,29 @@ justify-content: center; gap: 5px;">
     }
     updateUI();
   }
+  
+  // --- НОВАЯ ФУНКЦИЯ: ВЫПАДЕНИЕ ПРЕДМЕТА ПРИ КЛИКЕ ---
+  function dropSpecialClickItem() {
+      if (SPECIAL_CLICK_DROPS.length === 0) return;
+
+      // 1. Выбираем случайный предмет из списка
+      const tpl = SPECIAL_CLICK_DROPS[Math.floor(Math.random() * SPECIAL_CLICK_DROPS.length)];
+      
+      // 2. Генерируем полный объект предмета, принудительно устанавливая 'gray' редкость
+      const newItem = generateItemObj({ 
+          ...tpl, 
+          rarity: 'gray' 
+      });
+
+      // 3. Добавляем в инвентарь
+      state.inventory.push(newItem);
+      
+      // 4. Уведомление
+      notify(`🎉 Повезло! Выпал ${newItem.name} (${newItem.wear})!`);
+      
+      // 5. Сохранение (сразу, так как это важное событие, debounced)
+      saveGame(); 
+  }
 
   function dropRandomCase() {
     // 80% Common, 20% Rare drop chance for the case itself
@@ -769,7 +1267,7 @@ justify-content: center; gap: 5px;">
     
     state.activeCase = dropped.id;
     notify(`ВЫПАЛ ${dropped.name.toUpperCase()}!`);
-    saveGame();
+    saveGame(); // (debounced)
   }
 
   function buyKeyAndOpen() {
@@ -788,7 +1286,7 @@ justify-content: center; gap: 5px;">
     }
   }
 
-  // --- ROULETTE ---
+  // --- ROULETTE (CASE OPEN) ---
   function spinRoulette(caseObj) {
     const overlay = document.getElementById('rouletteScreen');
     const strip = document.getElementById('strip');
@@ -827,7 +1325,7 @@ justify-content: center; gap: 5px;">
     setTimeout(() => {
       overlay.style.display = 'none';
       showDropModal();
-      saveGame();
+      saveGame(); // (debounced)
     }, 5500);
   }
 
@@ -890,7 +1388,7 @@ justify-content: center; gap: 5px;">
     return "Закаленное в боях";
   }
 
-  // --- UI UPDATE ---
+  // --- UI UPDATE (ОБНОВЛЕННЫЙ) ---
   function updateUI() {
     document.getElementById('balanceDisp').innerText = Math.floor(state.balance) + "$";
     document.getElementById('clickDisp').innerText = "+" + state.clickPower;
@@ -920,6 +1418,24 @@ justify-content: center; gap: 5px;">
       dz.className = "drop-zone";
       dz.innerHTML = `<div style="color: #666; font-size: 14px;">Пусто... Кликай (${state.clicksDone}/${DROP_THRESHOLD})</div>`;
     }
+
+    // Обновление кнопки ежедневной награды
+    const rewardBtn = document.getElementById('dailyRewardBtn');
+    if (isRewardReady()) {
+        const nextStreak = state.rewardStreak + 1;
+        rewardBtn.innerHTML = `
+            💰 ЕЖЕДНЕВНАЯ НАГРАДА
+            <small style="color: #4caf50;">ГОТОВО! +${getDailyRewardValue(nextStreak)}$</small>
+        `;
+        rewardBtn.classList.add('btn-buy');
+    } else {
+        const currentStreak = state.rewardStreak;
+        rewardBtn.innerHTML = `
+            💰 ЕЖЕДНЕВНАЯ НАГРАДА
+            <small style="color: #aaa;">Серия: ${currentStreak} д.</small>
+        `;
+        rewardBtn.classList.remove('btn-buy');
+    }
   }
 
   // --- MODALS & API ---
@@ -938,7 +1454,7 @@ justify-content: center; gap: 5px;">
       document.getElementById('dropModal').style.display = 'none'; 
       notify(`+${pendingItem.price}$`); 
       updateUI(); 
-      saveGame(); 
+      saveGame(); // (debounced)
   }
   
 function keepDrop() { 
@@ -946,7 +1462,7 @@ function keepDrop() {
       document.getElementById('dropModal').style.display = 'none'; 
       notify("В инвентаре"); 
       updateUI(); 
-      saveGame(); 
+      saveGame(); // (debounced)
       if (document.getElementById('inventoryScreen').style.display === 'flex') {
           toggleInventory(true);
       }
@@ -1058,7 +1574,7 @@ function keepDrop() {
   // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
 
-  window.sellInv = function(i) { state.balance += state.inventory[i].price; state.inventory.splice(i, 1); toggleInventory(true); updateUI(); saveGame(); }
+  window.sellInv = function(i) { state.balance += state.inventory[i].price; state.inventory.splice(i, 1); toggleInventory(true); updateUI(); saveGame(); } // (debounced)
   
   function buyUpgrade(t) { 
       let c = t==='click'?50*state.clickPower:100*(state.autoClick+1); 
@@ -1066,21 +1582,77 @@ function keepDrop() {
           state.balance-=c; 
           t==='click'?state.clickPower++:state.autoClick++; 
           updateUI();
-          saveGame(); 
+          saveGame(); // (debounced)
       } 
   }
   
-  async function apiCall(act, pl={}) {
-    if(act === 'save') { pl = { items: state.inventory, activeCase: state.activeCase, clicksDone: state.clicksDone, ...pl }; }
-    try { let r = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:act, telegramId:userId, payload:pl})}); return await r.json(); } catch(e){return null;}
+  // =========================================================================
+  // --- ИСПРАВЛЕННЫЙ БЛОК ДЛЯ СОХРАНЕНИЯ ---
+  // =========================================================================
+
+  // НОВАЯ ФУНКЦИЯ: Debounce Utility
+  function debounce(func, timeout = 1000){
+      let timer;
+      return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => { func.apply(this, args); }, timeout);
+      };
   }
-  function saveGame() { 
+  
+  // Оригинальная функция сохранения (используется для регулярного интервала)
+  async function saveGameOriginal() { 
+      // Мы явно передаем все данные, включая серию наград, в apiCall
       apiCall('save', { 
           balance: state.balance, 
           clickPower: state.clickPower, 
-          autoClick: state.autoClick 
+          autoClick: state.autoClick,
+          // *** ВАЖНО: ПОЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ (ПЕРЕДАЮТСЯ В PL) ***
+          lastRewardDay: state.lastRewardDay, 
+          rewardStreak: state.rewardStreak 
+          // **********************************************************
       }); 
   }
+
+  // Переопределение saveGame с дебаунсом (ручные вызовы)
+  window.saveGame = debounce(saveGameOriginal, 1000); // 1000ms = 1 секунда
+
+  // ИСПРАВЛЕННЫЙ apiCall с обработкой ошибки 429 и CORS/Network
+  async function apiCall(act, pl={}) {
+      // В режиме 'save' pl уже содержит balance, clickPower, autoClick и reward fields
+      if(act === 'save') { 
+        pl = { 
+          // Добавляем данные, которые не меняются при покупке улучшений (инвентарь, кейсы)
+          items: state.inventory, 
+          activeCase: state.activeCase, 
+          clicksDone: state.clicksDone, 
+          ...pl 
+        }; 
+      }
+      try { 
+          let r = await fetch(SCRIPT_URL, {
+              method:'POST', 
+              body:JSON.stringify({action:act, telegramId:userId, payload:pl})
+          }); 
+          
+          // НОВОЕ: Обработка 429 Too Many Requests
+          if (r.status === 429) {
+              console.error("API Call Failed: 429 Too Many Requests");
+              notify("Сервер занят (429). Попробуйте позже.");
+              return null;
+          }
+
+          return await r.json(); 
+      } catch(e){
+          // Обработка ошибок сети и CORS
+          console.error("API Call Failed (Network/CORS):", e);
+          return null;
+      }
+  }
+  
+  // =========================================================================
+  // --- КОНЕЦ ИСПРАВЛЕННОГО БЛОКА ---
+  // =========================================================================
+
   function notify(m) { let n=document.getElementById('notification'); n.innerText=m; n.style.display='block'; setTimeout(()=>n.style.display='none', 2000); }
   
   window.onload = initGame;
