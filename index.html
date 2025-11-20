@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Case Drop Clicker V6</title>
+  <title>Case Drop Clicker V7</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
@@ -68,7 +68,7 @@
     }
     .drop-zone.active { border: 2px solid var(--accent); background: #2a2a2a; border-style: solid;}
     
-    .case-display { text-align: center; /*animation: popIn 0.3s;*/ }
+    .case-display { text-align: center; /* animation: popIn 0.3s; - УДАЛЕНО */ }
     .case-img { width: 80px; height: 60px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,215,0,0.2)); }
     .case-title { font-weight: bold; font-size: 16px; color: var(--accent); margin-bottom: 5px; }
     .key-price { font-size: 12px; color: #aaa; margin-bottom: 10px; }
@@ -89,7 +89,7 @@
     /* Inventory & Roulette Styles (Same as before) */
     .full-screen-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 500; display: none; flex-direction: column; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    /* @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } } - УДАЛЕНО */
 
     .modal-header { padding: 15px; background: #222; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
     .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; }
@@ -174,13 +174,12 @@
 
 <script>
   // !!! ВСТАВЬ СЮДА URL ГУГЛ СКРИПТА !!!
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0NES2apzBLlsWY3L-8UF2Yj72S4m6lUff9q1xC32bI3wYmjfMvefQ6V11KzJqLlM_/exec'; 
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzF8GaHJzOJy5Bqr0dHoz2TNvrV-tUbAC8N5cBfGXvXtfxLkB-IRUoEjjfT5MTAZh6a/exec'; 
 
-  const DROP_THRESHOLD = 50; // Сколько кликов нужно для кейса
+  const DROP_THRESHOLD = 10; // Сколько кликов нужно для кейса
 
   // =========================================================================
   // --- НАСТРОЙКА ШАНСОВ ВЫПАДЕНИЯ (ФИКСИРОВАННЫЕ ВЕСА) ---
-  // Общий вес = 100 000
   // =========================================================================
   const RARITY_CHANCES = {
       // 49.00%
@@ -209,7 +208,7 @@
       id: "case_common", 
       name: "Обычный Кейс", 
       keyPrice: 50, 
-      image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/CS%20GO%20Weapon%20Case.png?raw=true",
+      image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQh5hlcX0nvUOGsx8DdQBJjIAVHubSaLwJh1P_NP28b6YywxdCIx6_2MOLUw24H7ZYp2-3I94mjjgXmqkU6ZmHzLdCRJgU9NVvQ-1G-w7u508O5vM_KyHpm7nQ8pSGK01d088Q",
       
       // Items - Группировка предметов по редкости
       items: {
@@ -407,7 +406,8 @@
       if (!caseObj.items[selectedRarity] || caseObj.items[selectedRarity].length === 0) {
           const availableRarities = Object.keys(caseObj.items).filter(r => caseObj.items[r].length > 0);
           if (availableRarities.length > 0) {
-              selectedRarity = availableRarities[0]; // Берем первый попавшийся
+              // Берем случайную доступную редкость
+              selectedRarity = availableRarities[Math.floor(Math.random() * availableRarities.length)];
           } else {
               // Если кейс пуст
               return { name: "Ошибка!", rarity: "gray", basePrice: 0, image: "" }; 
@@ -487,8 +487,27 @@
     document.getElementById('dPrice').innerText = pendingItem.price + "$";
     m.style.display = 'block';
   }
-  function sellDrop() { state.balance += pendingItem.price; document.getElementById('dropModal').style.display = 'none'; notify(`+${pendingItem.price}$`); updateUI(); }
-  function keepDrop() { state.inventory.push(pendingItem); document.getElementById('dropModal').style.display = 'none'; notify("В инвентаре"); updateUI(); }
+  
+  function sellDrop() { 
+      state.balance += pendingItem.price; 
+      document.getElementById('dropModal').style.display = 'none'; 
+      notify(`+${pendingItem.price}$`); 
+      updateUI(); 
+      saveGame(); // Сохраняем после продажи
+  }
+  
+  // ИСПРАВЛЕННАЯ ФУНКЦИЯ keepDrop
+  function keepDrop() { 
+      state.inventory.push(pendingItem); 
+      document.getElementById('dropModal').style.display = 'none'; 
+      notify("В инвентаре"); 
+      updateUI(); 
+      saveGame(); // Сохраняем после добавления в инвентарь
+      // Если инвентарь был открыт, обновляем его
+      if (document.getElementById('inventoryScreen').style.display === 'flex') {
+          toggleInventory(true);
+      }
+  }
   
   function toggleInventory(show) {
     const g = document.getElementById('inventoryGrid');
@@ -503,13 +522,27 @@
     }
   }
   window.sellInv = function(i) { state.balance += state.inventory[i].price; state.inventory.splice(i, 1); toggleInventory(true); updateUI(); saveGame(); }
-  function buyUpgrade(t) { let c = t==='click'?50*state.clickPower:100*(state.autoClick+1); if(state.balance>=c){state.balance-=c; t==='click'?state.clickPower++:state.autoClick++; updateUI();} }
+  function buyUpgrade(t) { 
+      let c = t==='click'?50*state.clickPower:100*(state.autoClick+1); 
+      if(state.balance>=c){
+          state.balance-=c; 
+          t==='click'?state.clickPower++:state.autoClick++; 
+          updateUI();
+          saveGame(); // Сохраняем после покупки
+      } 
+  }
   
   async function apiCall(act, pl={}) {
     if(act === 'save') { pl = { items: state.inventory, activeCase: state.activeCase, clicksDone: state.clicksDone, ...pl }; }
     try { let r = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:act, telegramId:userId, payload:pl})}); return await r.json(); } catch(e){return null;}
   }
-  function saveGame() { apiCall('save', { balance: state.balance, clickPower: state.clickPower, autoClick: state.autoClick }); }
+  function saveGame() { 
+      apiCall('save', { 
+          balance: state.balance, 
+          clickPower: state.clickPower, 
+          autoClick: state.autoClick 
+      }); 
+  }
   function notify(m) { let n=document.getElementById('notification'); n.innerText=m; n.style.display='block'; setTimeout(()=>n.style.display='none', 2000); }
   
   window.onload = initGame;
