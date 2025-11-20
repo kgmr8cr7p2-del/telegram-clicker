@@ -7,6 +7,28 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
 	
+
+    :root {
+      --bg-color: #1b1b1b;
+      --card-bg: #262626;
+      --accent: #d4af37;
+      --text: #e1e1e1;
+      --progress-bg: #111;
+      --progress-fill: #4caf50;
+      
+      /* Цвета редкости */
+      --gray: #b0c3d9; --blue: #4b69ff; --purple: #8847ff; 
+      --pink: #d32ce6; --red: #eb4b4b; --gold: #ffd700;   
+    }
+	
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0; padding: 0;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+	
 	body {
       font-family: 'Segoe UI', Roboto, sans-serif;
       background-color: var(--bg-color);
@@ -21,30 +43,10 @@
     }
 	{
         /* Запрет на увеличение двойным тапом и pinch-to-zoom */
-        touch-action: manipulation; 
+       touch-action: manipulation; 
     }
   
   
-    :root {
-      --bg-color: #1b1b1b;
-      --card-bg: #262626;
-      --accent: #d4af37;
-      --text: #e1e1e1;
-      --progress-bg: #111;
-      --progress-fill: #4caf50;
-      
-      /* Цвета редкости */
-      --gray: #b0c3d9; --blue: #4b69ff; --purple: #8847ff; 
-      --pink: #d32ce6; --red: #eb4b4b; --gold: #ffd700;   
-    }
-
-    body {
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      margin: 0; padding: 0;
-      user-select: none; -webkit-tap-highlight-color: transparent;
-    }
 
     .app-container { padding: 20px; height: 100vh; box-sizing: border-box; overflow-y: auto; padding-bottom: 80px; }
     
