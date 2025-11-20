@@ -1,1019 +1,903 @@
 ﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Case Drop Clicker V9 - Trade Up</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Case Drop Clicker V9</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
 	
 
-    :root {
-      --bg-color: #1b1b1b;
-      --card-bg: #262626;
-      --accent: #d4af37;
-      --text: #e1e1e1;
-      --progress-bg: #111;
-      --progress-fill: #4caf50;
-      
-      /* Цвета редкости (Обновлено для соответствия логике RARITY_MAP) */
-      --Common: #b0c3d9; 
-      --Rare: #4b69ff; 
-      --Epic: #8847ff; 
-      --Legendary: #d32ce6; 
-      --Ancient: #eb4b4b; 
-      --Gold: #ffd700;   
-    }
-	
+    :root {
+      --bg-color: #1b1b1b;
+      --card-bg: #262626;
+      --accent: #d4af37;
+      --text: #e1e1e1;
+      --progress-bg: #111;
+      --progress-fill: #4caf50;
+      
+      /* Цвета редкости */
+      --gray: #b0c3d9; --blue: #4b69ff; --purple: #8847ff; 
+      --pink: #d32ce6; --red: #eb4b4b; --gold: #ffd700;   
+    }
+
 	body {
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      margin: 0; padding: 0;
-      user-select: none; 
-      -webkit-tap-highlight-color: transparent; 
-      touch-action: manipulation; 
-    }
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0; padding: 0;
+      /* 1. Запрещает выделение текста */
+      user-select: none; 
+      /* 2. Отключает эффект затемнения при нажатии на ссылки/кнопки в WebKit (Chrome/Safari) */
+      -webkit-tap-highlight-color: transparent; 
+      /* 3. Отключает масштабирование на большинстве Android устройств */
+      touch-action: manipulation; 
+    }
 	{
-       touch-action: manipulation; 
-    }
-  
-  
+        /* Запрет на увеличение двойным тапом и pinch-to-zoom */
+       touch-action: manipulation; 
+    }
+  
+  
 
-    .app-container { padding: 20px; height: 100vh; box-sizing: border-box; overflow-y: auto; padding-bottom: 80px; }
-    
-    /* Stats */
-    .stats-bar {
-      display: flex; justify-content: space-between;
-      background: #222; padding: 12px; border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 20px;
-      border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 10;
-    }
-    .stat-item { text-align: center; }
-    .stat-item span { font-size: 10px; color: #888; text-transform: uppercase; }
-    .stat-item div { font-size: 15px; font-weight: 700; color: var(--accent); margin-top: 4px;}
+    .app-container { padding: 20px; height: 100vh; box-sizing: border-box; overflow-y: auto; padding-bottom: 80px; }
+    
+    /* Stats */
+    .stats-bar {
+      display: flex; justify-content: space-between;
+      background: #222; padding: 12px; border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 20px;
+      border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 10;
+    }
+    .stat-item { text-align: center; }
+    .stat-item span { font-size: 10px; color: #888; text-transform: uppercase; }
+    .stat-item div { font-size: 15px; font-weight: 700; color: var(--accent); margin-top: 4px;}
 
-    /* Clicker Area */
-    .click-section { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
-    #clickBtn {
-      width: 140px; height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #444, #111);
-      border: 4px solid #444;
-      box-shadow: 0 0 25px rgba(0,0,0,0.5);
-      color: #fff; font-size: 18px; font-weight: bold;
-      cursor: pointer; transition: transform 0.05s; outline: none;
-    }
-    #clickBtn:active { transform: scale(0.95); border-color: var(--accent); }
+    /* Clicker Area */
+    .click-section { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+    #clickBtn {
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #444, #111);
+      border: 4px solid #444;
+      box-shadow: 0 0 25px rgba(0,0,0,0.5);
+      color: #fff; font-size: 18px; font-weight: bold;
+      cursor: pointer; transition: transform 0.05s; outline: none;
+    }
+    #clickBtn:active { transform: scale(0.95); border-color: var(--accent); }
 
-    /* Progress Bar */
-    .progress-container { width: 100%; margin-top: 20px; text-align: center; }
-    .progress-label { font-size: 12px; color: #aaa; margin-bottom: 5px; }
-    .progress-bar { width: 100%; height: 10px; background: var(--progress-bg); border-radius: 5px; overflow: hidden; }
-    .progress-fill { height: 100%; background: var(--progress-fill); width: 0%; transition: width 0.2s; }
+    /* Progress Bar */
+    .progress-container { width: 100%; margin-top: 20px; text-align: center; }
+    .progress-label { font-size: 12px; color: #aaa; margin-bottom: 5px; }
+    .progress-bar { width: 100%; height: 10px; background: var(--progress-bg); border-radius: 5px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--progress-fill); width: 0%; transition: width 0.2s; }
 
-    /* Drop Zone (Active Case) */
-    .drop-zone {
-      margin-top: 25px;
-      background: #222; border: 2px dashed #444; border-radius: 12px;
-      padding: 20px; min-height: 120px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
-    .drop-zone.active { border: 2px solid var(--accent); background: #2a2a2a; border-style: solid;}
-    
-    .case-display { text-align: center; }
-    .case-img { width: 80px; height: 60px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,215,0,0.2)); }
-    .case-title { font-weight: bold; font-size: 16px; color: var(--accent); margin-bottom: 5px; }
-    .key-price { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+    /* Drop Zone (Active Case) */
+    .drop-zone {
+      margin-top: 25px;
+      background: #222; border: 2px dashed #444; border-radius: 12px;
+      padding: 20px; min-height: 120px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .drop-zone.active { border: 2px solid var(--accent); background: #2a2a2a; border-style: solid;}
+    
+    .case-display { text-align: center; /* animation: popIn 0.3s; - УДАЛЕНО */ }
+    .case-img { width: 80px; height: 60px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,215,0,0.2)); }
+    .case-title { font-weight: bold; font-size: 16px; color: var(--accent); margin-bottom: 5px; }
+    .key-price { font-size: 12px; color: #aaa; margin-bottom: 10px; }
 
-    /* Menu Buttons */
-    .section-title { margin: 20px 0 10px; font-size: 13px; color: #666; text-transform: uppercase; font-weight: bold; }
-    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn {
-      background: var(--card-bg); border: 1px solid #3a3a3a;
-      color: white; padding: 12px; border-radius: 8px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; outline: none;
-    }
-    .btn:active { background: #333; }
-    .btn-buy { border-bottom: 2px solid #4caf50; }
-    .btn-key { background: #2a442a; border: 1px solid #4caf50; width: 100%; margin-top: 5px; padding: 8px; font-weight: bold;}
+    /* Menu Buttons */
+    .section-title { margin: 20px 0 10px; font-size: 13px; color: #666; text-transform: uppercase; font-weight: bold; }
+    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      background: var(--card-bg); border: 1px solid #3a3a3a;
+      color: white; padding: 12px; border-radius: 8px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; outline: none;
+    }
+    .btn:active { background: #333; }
+    .btn-buy { border-bottom: 2px solid #4caf50; }
+    .btn-key { background: #2a442a; border: 1px solid #4caf50; width: 100%; margin-top: 5px; padding: 8px; font-weight: bold;}
 
-    /* Modals */
-    .full-screen-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 500; display: none; flex-direction: column; animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    /* Modals */
+    .full-screen-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 500; display: none; flex-direction: column; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-    .modal-header { padding: 15px; background: #222; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-    .modal-title { font-size: 18px; font-weight: bold; }
-    .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; }
+    .modal-header { padding: 15px; background: #222; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-size: 18px; font-weight: bold; }
+    .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; }
 
-    /* Inventory Grid */
-    .inventory-grid { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; overflow-y: auto; flex: 1; }
-    .inv-card { background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; border-top: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-    .inv-card img { width: 80%; height: 50px; object-fit: contain; margin: 10px 0; }
-    .inv-sell-btn { background: #2a442a; border: 1px solid #4caf50; color: #fff; font-size: 9px; padding: 4px 10px; border-radius: 15px; cursor: pointer; margin-top: auto; }
+    /* Inventory Grid */
+    .inventory-grid { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; overflow-y: auto; flex: 1; }
+    .inv-card { background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; border-top: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .inv-card img { width: 80%; height: 50px; object-fit: contain; margin: 10px 0; }
+    .inv-sell-btn { background: #2a442a; border: 1px solid #4caf50; color: #fff; font-size: 9px; padding: 4px 10px; border-radius: 15px; cursor: pointer; margin-top: auto; }
 
-    /* Case Store Main List (Existing Styles) */
-    #caseStoreContent { overflow-y: auto; flex: 1; padding: 15px; }
-    .case-list-item {
-        background: var(--card-bg);
-        border-radius: 12px;
-        margin-bottom: 10px;
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border: 1px solid #333;
-    }
-    .case-list-item img {
-        width: 60px;
-        height: 40px;
-        object-fit: contain;
-        margin-right: 15px;
-    }
-    .case-list-info {
-        flex-grow: 1;
-        display: flex;
-        align-items: center;
-    }
-    .case-list-info h3 {
-        margin: 0;
-        font-size: 16px;
-        color: var(--accent);
-    }
-    .case-list-info p {
-        margin: 2px 0 0;
-        font-size: 11px;
-        color: #aaa;
-    }
-    .case-details-btn {
-        background: #3a3a3a;
-        color: #fff;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-    .case-details-btn:active { background: #444; }
+    /* Case Store Main List */
+    #caseStoreContent { overflow-y: auto; flex: 1; padding: 15px; }
+    .case-list-item {
+        background: var(--card-bg);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #333;
+    }
+    .case-list-item img {
+        width: 60px;
+        height: 40px;
+        object-fit: contain;
+        margin-right: 15px;
+    }
+    .case-list-info {
+        flex-grow: 1;
+        display: flex;
+        align-items: center;
+    }
+    .case-list-info h3 {
+        margin: 0;
+        font-size: 16px;
+        color: var(--accent);
+    }
+    .case-list-info p {
+        margin: 2px 0 0;
+        font-size: 11px;
+        color: #aaa;
+    }
+    .case-details-btn {
+        background: #3a3a3a;
+        color: #fff;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        cursor: pointer;
+        white-space: nowrap; /* Предотвращаем перенос текста на кнопке */
+    }
+    .case-details-btn:active { background: #444; }
 
-    /* Case Details Modal (Existing Styles) */
-    #caseDetailsModal {
-        z-index: 600;
-    }
-    #caseDetailsContent {
-        overflow-y: auto;
-        flex: 1;
-        padding: 15px;
-    }
-    #caseDetailsContent h2 {
-        text-align: center;
-        color: var(--accent);
-        margin-top: 0;
-        margin-bottom: 20px;
-        font-size: 20px;
-    }
-    .details-item-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 10px;
-    }
-    .details-item-card {
-        background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); 
-        border-radius: 8px; 
-        overflow: hidden; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        padding-bottom: 8px; 
-        border-top: 3px solid transparent; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        text-align: center;
-    }
-    .details-item-card img {
-        width: 80%;
-        height: 60px;
-        object-fit: contain;
-        margin: 10px 0;
-    }
-    .details-item-card span {
-        font-size: 10px;
-        font-weight: bold;
-        margin-top: auto;
-        padding: 0 5px;
-        word-break: break-word;
-    }
-    .details-item-rarity {
-        font-size: 9px;
-        color: #aaa;
-        margin-top: 3px;
-        padding: 0 5px;
-    }
-    
-	/* --- НОВЫЕ СТИЛИ ДЛЯ КОНТРАКТА --- */
-	.rarity-selector-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 15px;
-		margin-top: 20px;
-	}
+    /* Case Details Modal (New) */
+    #caseDetailsModal {
+        z-index: 600; /* Выше чем caseStoreScreen */
+    }
+    #caseDetailsContent {
+        overflow-y: auto;
+        flex: 1;
+        padding: 15px;
+    }
+    #caseDetailsContent h2 {
+        text-align: center;
+        color: var(--accent);
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 20px;
+    }
+    .details-item-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+    .details-item-card {
+        background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); 
+        border-radius: 8px; 
+        overflow: hidden; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        padding-bottom: 8px; 
+        border-top: 3px solid transparent; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+    .details-item-card img {
+        width: 80%;
+        height: 60px;
+        object-fit: contain;
+        margin: 10px 0;
+    }
+    .details-item-card span {
+        font-size: 10px;
+        font-weight: bold;
+        margin-top: auto;
+        padding: 0 5px;
+        word-break: break-word; /* Позволяет длинным именам переноситься */
+    }
+    .details-item-rarity {
+        font-size: 9px;
+        color: #aaa;
+        margin-top: 3px;
+        padding: 0 5px;
+    }
 
-	.item-grid-contract {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-		gap: 10px;
-		padding: 10px;
-		max-height: 50vh; 
-		overflow-y: auto;
-		border: 1px solid #333;
-		border-radius: 8px;
-		margin-bottom: 20px;
-	}
+    /* Roulette & Drop Modal Styles (same as before) */
+    .roulette-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+    .roulette-window { width: 100%; height: 160px; background: #151515; position: relative; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); overflow: hidden; }
+    .center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #ffcc00; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 15px #ffcc00; }
+    .items-strip { display: flex; height: 100%; align-items: center; will-change: transform; }
+    .roulette-item { min-width: 130px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #2a2a2a; position: relative; background: linear-gradient(to bottom, #1e1e1e, #151515); }
+    .roulette-item img { width: 110px; height: 80px; object-fit: contain; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); }
+    .rarity-stripe { width: 100%; height: 4px; position: absolute; bottom: 0; }
 
-	.item-grid-contract .item-card {
-		cursor: pointer;
-		transition: all 0.1s;
-		border: 1px solid transparent; 
-		position: relative;
-	}
-
-	.item-grid-contract .item-card[data-selected="true"] {
-		opacity: 0.6;
-		border: 3px solid #fff;
-		box-shadow: 0 0 15px #fff;
-	}
-
-	.back-btn {
-		background-color: #333;
-		margin-bottom: 10px;
-	}
-	/* --- КОНЕЦ СТИЛЕЙ КОНТРАКТА --- */
-
-
-    /* Roulette & Drop Modal Styles (same as before) */
-    .roulette-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
-    .roulette-window { width: 100%; height: 160px; background: #151515; position: relative; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); overflow: hidden; }
-    .center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #ffcc00; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 15px #ffcc00; }
-    .items-strip { display: flex; height: 100%; align-items: center; will-change: transform; }
-    .roulette-item { min-width: 130px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #2a2a2a; position: relative; background: linear-gradient(to bottom, #1e1e1e, #151515); }
-    .roulette-item img { width: 110px; height: 80px; object-fit: contain; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); }
-    .rarity-stripe { width: 100%; height: 4px; position: absolute; bottom: 0; }
-
-    .drop-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; border: 1px solid #444; padding: 20px; width: 85%; max-width: 320px; text-align: center; z-index: 1100; display: none; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,1); }
-    .drop-img-large { width: 100%; height: 120px; object-fit: contain; margin-bottom: 15px; }
-    .drop-stat-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 13px; color: #aaa; border-bottom: 1px solid #333; padding-bottom: 4px; }
-    .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; z-index: 2000; display: none; }
-  </style>
+    .drop-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; border: 1px solid #444; padding: 20px; width: 85%; max-width: 320px; text-align: center; z-index: 1100; display: none; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,1); }
+    .drop-img-large { width: 100%; height: 120px; object-fit: contain; margin-bottom: 15px; }
+    .drop-stat-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 13px; color: #aaa; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; z-index: 2000; display: none; }
+  </style>
 </head>
 <body>
-
+	<div id="craftingScreen" class="full-screen-modal">
+  <div class="modal-header">
+    <span class="modal-title">🛠️ Система Крафтов</span>
+    <button class="modal-close" onclick="toggleCrafting(false)">&times;</button>
+  </div>
+  <div id="craftingContent" class="app-container" style="padding: 15px; padding-bottom: 20px;">
+    </div>
+</div>
 <div id="notification" class="notification"></div>
 
 <div class="app-container">
-  <div class="stats-bar">
-    <div class="stat-item"><span>Баланс</span><div id="balanceDisp">...</div></div>
-    <div class="stat-item"><span>Клик</span><div id="clickDisp">...</div></div>
-    <div class="stat-item"><span>Авто</span><div id="autoDisp">...</div></div>
-  </div>
+  <div class="stats-bar">
+    <div class="stat-item"><span>Баланс</span><div id="balanceDisp">...</div></div>
+    <div class="stat-item"><span>Клик</span><div id="clickDisp">...</div></div>
+    <div class="stat-item"><span>Авто</span><div id="autoDisp">...</div></div>
+  </div>
 
-  <div class="click-section">
-    <button id="clickBtn" onclick="handleClick()">КЛИК</button>
-    
-    <div class="progress-container">
-      <div class="progress-label">До выпадения кейса: <span id="clicksToDrop">50</span> кликов</div>
-      <div class="progress-bar">
-        <div id="progressFill" class="progress-fill"></div>
-      </div>
-    </div>
-  </div>
+  <div class="click-section">
+    <button id="clickBtn" onclick="handleClick()">КЛИК</button>
+    
+    <div class="progress-container">
+      <div class="progress-label">До выпадения кейса: <span id="clicksToDrop">50</span> кликов</div>
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+    </div>
+  </div>
 
-  <div class="section-title">Слот Кейса</div>
-  <div id="dropZone" class="drop-zone">
-    <div style="color: #666; font-size: 14px;">Пусто... Кликай, чтобы найти кейс!</div>
-  </div>
+  <div class="section-title">Слот Кейса</div>
+  <div id="dropZone" class="drop-zone">
+    <div style="color: #666; font-size: 14px;">Пусто... Кликай, чтобы найти кейс!</div>
+  </div>
 
-  <div class="section-title">Улучшения</div>
-  <div class="menu-grid">
-    <button class="btn btn-buy" onclick="buyUpgrade('click')">Сила Клика<small id="costClick">50$</small></button>
-    <button class="btn btn-buy" onclick="buyUpgrade('auto')">Авто-Клик<small id="costAuto">100$</small></button>
-  </div>
+  <div class="section-title">Улучшения</div>
+  <div class="menu-grid">
+    <button class="btn btn-buy" onclick="buyUpgrade('click')">Сила Клика<small id="costClick">50$</small></button>
+    <button class="btn btn-buy" onclick="buyUpgrade('auto')">Авто-Клик<small id="costAuto">100$</small></button>
+  </div>
 
-  <div class="section-title">Меню</div>
-  <div class="menu-grid">
-    <button class="btn" onclick="toggleCaseStore(true)">
-      📦 МАГАЗИН КЕЙСОВ
-    </button>
-        <button class="btn" onclick="toggleContract(true)" style="background-color: #0d362f;">
-      🔄 КОНТРАКТ ОБМЕНА
-    </button>
-    <button class="btn" onclick="toggleInventory(true)" style="flex-direction: row; justify-content: center; gap: 5px;">
-      🎒 ИНВЕНТАРЬ (<span id="invCount">0</span>)
-    </button>
-  </div>
+<div class="section-title">Меню</div>
+  <div class="menu-grid">
+    <button class="btn" onclick="toggleCaseStore(true)">
+      📦 МАГАЗИН КЕЙСОВ
+    </button>
+    <button class="btn" onclick="toggleInventory(true)" style="flex-direction: row;
+justify-content: center; gap: 5px;">
+      🎒 ИНВЕНТАРЬ (<span id="invCount">0</span>)
+    </button>
+    <button class="btn" onclick="toggleCrafting(true)">
+      🛠️ КРАФТ
+    </button> </div>
+</div>
 </div>
 
 <div id="inventoryScreen" class="full-screen-modal">
-  <div class="modal-header"><span class="modal-title">Инвентарь</span><button class="modal-close" onclick="toggleInventory(false)">&times;</button></div>
-  <div id="inventoryGrid" class="inventory-grid"></div>
+  <div class="modal-header"><span class="modal-title">Инвентарь</span><button class="modal-close" onclick="toggleInventory(false)">&times;</button></div>
+  <div id="inventoryGrid" class="inventory-grid"></div>
 </div>
 
 <div id="caseStoreScreen" class="full-screen-modal">
-  <div class="modal-header"><span class="modal-title">📦 Каталог Кейсов</span><button class="modal-close" onclick="toggleCaseStore(false)">&times;</button></div>
-  <div id="caseStoreContent" class="case-card-list">
-    </div>
+  <div class="modal-header"><span class="modal-title">📦 Каталог Кейсов</span><button class="modal-close" onclick="toggleCaseStore(false)">&times;</button></div>
+  <div id="caseStoreContent" class="case-card-list">
+    </div>
 </div>
 
 <div id="caseDetailsModal" class="full-screen-modal">
-    <div class="modal-header">
-        <span id="caseDetailsTitle" class="modal-title"></span>
-        <button class="modal-close" onclick="hideCaseDetails()">&times;</button>
-    </div>
-    <div id="caseDetailsContent">
-        </div>
-</div>
-
-<div id="contract-modal" class="full-screen-modal" style="display: none; z-index: 550;">
     <div class="modal-header">
-        <span class="modal-title">🔄 Контракт Обмена</span>
-        <button class="modal-close" onclick="toggleContract(false)">&times;</button>
+        <span id="caseDetailsTitle" class="modal-title"></span>
+        <button class="modal-close" onclick="hideCaseDetails()">&times;</button>
     </div>
-    <div id="contract-content" style="overflow-y: auto; flex: 1; padding: 15px;">
+    <div id="caseDetailsContent">
         </div>
 </div>
+
 <div id="rouletteScreen" class="roulette-overlay">
-  <div class="roulette-window"><div class="center-line"></div><div class="items-strip" id="strip"></div></div>
+  <div class="roulette-window"><div class="center-line"></div><div class="items-strip" id="strip"></div></div>
 </div>
 
 <div id="dropModal" class="drop-modal">
-  <h2 id="dName" style="margin: 0 0 10px 0;">Item</h2>
-  <img id="dImg" src="" class="drop-img-large">
-  <div class="drop-stat-row"><span>Качество:</span> <span id="dWear">...</span></div>
-  <div class="drop-stat-row"><span>Цена:</span> <span id="dPrice" style="color: #4caf50; font-weight:bold">...</span></div>
-  <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
-    <button class="btn" style="background:#333; width: 100px;" onclick="sellDrop()">Продать</button>
-    <button class="btn btn-buy" style="width: 100px;" onclick="keepDrop()">Забрать</button>
-  </div>
+  <h2 id="dName" style="margin: 0 0 10px 0;">Item</h2>
+  <img id="dImg" src="" class="drop-img-large">
+  <div class="drop-stat-row"><span>Качество:</span> <span id="dWear">...</span></div>
+  <div class="drop-stat-row"><span>Цена:</span> <span id="dPrice" style="color: #4caf50; font-weight:bold">...</span></div>
+  <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
+    <button class="btn" style="background:#333; width: 100px;" onclick="sellDrop()">Продать</button>
+    <button class="btn btn-buy" style="width: 100px;" onclick="keepDrop()">Забрать</button>
+  </div>
 </div>
 
 <script>
-  // !!! ВСТАВЬ СЮДА URL ГУГЛ СКРИПТА !!!
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzF8GaHJzOJy5Bqr0dHoz2TNvrV-tUbAC8N5cBfGXvXtfxLkB-IRUoEjjfT5MTAZh6a/exec'; 
+  // !!! ВСТАВЬ СЮДА URL ГУГЛ СКРИПТА !!!
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzF8GaHJzOJy5Bqr0dHoz2TNvrV-tUbAC8N5cBfGXvXtfxLkB-IRUoEjjfT5MTAZh6a/exec'; 
 
-  const DROP_THRESHOLD = 5; // Сколько кликов нужно для кейса
+  const DROP_THRESHOLD = 5; // Сколько кликов нужно для кейса
 
-  // =========================================================================
-  // --- НАСТРОЙКА ШАНСОВ ВЫПАДЕНИЯ И КАРТЫ РЕДКОСТЕЙ ---
-  // =========================================================================
-  const RARITY_CHANCES = {
-      // ИМЕНА КЛЮЧЕЙ ОБНОВЛЕНЫ для соответствия RARITY_MAP
-      Common:   { weight: 49000, color: '#b0c3d9', label: 'Common (49.00%)' }, 
-      Rare:    { weight: 30000, color: '#4b69ff', label: 'Rare (30.00%)' },
-      Epic: 	 { weight: 15000, color: '#8847ff', label: 'Epic (15.00%)' },
-      Legendary: { weight: 4500,  color: '#d32ce6', label: 'Legendary (4.50%)' },
-      Ancient:   { weight: 1450,  color: '#eb4b4b', label: 'Ancient (1.45%)' },
-      Gold:    { weight: 50,    color: '#ffd700', label: 'Gold (0.05%)' }
-  };
-  
-  // НОВАЯ КАРТА РЕДКОСТЕЙ ДЛЯ ЛОГИКИ КОНТРАКТА
-  const RARITY_MAP = {
-      'Common': { color: '#b0c3d9', index: 0, next: 'Rare' },
-      'Rare': { color: '#4b69ff', index: 1, next: 'Epic' },
-      'Epic': { color: '#8847ff', index: 2, next: 'Legendary' }, 
-      'Legendary': { color: '#d32ce6', index: 3, next: 'Ancient' }, // Исправлено: Легендарный идет перед Древним
-      'Ancient': { color: '#eb4b4b', index: 4, next: null }, // Древний - самая высокая, которую можно обменять (получаем Легендарный)
-      'Gold': { color: '#ffd700', index: 5, next: null },     // Золотой нельзя получить/использовать
-  };
+  // =========================================================================
+  // --- НАСТРОЙКА ШАНСОВ ВЫПАДЕНИЯ (ФИКСИРОВАННЫЕ ВЕСА) ---
+  // =========================================================================
+  const RARITY_CHANCES = {
+      // 49.00%
+      gray:   { weight: 49000, color: '#b0c3d9', label: 'Common (49.00%)' }, 
+      // 30.00%
+      blue:   { weight: 30000, color: '#4b69ff', label: 'Rare (30.00%)' },
+      // 15.00%
+      purple: { weight: 15000, color: '#8847ff', label: 'Mythical (15.00%)' },
+      // 4.50%
+      pink:   { weight: 4500,  color: '#d32ce6', label: 'Legendary (4.50%)' },
+      // 1.45%
+      red:    { weight: 1450,  color: '#eb4b4b', label: 'Ancient (1.45%)' },
+      // 0.05%
+      gold:   { weight: 50,    color: '#ffd700', label: 'Extraordinary (0.05%)' }
+  };
+  const RARITY_COLORS = { 
+      gray: RARITY_CHANCES.gray.color, blue: RARITY_CHANCES.blue.color, purple: RARITY_CHANCES.purple.color, 
+      pink: RARITY_CHANCES.pink.color, red: RARITY_CHANCES.red.color, gold: RARITY_CHANCES.gold.color 
+  };
+  const TOTAL_WEIGHT = 100000; // Сумма всех весов
+  // =========================================================================
 
-  const TRADE_UP_CONFIG = {
-    ITEMS_REQUIRED: 10,
-    RESULT_MAX_RARITY: 'Ancient' // Самая высокая редкость, которую можно получить (Legendary -> Ancient)
-  };
+  // 1. БАЗА КЕЙСОВ И ПРЕДМЕТОВ (ВСЁ В ОДНОМ МЕСТЕ)
+  const CASES = [
+    {
+      id: "case_common", 
+      name: "Обычный Кейс", 
+      keyPrice: 50, 
+      image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/CS%20GO%20Weapon%20Case.png?raw=true",
+      
+      // Items - Группировка предметов по редкости
+      items: {
+          gray: [
+              { name: "P250 | Sand Dune", basePrice: 2, image: "" },
+              { name: "Nova | Polar Mesh", basePrice: 3, image: "" }
+          ],
+          blue: [
+              { name: "SG 553 | Ultraviolet", basePrice: 50, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/SG%20553%20Ultraviolet.png?raw=true" },
+			  { name: "AUG | Wings", basePrice: 17, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AUG%20Wings.png?raw=true" },
+			  { name: "MP7 | Skulls", basePrice: 17, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/MP7%20Skulls.png?raw=true" }
+          ],
+          purple: [
+              { name: "Glock-18 | Dragon Tattoo", basePrice: 161, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/Glock-18%20Dragon%20Tattoo.png?raw=true" },
+			  { name: "M4A1-S | Dark Water", basePrice: 122, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/M4A1-S%20Dark%20Water.png?raw=true" },
+			  { name: "USP-S | Dark Water", basePrice: 101, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/M4A1-S%20Dark%20Water.png?raw=true" }
+          ],
+		  pink: [
+              { name: "AK-47 | Case Hardened", basePrice: 980, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AK-47%20Case%20Hardened.png?raw=true" },
+			  { name: "Desert Eagle | Hypnotic", basePrice: 181, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/Desert%20Eagle%20Hypnotic.png?raw=true" }
+          ],
+          red: [
+              { name: "AWP | Lightning Strike", basePrice: 1100, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AWP%20Lightning%20Strike.png?raw=true" }
+          ],
+          // Pink и Gold не могут выпасть из этого кейса, но это нормально
+      }
+    },
+    {
+      id: "case_rare", 
+      name: "Редкий Кейс", 
+      keyPrice: 300, 
+      image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQh5hlcX0nvUOGsx8DdQBJjIAVHubSaLwJh1P_NP28b6YywxdCIx6_2MOLUw24H7ZYp2-3I94mjjgXmqkU6ZmHzLdCRJgU9NVvQ-1G-w7u508O5vM_KyHpm7nQ8pSGK01d088Q",
+      
+      items: {
+          purple: [
+              { name: "M4A1-S | Decimator", basePrice: 150, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
+          ],
+          pink: [
+              { name: "AK-47 | Redline", basePrice: 400, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
+          ],
+          red: [
+              { name: "AWP | Asiimov", basePrice: 1500, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
+          ],
+          gold: [
+              { name: "★ Karambit | Fade", basePrice: 10000, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
+          ]
+      }
+    }
+  ];
 
-  // КОНСТАНТЫ ЦВЕТОВ ОБНОВЛЕНЫ
-  const RARITY_COLORS = { 
-      Common: RARITY_CHANCES.Common.color, Rare: RARITY_CHANCES.Rare.color, Epic: RARITY_CHANCES.Epic.color, 
-      Legendary: RARITY_CHANCES.Legendary.color, Ancient: RARITY_CHANCES.Ancient.color, Gold: RARITY_CHANCES.Gold.color 
-  };
-  const TOTAL_WEIGHT = 100000;
-  // =========================================================================
+  let tg = window.Telegram.WebApp; tg.expand();
+  let userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 10001; 
 
-  // 1. БАЗА КЕЙСОВ И ПРЕДМЕТОВ (ВАЖНО: КЛЮЧИ РЕДКОСТЕЙ ОБНОВЛЕНЫ)
-  const CASES = [
-    {
-      id: "case_common", 
-      name: "Обычный Кейс", 
-      keyPrice: 50, 
-      image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/CS%20GO%20Weapon%20Case.png?raw=true",
-      
-      // Items - Группировка предметов по редкости
-      items: {
-          Common: [ // Было gray
-              { name: "P250 | Sand Dune", basePrice: 2, image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }, // Добавлена заглушка img
-              { name: "Nova | Polar Mesh", basePrice: 3, image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ],
-          Rare: [ // Было blue
-              { name: "SG 553 | Ultraviolet", basePrice: 50, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/SG%20553%20Ultraviolet.png?raw=true" },
-			  { name: "AUG | Wings", basePrice: 17, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AUG%20Wings.png?raw=true" },
-			  { name: "MP7 | Skulls", basePrice: 17, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/MP7%20Skulls.png?raw=true" }
-          ],
-          Epic: [ // Было purple
-              { name: "Glock-18 | Dragon Tattoo", basePrice: 161, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/Glock-18%20Dragon%20Tattoo.png?raw=true" },
-			  { name: "M4A1-S | Dark Water", basePrice: 122, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/M4A1-S%20Dark%20Water.png?raw=true" },
-			  { name: "USP-S | Dark Water", basePrice: 101, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/M4A1-S%20Dark%20Water.png?raw=true" }
-          ],
-		  Legendary: [ // Было pink
-              { name: "AK-47 | Case Hardened", basePrice: 980, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AK-47%20Case%20Hardened.png?raw=true" },
-			  { name: "Desert Eagle | Hypnotic", basePrice: 181, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/Desert%20Eagle%20Hypnotic.png?raw=true" }
-          ],
-          Ancient: [ // Было red
-              { name: "AWP | Lightning Strike", basePrice: 1100, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AWP%20Lightning%20Strike.png?raw=true" }
-          ],
-          // Gold не может выпасть из этого кейса
-      }
-    },
-    {
-      id: "case_rare", 
-      name: "Редкий Кейс", 
-      keyPrice: 300, 
-      image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQh5hlcX0nvUOGsx8DdQBJjIAVHubSaLwJh1P_NP28b6YywxdCIx6_2MOLUw24H7ZYp2-3I94mjjgXmqkU6ZmHzLdCRJgU9NVvQ-1G-w7u508O5vM_KyHpm7nQ8pSGK01d088Q",
-      
-      items: {
-          Epic: [ // Было purple
-              { name: "M4A1-S | Decimator", basePrice: 150, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ],
-          Legendary: [ // Было pink
-              { name: "AK-47 | Redline", basePrice: 400, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ],
-          Ancient: [ // Было red
-              { name: "AWP | Asiimov", basePrice: 1500, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ],
-          Gold: [
-              { name: "★ Karambit | Fade", basePrice: 10000, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ]
-      }
-    }
-  ];
+  // GLOBAL STATE
+  let state = {
+    balance: 0, clickPower: 1, autoClick: 0, inventory: [],
+    activeCase: null,  // ID выпавшего кейса
+    clicksDone: 0      // Прогресс до следующего кейса
+  };
+  let pendingItem = null;
 
-  let tg = window.Telegram.WebApp; tg.expand();
-  let userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 10001; 
+  // --- INITIALIZATION ---
+  async function initGame() {
+    let data = await apiCall('login');
+    if (data && data.success) {
+      // Logic to handle old/new save format
+      if (Array.isArray(data.inventory)) {
+        state.balance = data.balance;
+        state.clickPower = data.clickPower;
+        state.autoClick = data.autoClick;
+        state.inventory = data.inventory;
+      } else {
+        state.balance = data.balance;
+        state.clickPower = data.clickPower;
+        state.autoClick = data.autoClick;
+        state.inventory = data.inventory.items || [];
+        state.activeCase = data.inventory.activeCase || null;
+        state.clicksDone = data.inventory.clicksDone || 0;
+      }
 
-  // GLOBAL STATE (ДОБАВЛЕНО: contractSelection)
-  let state = {
-    balance: 0, clickPower: 1, autoClick: 0, inventory: [],
-    activeCase: null, 
-    clicksDone: 0,     
-    contractSelection: {} // Для хранения выбранных ID предметов
-  };
-  let pendingItem = null;
-  let currentTradeUpRarity = null; // Отслеживает текущую обмениваемую редкость
+      if (data.offlineBonus > 0) notify(`Офлайн доход: +${data.offlineBonus}$`);
+      updateUI();
+      
+      setInterval(() => { if (state.autoClick > 0) { state.balance += state.autoClick; updateUI(); }}, 1000);
+      setInterval(saveGame, 5000);
+    }
+  }
+// --- НОВАЯ ЛОГИКА КРАФТИНГА ---
 
+  const CRAFT_COUNT = 10; // Сколько предметов нужно для крафта
+  // Порядок редкостей от самой низкой до самой высокой
+  const RARITY_ORDER = ['gray', 'blue', 'purple', 'pink', 'red', 'gold'];
 
-  // --- INITIALIZATION ---
-  async function initGame() {
-    let data = await apiCall('login');
-    if (data && data.success) {
-      
-      if (Array.isArray(data.inventory)) {
-        state.balance = data.balance;
-        state.clickPower = data.clickPower;
-        state.autoClick = data.autoClick;
-        state.inventory = data.inventory;
-      } else {
-        state.balance = data.balance;
-        state.clickPower = data.clickPower;
-        state.autoClick = data.autoClick;
-        state.inventory = data.inventory.items || [];
-        state.activeCase = data.inventory.activeCase || null;
-        state.clicksDone = data.inventory.clicksDone || 0;
-      }
+  function toggleCrafting(show) {
+    const screen = document.getElementById('craftingScreen');
+    const content = document.getElementById('craftingContent');
+    screen.style.display = show ? 'flex' : 'none';
 
-      if (data.offlineBonus > 0) notify(`Офлайн доход: +${data.offlineBonus}$`);
-      updateUI();
-      
-      setInterval(() => { if (state.autoClick > 0) { state.balance += state.autoClick; updateUI(); }}, 1000);
-      setInterval(saveGame, 5000);
-    }
-  }
+    if (show) {
+      content.innerHTML = '';
+      
+      const countsByRarity = state.inventory.reduce((acc, item) => {
+        acc[item.rarity] = (acc[item.rarity] || 0) + 1;
+        return acc;
+      }, {});
 
-  // --- CLICK & DROP LOGIC ---
-  function handleClick() {
-    state.balance += state.clickPower;
-    
-    if (!state.activeCase) {
-      state.clicksDone++;
-      if (state.clicksDone >= DROP_THRESHOLD) {
-        dropRandomCase();
-        state.clicksDone = 0;
-      }
-    }
-    updateUI();
-  }
+      let canCraftExists = false;
 
-  function dropRandomCase() {
-    
-    let isRare = Math.random() > 0.8; 
-    let dropped = isRare ? CASES.find(c => c.id === 'case_rare') : CASES.find(c => c.id === 'case_common');
-    
-    state.activeCase = dropped.id;
-    notify(`ВЫПАЛ ${dropped.name.toUpperCase()}!`);
-    saveGame();
-  }
+      // Перебор редкостей от самой низкой до "red" (предпоследняя, 'gold' нельзя скрафтить)
+      for (let i = 0; i < RARITY_ORDER.length - 1; i++) {
+        const currentRarity = RARITY_ORDER[i];
+        const nextRarity = RARITY_ORDER[i + 1];
+        
+        const count = countsByRarity[currentRarity] || 0;
+        const rarityInfo = RARITY_CHANCES[currentRarity];
+        const nextRarityInfo = RARITY_CHANCES[nextRarity];
 
-  function buyKeyAndOpen() {
-    if (!state.activeCase) return;
-    
-    let caseObj = CASES.find(c => c.id === state.activeCase);
-    if (state.balance >= caseObj.keyPrice) {
-      state.balance -= caseObj.keyPrice;
-      
-      spinRoulette(caseObj);
-      
-      state.activeCase = null;
-      updateUI();
-    } else {
-      notify("Не хватает денег на ключ!");
-    }
-  }
+        // Проверяем, можно ли скрафтить (минимум 10 предметов)
+        if (count >= CRAFT_COUNT) {
+          canCraftExists = true;
+          
+          const maxCrafts = Math.floor(count / CRAFT_COUNT);
 
-  // --- ROULETTE ---
-  function spinRoulette(caseObj) {
-    const overlay = document.getElementById('rouletteScreen');
-    const strip = document.getElementById('strip');
-    overlay.style.display = 'flex';
-    strip.innerHTML = '';
-    strip.style.transition = 'none';
-    strip.style.transform = 'translateX(0px)';
+          const craftSection = document.createElement('div');
+          craftSection.style.marginBottom = '20px';
+          craftSection.innerHTML = `
+            <h4 style="color: ${rarityInfo.color}; border-left: 4px solid ${rarityInfo.color}; padding-left: 10px; margin-bottom: 10px;">
+              ${rarityInfo.label.split(' ')[0]} -> ${nextRarityInfo.label.split(' ')[0]}
+            </h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px; border-radius: 8px;">
+              <span>${count} шт. ${rarityInfo.label.split(' ')[0]} (${CRAFT_COUNT} = 1)</span>
+              <button class="btn btn-buy" style="padding: 8px 12px;" 
+                      onclick="performCraft('${currentRarity}', ${maxCrafts})">
+                Скрафтить ${maxCrafts}
+              </button>
+            </div>
+          `;
+          content.appendChild(craftSection);
+        }
+      }
+      
+      if (!canCraftExists) {
+        content.innerHTML = '<p style="text-align:center; color:#aaa;">У вас нет 10 одинаковых предметов для крафта.</p>';
+      }
+    }
+  }
 
-    let items = [];
-    const winIndex = 35;
-    
-    for(let i=0; i<50; i++) {
-      let tpl = getRandomItemFromCase(caseObj);
-      let item = generateItemObj(tpl);
-      items.push(item);
-      
-      let div = document.createElement('div');
-      div.className = 'roulette-item';
-      let stripe = document.createElement('div');
-      stripe.className = 'rarity-stripe';
-      stripe.style.background = RARITY_COLORS[item.rarity];
-      let img = document.createElement('img');
-      img.src = item.image;
-      div.append(img, stripe);
-      strip.appendChild(div);
-    }
+  // 2. Функция Выполнения Крафта
+  window.performCraft = function(rarityToConsume, count) {
+      if (count <= 0) return;
 
-    pendingItem = items[winIndex];
+      const nextRarityIndex = RARITY_ORDER.indexOf(rarityToConsume) + 1;
+      const nextRarity = RARITY_ORDER[nextRarityIndex];
 
-    setTimeout(() => {
-      let offset = (winIndex * 131) - (window.innerWidth / 2) + 65 + (Math.random() * 60 - 30);
-      strip.style.transition = "transform 5s cubic-bezier(0.15, 0, 0.10, 1)";
-      strip.style.transform = `translateX(-${offset}px)`;
-    }, 50);
+      if (!nextRarity || nextRarity === 'gold') {
+          notify("Нельзя скрафтить выше Красного!"); // Максимальный уровень
+          return;
+      }
 
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      showDropModal();
-      saveGame();
-    }, 5500);
-  }
+      // 1. Сбор предметов для удаления
+      let itemsToRemove = [];
+      for (let i = 0; i < state.inventory.length && itemsToRemove.length < CRAFT_COUNT * count; i++) {
+          if (state.inventory[i].rarity === rarityToConsume) {
+              itemsToRemove.push(i);
+          }
+      }
 
-  // --- HELPERS (ОБНОВЛЕННАЯ ЛОГИКА) ---
-  function getRarityByChance() {
-    let r = Math.random() * TOTAL_WEIGHT; 
-    let currentSum = 0;
-    
-    for (const rarity in RARITY_CHANCES) {
-        currentSum += RARITY_CHANCES[rarity].weight;
-        if (r <= currentSum) {
-            return rarity;
-        }
-    }
-    return 'Common'; // Было 'gray'
-  }
+      // 2. Проверка, что предметов достаточно (на всякий случай)
+      if (itemsToRemove.length < CRAFT_COUNT * count) {
+          notify("Недостаточно предметов для крафта!");
+          return;
+      }
 
-  function getRandomItemFromCase(caseObj) {
-      const allRarities = Object.keys(RARITY_CHANCES);
-      let selectedRarity = getRarityByChance();
-      
-      let rarityIndex = allRarities.indexOf(selectedRarity);
-      while(rarityIndex >= 0 && (!caseObj.items[selectedRarity] || caseObj.items[selectedRarity].length === 0)) {
-          rarityIndex++;
-          selectedRarity = allRarities[rarityIndex];
-      }
+      // 3. Удаление предметов из инвентаря
+      itemsToRemove.sort((a, b) => b - a).forEach(index => {
+          state.inventory.splice(index, 1);
+      });
 
-      if (!caseObj.items[selectedRarity] || caseObj.items[selectedRarity].length === 0) {
-          const availableRarities = Object.keys(caseObj.items).filter(r => caseObj.items[r].length > 0);
-          if (availableRarities.length > 0) {
-              selectedRarity = availableRarities[Math.floor(Math.random() * availableRarities.length)];
-          } else {
-              // Возвращаем ошибку с новой константой 'Common'
-              return { name: "Ошибка!", rarity: "Common", basePrice: 0, image: "" }; 
-          }
-      }
-      
-      const availableItems = caseObj.items[selectedRarity];
-      const tpl = availableItems[Math.floor(Math.random() * availableItems.length)];
-      
-      return { ...tpl, rarity: selectedRarity };
-  }
+      // 4. Добавление новых, более редких предметов
+      const availableCases = CASES.filter(c => Object.keys(c.items).includes(nextRarity));
+      if (availableCases.length === 0) {
+          notify("Ошибка! Нет кейсов с предметами нужной редкости.");
+          return;
+      }
+      
+      let newItems = [];
+      for (let i = 0; i < count; i++) {
+          // Выбираем случайный кейс, который может дропнуть нужную редкость
+          const randomCase = availableCases[Math.floor(Math.random() * availableCases.length)];
+          // Выбираем случайный предмет только нужной редкости
+          const availableItems = randomCase.items[nextRarity];
+          const tpl = availableItems[Math.floor(Math.random() * availableItems.length)];
+          
+          // Генерируем новый предмет с нужной редкостью
+          const newItem = generateItemObj({ ...tpl, rarity: nextRarity });
+          state.inventory.push(newItem);
+          newItems.push(newItem);
+      }
+      
+      updateUI();
+      saveGame();
+      toggleCrafting(true); // Перерисовка меню крафта
+      
+      if(newItems.length === 1) {
+          notify(`Скрафчен 1x ${newItems[0].name} (${newItems[0].wear})!`);
+      } else {
+          notify(`Скрафчено ${newItems.length}x ${RARITY_CHANCES[nextRarity].label.split(' ')[0]}!`);
+      }
+  }
+  
+  // --- КОНЕЦ НОВОЙ ЛОГИКИ КРАФТИНГА ---
+  // --- CLICK & DROP LOGIC ---
+  function handleClick() {
+    state.balance += state.clickPower;
+    
+    if (!state.activeCase) {
+      state.clicksDone++;
+      if (state.clicksDone >= DROP_THRESHOLD) {
+        dropRandomCase();
+        state.clicksDone = 0;
+      }
+    }
+    updateUI();
+  }
 
-  // ОБНОВЛЕННАЯ ФУНКЦИЯ: может принимать requiredRarity для контракта
-  function generateItemObj(tpl, requiredRarity = null) {
-    let float = Math.random(); 
-    let mult = 1 + (0.5 - float);
+  function dropRandomCase() {
+    // 80% Common, 20% Rare drop chance for the case itself
+    let isRare = Math.random() > 0.8; 
+    let dropped = isRare ? CASES.find(c => c.id === 'case_rare') : CASES.find(c => c.id === 'case_common');
+    
+    state.activeCase = dropped.id;
+    notify(`ВЫПАЛ ${dropped.name.toUpperCase()}!`);
+    saveGame();
+  }
 
-	// Если требуется конкретная редкость (для крафта)
-	let rarityName = requiredRarity || tpl.rarity;
-	let baseTemplate;
-	
-	if (requiredRarity) {
-		// Ищем подходящий шаблон среди всех кейсов
-		let allTemplates = [];
-		CASES.forEach(c => {
-			if (c.items[rarityName]) {
-				allTemplates.push(...c.items[rarityName].map(item => ({...item, rarity: rarityName})));
-			}
-		});
-		// Если не нашли ничего, используем заглушку
-		if (allTemplates.length === 0) {
-			baseTemplate = { name: "Секретный предмет", basePrice: 500, image: "", rarity: rarityName };
-		} else {
-			baseTemplate = allTemplates[Math.floor(Math.random() * allTemplates.length)];
-		}
-	} else {
-		// Используем шаблон, полученный из кейса
-		baseTemplate = tpl;
-	}
-	
-    return {
-      id: Date.now() + Math.random(),
-      name: baseTemplate.name, rarity: rarityName, image: baseTemplate.image,
-      float: float.toFixed(3),
-      wear: getWearName(float),
-      price: Math.floor(baseTemplate.basePrice * mult)
-    };
-  }
+  function buyKeyAndOpen() {
+    if (!state.activeCase) return;
+    
+    let caseObj = CASES.find(c => c.id === state.activeCase);
+    if (state.balance >= caseObj.keyPrice) {
+      state.balance -= caseObj.keyPrice;
+      
+      spinRoulette(caseObj);
+      
+      state.activeCase = null;
+      updateUI();
+    } else {
+      notify("Не хватает денег на ключ!");
+    }
+  }
 
-  function getWearName(f) {
-    if (f < 0.07) return "Прямо с завода";
-    if (f < 0.15) return "Немного поношенное";
-    if (f < 0.38) return "После полевых";
-    if (f < 0.45) return "Поношенное";
-    return "Закаленное в боях";
-  }
+  // --- ROULETTE ---
+  function spinRoulette(caseObj) {
+    const overlay = document.getElementById('rouletteScreen');
+    const strip = document.getElementById('strip');
+    overlay.style.display = 'flex';
+    strip.innerHTML = '';
+    strip.style.transition = 'none';
+    strip.style.transform = 'translateX(0px)';
 
-  // --- UI UPDATE ---
-  function updateUI() {
-    document.getElementById('balanceDisp').innerText = Math.floor(state.balance) + "$";
-    document.getElementById('clickDisp').innerText = "+" + state.clickPower;
-    document.getElementById('autoDisp').innerText = state.autoClick + "/s";
-    document.getElementById('costClick').innerText = (50 * state.clickPower) + "$";
-    document.getElementById('costAuto').innerText = (100 * (state.autoClick + 1)) + "$";
-    document.getElementById('invCount').innerText = state.inventory.length;
+    let items = [];
+    const winIndex = 35;
+    
+    for(let i=0; i<50; i++) {
+      let tpl = getRandomItemFromCase(caseObj);
+      let item = generateItemObj(tpl);
+      items.push(item);
+      
+      let div = document.createElement('div');
+      div.className = 'roulette-item';
+      let stripe = document.createElement('div');
+      stripe.className = 'rarity-stripe';
+      stripe.style.background = RARITY_COLORS[item.rarity];
+      let img = document.createElement('img');
+      img.src = item.image;
+      div.append(img, stripe);
+      strip.appendChild(div);
+    }
 
-    let progress = Math.min(state.clicksDone, DROP_THRESHOLD);
-    let pct = (progress / DROP_THRESHOLD) * 100;
-    document.getElementById('progressFill').style.width = pct + "%";
-    document.getElementById('clicksToDrop').innerText = Math.max(0, DROP_THRESHOLD - progress);
+    pendingItem = items[winIndex];
 
-    const dz = document.getElementById('dropZone');
-    if (state.activeCase) {
-      let c = CASES.find(x => x.id === state.activeCase);
-      dz.className = "drop-zone active";
-      dz.innerHTML = `
-        <div class="case-display">
-          <div class="case-title">${c.name}</div>
-          <img src="${c.image}" class="case-img">
-          <div class="key-price">Цена ключа: ${c.keyPrice}$</div>
-          <button class="btn btn-key" onclick="buyKeyAndOpen()">КУПИТЬ КЛЮЧ</button>
-        </div>
-      `;
-    } else {
-      dz.className = "drop-zone";
-      dz.innerHTML = `<div style="color: #666; font-size: 14px;">Пусто... Кликай (${state.clicksDone}/${DROP_THRESHOLD})</div>`;
-    }
-  }
+    setTimeout(() => {
+      let offset = (winIndex * 131) - (window.innerWidth / 2) + 65 + (Math.random() * 60 - 30);
+      strip.style.transition = "transform 5s cubic-bezier(0.15, 0, 0.10, 1)";
+      strip.style.transform = `translateX(-${offset}px)`;
+    }, 50);
 
-  // --- MODALS & API ---
-  function showDropModal() {
-    let m = document.getElementById('dropModal');
-    document.getElementById('dName').innerText = pendingItem.name;
-    document.getElementById('dName').style.color = RARITY_COLORS[pendingItem.rarity];
-    document.getElementById('dImg').src = pendingItem.image;
-    document.getElementById('dWear').innerText = `${pendingItem.wear} (${pendingItem.float})`;
-    document.getElementById('dPrice').innerText = pendingItem.price + "$";
-    m.style.display = 'block';
-  }
-  
-  function sellDrop() { 
-      state.balance += pendingItem.price; 
-      document.getElementById('dropModal').style.display = 'none'; 
-      notify(`+${pendingItem.price}$`); 
-      updateUI(); 
-      saveGame(); 
-  }
-  
-  function keepDrop() { 
-      state.inventory.push(pendingItem); 
-      document.getElementById('dropModal').style.display = 'none'; 
-      notify("В инвентаре"); 
-      updateUI(); 
-      saveGame(); 
-      if (document.getElementById('inventoryScreen').style.display === 'flex') {
-          toggleInventory(true);
-      }
-  }
-  
-  function toggleInventory(show) {
-    const g = document.getElementById('inventoryGrid');
-    document.getElementById('inventoryScreen').style.display = show ? 'flex' : 'none';
-    if(show) {
-      g.innerHTML = '';
-      state.inventory.forEach((it, idx) => {
-        let div = document.createElement('div'); div.className='inv-card'; div.style.borderTopColor=RARITY_COLORS[it.rarity];
-        div.innerHTML = `<img src="${it.image}"><div style="font-size:9px; text-align:center; margin-bottom:5px; color:${RARITY_COLORS[it.rarity]}">${it.name}</div><button class="inv-sell-btn" onclick="sellInv(${idx})">${it.price}$</button>`;
-        g.appendChild(div);
-      });
-    }
-  }
-  
-  // --- ЛОГИКА КОНТРАКТА ОБМЕНА (Trade Up) ---
-  
-  // 1. Управление модальным окном
-  window.toggleContract = function(show) {
-    const modal = document.getElementById('contract-modal');
-    if (show) {
-      modal.style.display = 'flex';
-      renderContractSelector(); // Начинаем с селектора редкости
-    } else {
-      modal.style.display = 'none';
-      currentTradeUpRarity = null;
-      state.contractSelection = {};
-      saveGame();
-      updateUI(); 
-    }
-  }
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      showDropModal();
+      saveGame();
+    }, 5500);
+  }
 
-  // 2. Шаг: Отображение селектора редкости
-  function renderContractSelector() {
-    const contractContent = document.getElementById('contract-content');
-    let html = `
-        <h2 style="margin-bottom: 20px;">КОНТРАКТ ОБМЕНА</h2>
-        <p>Выберите редкость, которую хотите обменять (<span style="color:var(--accent); font-weight:bold;">10 предметов</span> = 1 предмет следующей редкости).</p>
-        <div class="rarity-selector-grid">
-    `;
+  // --- HELPERS (NEW LOGIC) ---
+  function getRarityByChance() {
+    let r = Math.random() * TOTAL_WEIGHT; 
+    let currentSum = 0;
+    
+    for (const rarity in RARITY_CHANCES) {
+        currentSum += RARITY_CHANCES[rarity].weight;
+        if (r <= currentSum) {
+            return rarity;
+        }
+    }
+    return 'gray'; 
+  }
 
-    for (const [rarityName, data] of Object.entries(RARITY_MAP)) {
-        // Исключаем Gold (всегда) и Ancient (поскольку Ancient - самая высокая, которую можно получить)
-        if (rarityName === 'Gold' || rarityName === TRADE_UP_CONFIG.RESULT_MAX_RARITY) {
-            continue;
-        }
+  function getRandomItemFromCase(caseObj) {
+      const allRarities = Object.keys(RARITY_CHANCES);
+      let selectedRarity = getRarityByChance();
+      
+      let rarityIndex = allRarities.indexOf(selectedRarity);
+      while(rarityIndex >= 0 && (!caseObj.items[selectedRarity] || caseObj.items[selectedRarity].length === 0)) {
+          rarityIndex++;
+          selectedRarity = allRarities[rarityIndex];
+      }
 
-        const count = state.inventory.filter(item => item.rarity === rarityName).length;
-        const targetRarity = RARITY_MAP[rarityName].next;
-        const isTradable = targetRarity && count >= TRADE_UP_CONFIG.ITEMS_REQUIRED;
+      if (!caseObj.items[selectedRarity] || caseObj.items[selectedRarity].length === 0) {
+          const availableRarities = Object.keys(caseObj.items).filter(r => caseObj.items[r].length > 0);
+          if (availableRarities.length > 0) {
+              selectedRarity = availableRarities[Math.floor(Math.random() * availableRarities.length)];
+          } else {
+              return { name: "Ошибка!", rarity: "gray", basePrice: 0, image: "" }; 
+          }
+      }
+      
+      const availableItems = caseObj.items[selectedRarity];
+      const tpl = availableItems[Math.floor(Math.random() * availableItems.length)];
+      
+      return { ...tpl, rarity: selectedRarity };
+  }
 
-        html += `
-            <button class="btn" onclick="selectRarityForContract('${rarityName}')" 
-                  ${!isTradable ? 'disabled' : ''}
-                  style="background-color: ${data.color}; color: #000; padding: 10px; opacity: ${!isTradable ? 0.5 : 1};">
-                Обменять 10x ${rarityName} <br/> 
-                <small>На 1x ${targetRarity}</small>
-                <div style="font-size: 1.2em; margin-top: 5px; font-weight: bold;">(В наличии: ${count})</div>
-            </button>
-        `;
-    }
+  function generateItemObj(tpl) {
+    let float = Math.random(); 
+    let mult = 1 + (0.5 - float);
+    return {
+      id: Date.now() + Math.random(),
+      name: tpl.name, rarity: tpl.rarity, image: tpl.image,
+      float: float.toFixed(3),
+      wear: getWearName(float),
+      price: Math.floor(tpl.basePrice * mult)
+    };
+  }
 
-    html += `</div>`;
-    contractContent.innerHTML = html;
-  }
+  function getWearName(f) {
+    if (f < 0.07) return "Прямо с завода";
+    if (f < 0.15) return "Немного поношенное";
+    if (f < 0.38) return "После полевых";
+    if (f < 0.45) return "Поношенное";
+    return "Закаленное в боях";
+  }
 
-  // 3. Шаг: Выбор предметов для контракта
-  window.selectRarityForContract = function(rarityName) {
-    currentTradeUpRarity = rarityName;
-    state.contractSelection = {}; // Сброс выбора
-    renderContractUI();
-  }
+  // --- UI UPDATE ---
+  function updateUI() {
+    document.getElementById('balanceDisp').innerText = Math.floor(state.balance) + "$";
+    document.getElementById('clickDisp').innerText = "+" + state.clickPower;
+    document.getElementById('autoDisp').innerText = state.autoClick + "/s";
+    document.getElementById('costClick').innerText = (50 * state.clickPower) + "$";
+    document.getElementById('costAuto').innerText = (100 * (state.autoClick + 1)) + "$";
+    document.getElementById('invCount').innerText = state.inventory.length;
 
-  window.renderContractUI = function() {
-    const contractContent = document.getElementById('contract-content');
-    const itemsForRarity = state.inventory.filter(item => item.rarity === currentTradeUpRarity);
-    const targetRarityName = RARITY_MAP[currentTradeUpRarity].next;
-    const selectedIds = Object.keys(state.contractSelection);
-    const selectedItemsCount = selectedIds.length;
-    const itemsRequired = TRADE_UP_CONFIG.ITEMS_REQUIRED;
-    
-    // HTML для статуса
-    let statusHTML = `
-        <button class="btn back-btn" onclick="renderContractSelector()">← Выбрать другую редкость</button>
-        <h2 style="margin: 15px 0;">Обмен: ${currentTradeUpRarity} → ${targetRarityName}</h2>
-        <p style="font-weight: bold; font-size: 1.1em; margin-bottom: 10px;">
-            Выбрано: <span style="color: ${selectedItemsCount >= itemsRequired ? 'lightgreen' : 'orange'};">${selectedItemsCount}</span> / ${itemsRequired}
-        </p>
-    `;
+    let progress = Math.min(state.clicksDone, DROP_THRESHOLD);
+    let pct = (progress / DROP_THRESHOLD) * 100;
+    document.getElementById('progressFill').style.width = pct + "%";
+    document.getElementById('clicksToDrop').innerText = Math.max(0, DROP_THRESHOLD - progress);
 
-    // Кнопка Выполнить
-    statusHTML += `
-        <button class="btn" onclick="performTradeUp()" ${selectedItemsCount < itemsRequired ? 'disabled' : ''}
-                style="background-color: ${selectedItemsCount < itemsRequired ? 'gray' : '#00a87f'}; margin-bottom: 20px;">
-            ВЫПОЛНИТЬ КОНТРАКТ
-        </button>
-        <p style="margin-bottom: 10px;">Нажмите на предмет, чтобы выбрать его для контракта.</p>
-    `;
+    const dz = document.getElementById('dropZone');
+    if (state.activeCase) {
+      let c = CASES.find(x => x.id === state.activeCase);
+      dz.className = "drop-zone active";
+      dz.innerHTML = `
+        <div class="case-display">
+          <div class="case-title">${c.name}</div>
+          <img src="${c.image}" class="case-img">
+          <div class="key-price">Цена ключа: ${c.keyPrice}$</div>
+          <button class="btn btn-key" onclick="buyKeyAndOpen()">КУПИТЬ КЛЮЧ</button>
+        </div>
+      `;
+    } else {
+      dz.className = "drop-zone";
+      dz.innerHTML = `<div style="color: #666; font-size: 14px;">Пусто... Кликай (${state.clicksDone}/${DROP_THRESHOLD})</div>`;
+    }
+  }
 
-    let itemsHTML = '<div class="item-grid-contract">';
-    
-    itemsForRarity.forEach(item => {
-        const isSelected = selectedIds.includes(item.id);
-        
-        itemsHTML += `
-            <div class="inv-card" 
-                 data-selected="${isSelected}"
-                 style="border-top-color: ${RARITY_COLORS[item.rarity]};"
-                 onclick="selectContractItem('${item.id}')">
-                <img src="${item.image}">
-                <div style="font-size:9px; text-align:center; margin-bottom:5px; color:${RARITY_COLORS[item.rarity]}">${item.name}</div>
-                <small>${item.price}$</small>
-            </div>
-        `;
-    });
+  // --- MODALS & API ---
+  function showDropModal() {
+    let m = document.getElementById('dropModal');
+    document.getElementById('dName').innerText = pendingItem.name;
+    document.getElementById('dName').style.color = RARITY_COLORS[pendingItem.rarity];
+    document.getElementById('dImg').src = pendingItem.image;
+    document.getElementById('dWear').innerText = `${pendingItem.wear} (${pendingItem.float})`;
+    document.getElementById('dPrice').innerText = pendingItem.price + "$";
+    m.style.display = 'block';
+  }
+  
+  function sellDrop() { 
+      state.balance += pendingItem.price; 
+      document.getElementById('dropModal').style.display = 'none'; 
+      notify(`+${pendingItem.price}$`); 
+      updateUI(); 
+      saveGame(); 
+  }
+  
+function keepDrop() { 
+      state.inventory.push(pendingItem);
+      document.getElementById('dropModal').style.display = 'none'; 
+      notify("В инвентаре"); 
+      updateUI(); 
+      saveGame(); 
+      if (document.getElementById('inventoryScreen').style.display === 'flex') {
+          toggleInventory(true);
+      }
+      if (document.getElementById('craftingScreen').style.display === 'flex') { // НОВАЯ ПРОВЕРКА
+          toggleCrafting(true);
+      }
+  }
+  
+  function toggleInventory(show) {
+    const g = document.getElementById('inventoryGrid');
+    document.getElementById('inventoryScreen').style.display = show ? 'flex' : 'none';
+    if(show) {
+      g.innerHTML = '';
+      state.inventory.forEach((it, idx) => {
+        let div = document.createElement('div'); div.className='inv-card'; div.style.borderTopColor=RARITY_COLORS[it.rarity];
+        div.innerHTML = `<img src="${it.image}"><div style="font-size:9px; text-align:center; margin-bottom:5px; color:${RARITY_COLORS[it.rarity]}">${it.name}</div><button class="inv-sell-btn" onclick="sellInv(${idx})">${it.price}$</button>`;
+        g.appendChild(div);
+      });
+    }
+  }
+  
+  // --- НОВАЯ ЛОГИКА ДЛЯ МАГАЗИНА КЕЙСОВ ---
+  
+  // 1. Отображает список кейсов с кнопкой "Подробнее"
+  function toggleCaseStore(show) {
+    const store = document.getElementById('caseStoreContent');
+    document.getElementById('caseStoreScreen').style.display = show ? 'flex' : 'none';
 
-    itemsHTML += '</div>';
-    contractContent.innerHTML = statusHTML + itemsHTML;
-  }
+    if (show) {
+        store.innerHTML = ''; // Очистка перед заполнением
+        
+        CASES.forEach(caseObj => {
+            let cardHTML = `
+                <div class="case-list-item">
+                    <div class="case-list-info">
+                        <img src="${caseObj.image}" alt="${caseObj.name}">
+                        <div>
+                            <h3>${caseObj.name}</h3>
+                            <p>Цена ключа: ${caseObj.keyPrice}$</p>
+                        </div>
+                    </div>
+                    <button class="case-details-btn" onclick="showCaseDetails('${caseObj.id}')">
+                        Подробнее
+                    </button>
+                </div>
+            `;
+            store.innerHTML += cardHTML;
+        });
+    }
+  }
 
-  window.selectContractItem = function(itemId) {
-    const itemsRequired = TRADE_UP_CONFIG.ITEMS_REQUIRED;
-    const selectedIds = Object.keys(state.contractSelection);
+  // 2. Отображает детали выбранного кейса
+  window.showCaseDetails = function(caseId) {
+    const caseObj = CASES.find(c => c.id === caseId);
+    if (!caseObj) return;
 
-    if (state.contractSelection[itemId]) {
-        delete state.contractSelection[itemId]; // Снять выделение
-    } else if (selectedIds.length < itemsRequired) {
-        state.contractSelection[itemId] = true; // Выделить
-    } else {
-        notify(`Для контракта требуется только ${itemsRequired} предметов.`);
-    }
+    const detailsModal = document.getElementById('caseDetailsModal');
+    const content = document.getElementById('caseDetailsContent');
+    document.getElementById('caseDetailsTitle').innerText = `Содержимое ${caseObj.name}`;
+    content.innerHTML = '';
+    
+    let allItemsHtml = '';
 
-    renderContractUI();
-  }
+    // Проходим по всем возможным редкостям (от самой редкой к самой обычной)
+    Object.keys(RARITY_CHANCES).reverse().forEach(rarityKey => {
+        const itemsInRarity = caseObj.items[rarityKey];
+        
+        if (itemsInRarity && itemsInRarity.length > 0) {
+            const rarityInfo = RARITY_CHANCES[rarityKey];
+            
+            let gridHtml = '<div class="details-item-grid">';
+            
+            itemsInRarity.forEach(item => {
+                gridHtml += `
+                    <div class="details-item-card" style="border-top-color: ${rarityInfo.color};">
+                        <img src="${item.image}" alt="${item.name}">
+                        <span style="color: ${rarityInfo.color};">${item.name}</span>
+                        <div class="details-item-rarity">${rarityInfo.label.split(' ')[0]}</div>
+                    </div>
+                `;
+            });
+            
+            gridHtml += '</div>';
 
-  window.performTradeUp = function() {
-    const itemsRequired = TRADE_UP_CONFIG.ITEMS_REQUIRED;
-    const selectedIds = Object.keys(state.contractSelection);
-    
-    if (selectedIds.length !== itemsRequired) {
-        notify(`Ошибка: Выберите ровно ${itemsRequired} предметов.`);
-        return;
-    }
+            allItemsHtml += `
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: ${rarityInfo.color}; border-left: 4px solid ${rarityInfo.color}; padding-left: 10px;">${rarityInfo.label}</h4>
+                    ${gridHtml}
+                </div>
+            `;
+        }
+    });
 
-    const inputRarity = currentTradeUpRarity;
-    const targetRarity = RARITY_MAP[inputRarity].next;
-    
-    if (!targetRarity) {
-        notify(`Ошибка: Невозможно обменять редкость ${inputRarity} на более высокую.`);
-        return;
-    }
+    if (allItemsHtml === '') {
+        content.innerHTML = '<p style="text-align:center;">Кейс пуст или данные не найдены.</p>';
+    } else {
+        content.innerHTML = allItemsHtml;
+    }
 
-    // 1. Удаление выбранных предметов из инвентаря
-    const idsToRemove = new Set(selectedIds);
-    state.inventory = state.inventory.filter(item => !idsToRemove.has(item.id));
-    
-    // 2. Генерация нового предмета требуемой редкости
-    const newItem = generateItemObj(null, targetRarity);
+    detailsModal.style.display = 'flex';
+  }
 
-    // 3. Добавление нового предмета в инвентарь
-    state.inventory.push(newItem);
-    
-    // 4. Сброс состояния контракта
-    state.contractSelection = {};
-    currentTradeUpRarity = null;
-
-    // 5. Обновление UI и уведомление
-    saveGame();
-    updateUI();
-    // Возвращаемся к селектору редкости, чтобы увидеть обновленное количество
-    renderContractSelector(); 
-    notify(`🎉 КОНТРАКТ УСПЕШНО ВЫПОЛНЕН! Вы получили: ${newItem.name} (${targetRarity})`);
-  }
-
-
-  // --- НОВАЯ ЛОГИКА ДЛЯ МАГАЗИНА КЕЙСОВ (без изменений) ---
-  
-  // 1. Отображает список кейсов с кнопкой "Подробнее"
-  function toggleCaseStore(show) {
-    const store = document.getElementById('caseStoreContent');
-    document.getElementById('caseStoreScreen').style.display = show ? 'flex' : 'none';
-
-    if (show) {
-        store.innerHTML = ''; 
-        
-        CASES.forEach(caseObj => {
-            let cardHTML = `
-                <div class="case-list-item">
-                    <div class="case-list-info">
-                        <img src="${caseObj.image}" alt="${caseObj.name}">
-                        <div>
-                            <h3>${caseObj.name}</h3>
-                            <p>Цена ключа: ${caseObj.keyPrice}$</p>
-                        </div>
-                    </div>
-                    <button class="case-details-btn" onclick="showCaseDetails('${caseObj.id}')">
-                        Подробнее
-                    </button>
-                </div>
-            `;
-            store.innerHTML += cardHTML;
-        });
-    }
-  }
-
-  // 2. Отображает детали выбранного кейса
-  window.showCaseDetails = function(caseId) {
-    const caseObj = CASES.find(c => c.id === caseId);
-    if (!caseObj) return;
-
-    const detailsModal = document.getElementById('caseDetailsModal');
-    const content = document.getElementById('caseDetailsContent');
-    document.getElementById('caseDetailsTitle').innerText = `Содержимое ${caseObj.name}`;
-    content.innerHTML = '';
-    
-    let allItemsHtml = '';
-
-    // Проходим по всем возможным редкостям (от самой редкой к самой обычной)
-    Object.keys(RARITY_CHANCES).reverse().forEach(rarityKey => {
-        const itemsInRarity = caseObj.items[rarityKey];
-        
-        if (itemsInRarity && itemsInRarity.length > 0) {
-            const rarityInfo = RARITY_CHANCES[rarityKey];
-            
-            let gridHtml = '<div class="details-item-grid">';
-            
-            itemsInRarity.forEach(item => {
-                gridHtml += `
-                    <div class="details-item-card" style="border-top-color: ${rarityInfo.color};">
-                        <img src="${item.image}" alt="${item.name}">
-                        <span style="color: ${rarityInfo.color};">${item.name}</span>
-                        <div class="details-item-rarity">${rarityInfo.label.split(' ')[0]}</div>
-                    </div>
-                `;
-            });
-            
-            gridHtml += '</div>';
-
-            allItemsHtml += `
-                <div style="margin-bottom: 20px;">
-                    <h4 style="color: ${rarityInfo.color}; border-left: 4px solid ${rarityInfo.color}; padding-left: 10px;">${rarityInfo.label}</h4>
-                    ${gridHtml}
-                </div>
-            `;
-        }
-    });
-
-    if (allItemsHtml === '') {
-        content.innerHTML = '<p style="text-align:center;">Кейс пуст или данные не найдены.</p>';
-    } else {
-        content.innerHTML = allItemsHtml;
-    }
-
-    detailsModal.style.display = 'flex';
-  }
-
-  // 3. Скрывает детали кейса
-  window.hideCaseDetails = function() {
-    document.getElementById('caseDetailsModal').style.display = 'none';
-  }
-  // --- КОНЕЦ ЛОГИКИ МАГАЗИНА КЕЙСОВ ---
+  // 3. Скрывает детали кейса
+  window.hideCaseDetails = function() {
+    document.getElementById('caseDetailsModal').style.display = 'none';
+  }
+  // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
 
-  window.sellInv = function(i) { state.balance += state.inventory[i].price; state.inventory.splice(i, 1); toggleInventory(true); updateUI(); saveGame(); }
-  
-  function buyUpgrade(t) { 
-      let c = t==='click'?50*state.clickPower:100*(state.autoClick+1); 
-      if(state.balance>=c){
-          state.balance-=c; 
-          t==='click'?state.clickPower++:state.autoClick++; 
-          updateUI();
-          saveGame(); 
-      } 
-  }
-  
-  async function apiCall(act, pl={}) {
-    if(act === 'save') { pl = { items: state.inventory, activeCase: state.activeCase, clicksDone: state.clicksDone, ...pl }; }
-    try { let r = await fetch(SCRIPT_URL, {method:'POST', body: JSON.stringify({action: act, userId: userId, payload: pl}), headers: {'Content-Type': 'application/json'}}); return await r.json(); } catch(e) { console.error("API Call Error:", e); return null; }
-  }
-
-  function saveGame() { apiCall('save', {balance: state.balance, clickPower: state.clickPower, autoClick: state.autoClick}); }
-  
-  function notify(msg) { 
-      let n = document.getElementById('notification'); 
-      n.innerText = msg; 
-      n.style.display = 'block'; 
-      setTimeout(() => { n.style.display = 'none'; }, 2000); 
-  }
-  
-  initGame();
+  window.sellInv = function(i) { state.balance += state.inventory[i].price; state.inventory.splice(i, 1); toggleInventory(true); updateUI(); saveGame(); }
+  
+  function buyUpgrade(t) { 
+      let c = t==='click'?50*state.clickPower:100*(state.autoClick+1); 
+      if(state.balance>=c){
+          state.balance-=c; 
+          t==='click'?state.clickPower++:state.autoClick++; 
+          updateUI();
+          saveGame(); 
+      } 
+  }
+  
+  async function apiCall(act, pl={}) {
+    if(act === 'save') { pl = { items: state.inventory, activeCase: state.activeCase, clicksDone: state.clicksDone, ...pl }; }
+    try { let r = await fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:act, telegramId:userId, payload:pl})}); return await r.json(); } catch(e){return null;}
+  }
+  function saveGame() { 
+      apiCall('save', { 
+          balance: state.balance, 
+          clickPower: state.clickPower, 
+          autoClick: state.autoClick 
+      }); 
+  }
+  function notify(m) { let n=document.getElementById('notification'); n.innerText=m; n.style.display='block'; setTimeout(()=>n.style.display='none', 2000); }
+  
+  window.onload = initGame;
 </script>
 </body>
 </html>
