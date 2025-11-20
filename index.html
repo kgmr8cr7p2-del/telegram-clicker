@@ -262,10 +262,45 @@
     .drop-img-large { width: 100%; height: 120px; object-fit: contain; margin-bottom: 15px; }
     .drop-stat-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 13px; color: #aaa; border-bottom: 1px solid #333; padding-bottom: 4px; }
     .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; z-index: 2000; display: none; }
+    
+    /* === НОВЫЕ СТИЛИ ДЛЯ ЗАГРУЗКИ === */
+    #loadingScreen {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(27, 27, 27, 0.95); /* Полупрозрачный фон */
+        z-index: 5000; /* Самый высокий z-index */
+        display: flex; /* Изначально видимый */
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: var(--text);
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .spinner {
+        border: 4px solid #f3f3f3; /* Светло-серый */
+        border-top: 4px solid var(--accent); /* Акцентный цвет */
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    /* ============================== */
   </style>
 </head>
 <body>
-	<div id="craftingScreen" class="full-screen-modal">
+    
+    <div id="loadingScreen">
+        <div class="spinner"></div>
+        <span>Подключение к базе данных...</span>
+    </div>
+    <div id="craftingScreen" class="full-screen-modal">
   <div class="modal-header">
     <span class="modal-title">🛠️ Система Крафтов</span>
     <button class="modal-close" onclick="toggleCrafting(false)">&times;</button>
@@ -458,7 +493,13 @@ justify-content: center; gap: 5px;">
 
   // --- INITIALIZATION ---
   async function initGame() {
+    // document.getElementById('loadingScreen').style.display = 'flex'; // Это уже задано в CSS
+    
     let data = await apiCall('login');
+    
+    // Скрытие экрана загрузки после получения ответа
+    document.getElementById('loadingScreen').style.display = 'none';
+
     if (data && data.success) {
       // Logic to handle old/new save format
       if (Array.isArray(data.inventory)) {
@@ -480,6 +521,8 @@ justify-content: center; gap: 5px;">
       
       setInterval(() => { if (state.autoClick > 0) { state.balance += state.autoClick; updateUI(); }}, 1000);
       setInterval(saveGame, 5000);
+    } else {
+        notify("Ошибка подключения к БД. Попробуйте перезапустить.");
     }
   }
 // --- ИСПРАВЛЕННАЯ ЛОГИКА КРАФТИНГА С ВЫБОРОМ ---
