@@ -6,6 +6,25 @@
   <title>Case Drop Clicker V9</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+	
+	body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0; padding: 0;
+      /* 1. Запрещает выделение текста */
+      user-select: none; 
+      /* 2. Отключает эффект затемнения при нажатии на ссылки/кнопки в WebKit (Chrome/Safari) */
+      -webkit-tap-highlight-color: transparent; 
+      /* 3. Отключает масштабирование на большинстве Android устройств */
+      touch-action: manipulation; 
+    }
+	{
+        /* Запрет на увеличение двойным тапом и pinch-to-zoom */
+        touch-action: manipulation; 
+    }
+  
+  
     :root {
       --bg-color: #1b1b1b;
       --card-bg: #262626;
