@@ -1,1661 +1,624 @@
 ﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Case Drop Clicker V10 - Roulette</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-	
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ловишка - Mini App</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* Небесный фон */
+            font-family: Arial, sans-serif;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
 
-    :root {
-      --bg-color: #1b1b1b;
-      --card-bg: #262626;
-      --accent: #d4af37;
-      --text: #e1e1e1;
-      --progress-bg: #111;
-      --progress-fill: #4caf50;
-      
-      /* Цвета редкости */
-      --gray: #b0c3d9; --blue: #4b69ff; --purple: #8847ff; 
-      --pink: #d32ce6; --red: #eb4b4b; --gold: #ffd700;   
+        #gameCanvas {
+            background-color: #ADD8E6; /* Светло-голубой фон для игровой зоны */
+            border: 2px solid #555;
+            display: block;
+            touch-action: none;
+        }
 
-      /* Цвета рулетки */
-      --roulette-red: #e74c3c;
-      --roulette-black: #1b1b1b; /* Теперь черный */
-      --roulette-green: #2ecc71;
-    }
+        /* Общие стили для отображения информации */
+        #scoreDisplay, #rareCoinDisplay, #shopButton, #loadingText {
+            position: absolute;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
 
-	body {
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      margin: 0; padding: 0;
-      user-select: none; 
-      -webkit-tap-highlight-color: transparent; 
-      touch-action: manipulation; 
-    }
-	{
-       touch-action: manipulation; 
-    }
-  
-  
+        #scoreDisplay {
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: #FFF;
+            pointer-events: none;
+        }
+        
+        #rareCoinDisplay {
+            top: 40px;
+            left: 10px;
+            font-size: 20px;
+            color: gold;
+            pointer-events: none;
+        }
 
-    .app-container { padding: 20px; height: 100vh; box-sizing: border-box; overflow-y: auto; padding-bottom: 80px; }
-    
-    /* Stats */
-    .stats-bar {
-      display: flex; justify-content: space-between;
-      background: #222; padding: 12px; border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 20px;
-      border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 10;
-    }
-    .stat-item { text-align: center; }
-    .stat-item span { font-size: 10px; color: #888; text-transform: uppercase; }
-    .stat-item div { font-size: 15px; font-weight: 700; color: var(--accent); margin-top: 4px;}
+        #shopButton {
+            pointer-events: all;
+            top: 10px;
+            right: 10px;
+            padding: 10px 15px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        #loadingText {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #FFF;
+        }
 
-    /* Clicker Area */
-    .click-section { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
-    #clickBtn {
-      width: 140px; height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #444, #111);
-      border: 4px solid #444;
-      box-shadow: 0 0 25px rgba(0,0,0,0.5);
-      color: #fff; font-size: 18px; font-weight: bold;
-      cursor: pointer; transition: transform 0.05s; outline: none;
-    }
-    #clickBtn:active { transform: scale(0.95); border-color: var(--accent); }
+        /* Экран завершения игры */
+        #gameOverScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000;
+        }
 
-    /* Progress Bar */
-    .progress-container { width: 100%; margin-top: 20px; text-align: center; }
-    .progress-label { font-size: 12px; color: #aaa; margin-bottom: 5px; }
-    .progress-bar { width: 100%; height: 10px; background: var(--progress-bg); border-radius: 5px; overflow: hidden; }
-    .progress-fill { height: 100%; background: var(--progress-fill); width: 0%; transition: width 0.2s; }
+        #gameOverScreen h2 { font-size: 3em; margin-bottom: 20px; }
+        #gameOverScreen p { font-size: 1.5em; margin-bottom: 30px; }
 
-    /* Drop Zone (Active Case) */
-    .drop-zone {
-      margin-top: 25px;
-      background: #222; border: 2px dashed #444; border-radius: 12px;
-      padding: 20px; min-height: 120px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
-    .drop-zone.active { border: 2px solid var(--accent); background: #2a2a2a; border-style: solid;}
-    
-    .case-display { text-align: center; /* animation: popIn 0.3s; - УДАЛЕНО */ }
-    .case-img { width: 80px; height: 60px; object-fit: contain; margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(255,215,0,0.2)); }
-    .case-title { font-weight: bold; font-size: 16px; color: var(--accent); margin-bottom: 5px; }
-    .key-price { font-size: 12px; color: #aaa; margin-bottom: 10px; }
-
-    /* Menu Buttons */
-    .section-title { margin: 20px 0 10px; font-size: 13px; color: #666; text-transform: uppercase; font-weight: bold; }
-    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn {
-      background: var(--card-bg); border: 1px solid #3a3a3a;
-      color: white; padding: 12px; border-radius: 8px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; outline: none;
-    }
-    .btn:active { background: #333; }
-    .btn-buy { border-bottom: 2px solid #4caf50; }
-    .btn-key { background: #2a442a; border: 1px solid #4caf50; width: 100%; margin-top: 5px; padding: 8px; font-weight: bold;}
-
-    /* Modals */
-    .full-screen-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 500; display: none; flex-direction: column; animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-    .modal-header { padding: 15px; background: #222; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-    .modal-title { font-size: 18px; font-weight: bold; }
-    .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; }
-
-    /* Inventory Grid */
-    .inventory-grid { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; overflow-y: auto; flex: 1; }
-    .inv-card { 
-        background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); border-radius: 8px; overflow: hidden; 
-        display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; 
-        border-top: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        position: relative; 
-        cursor: pointer; 
-    }
-    .inv-card img { width: 80%; height: 50px; object-fit: contain; margin: 10px 0; }
-    .inv-sell-btn { background: #2a442a; border: 1px solid #4caf50; color: #fff; font-size: 9px; padding: 4px 10px; border-radius: 15px; cursor: pointer; margin-top: auto; }
-
-    /* НОВЫЙ СТИЛЬ: для режима выбора (крафта) */
-    .inv-card.selected {
-        border: 3px solid var(--accent) !important; 
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-    }
-    .selected-tick {
-        position: absolute; top: 5px; right: 5px; background: var(--accent); color: var(--bg-color);
-        border-radius: 50%; width: 20px; height: 20px; display: flex; justify-content: center;
-        align-items: center; font-size: 14px; font-weight: bold;
-    }
-    .inventory-grid.selecting .inv-sell-btn { display: none; }
-    .inventory-grid.selecting .inv-card { padding-bottom: 12px; }
-
-    /* Case Store Main List */
-    #caseStoreContent { overflow-y: auto; flex: 1; padding: 15px; }
-    .case-list-item {
-        background: var(--card-bg); border-radius: 12px; margin-bottom: 10px; padding: 10px;
-        display: flex; align-items: center; justify-content: space-between; border: 1px solid #333;
-    }
-    .case-list-item img { width: 60px; height: 40px; object-fit: contain; margin-right: 15px; }
-    .case-list-info { flex-grow: 1; display: flex; align-items: center; }
-    .case-list-info h3 { margin: 0; font-size: 16px; color: var(--accent); }
-    .case-list-info p { margin: 2px 0 0; font-size: 11px; color: #aaa; }
-    .case-details-btn {
-        background: #3a3a3a; color: #fff; border: none; padding: 8px 12px;
-        border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; 
-    }
-    .case-details-btn:active { background: #444; }
-
-    /* Case Details Modal (New) */
-    #caseDetailsModal { z-index: 600; }
-    #caseDetailsContent { overflow-y: auto; flex: 1; padding: 15px; }
-    #caseDetailsContent h2 { text-align: center; color: var(--accent); margin-top: 0; margin-bottom: 20px; font-size: 20px; }
-    .details-item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-    .details-item-card { 
-        background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%); border-radius: 8px; overflow: hidden; 
-        display: flex; flex-direction: column; align-items: center; padding-bottom: 8px; 
-        border-top: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-align: center;
-    }
-    .details-item-card img { width: 80%; height: 60px; object-fit: contain; margin: 10px 0; }
-    .details-item-card span { font-size: 10px; font-weight: bold; margin-top: auto; padding: 0 5px; word-break: break-word; }
-    .details-item-rarity { font-size: 9px; color: #aaa; margin-top: 3px; padding: 0 5px; }
-
-    /* Roulette & Drop Modal Styles (same as before) */
-    .roulette-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; justify-content: center; align-items: center; }
-    .roulette-window { width: 100%; height: 160px; background: #151515; position: relative; border-top: 3px solid var(--accent); border-bottom: 3px solid var(--accent); overflow: hidden; }
-    .center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: #ffcc00; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 15px #ffcc00; }
-    .items-strip { display: flex; height: 100%; align-items: center; will-change: transform; }
-    .roulette-item { min-width: 130px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #2a2a2a; position: relative; background: linear-gradient(to bottom, #1e1e1e, #151515); }
-    .roulette-item img { width: 110px; height: 80px; object-fit: contain; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); }
-    .rarity-stripe { width: 100%; height: 4px; position: absolute; bottom: 0; }
-
-    .drop-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; border: 1px solid #444; padding: 20px; width: 85%; max-width: 320px; text-align: center; z-index: 1100; display: none; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,1); }
-    .drop-img-large { width: 100%; height: 120px; object-fit: contain; margin-bottom: 15px; }
-    .drop-stat-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 13px; color: #aaa; border-bottom: 1px solid #333; padding-bottom: 4px; }
-    .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; z-index: 2000; display: none; }
-    
-    /* === СТИЛИ ДЛЯ ЗАГРУЗКИ === */
-    #loadingScreen {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(27, 27, 27, 0.95); z-index: 5000; 
-        display: flex; flex-direction: column; justify-content: center;
-        align-items: center; color: var(--text); font-size: 16px; font-weight: bold;
-    }
-    .spinner {
-        border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); 
-        border-radius: 50%; width: 40px; height: 40px;
-        animation: spin 1s linear infinite; margin-bottom: 15px;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }
-    }
-    /* ============================== */
-    
-    /* === СТИЛИ ДЛЯ РУЛЕТКИ (37 СЕКТОРОВ) === */
-    .roulette-board {
-        width: 100%; max-width: 400px; margin: 0 auto;
-        border: 2px solid #555; border-radius: 10px; overflow: hidden;
-        background: #333;
-    }
-    .number-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 2px;
-        padding: 2px;
-    }
-    .bet-cell {
-        background: #1b1b1b;
-        color: white;
-        text-align: center;
-        padding: 10px 5px;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        position: relative;
-        border-radius: 4px;
-        transition: background 0.1s;
-    }
-    .bet-cell:active:not(.disabled) { background: #555; }
-    .bet-cell.disabled { opacity: 0.5; cursor: default; }
-
-    /* Цветные ячейки чисел */
-    .num-0 { background: var(--roulette-green); color: black; }
-    .num-red { background: var(--roulette-red); }
-    .num-black { background: var(--roulette-black); }
-    
-    /* Цветные ячейки секторов */
-    .color-cell { padding: 15px 5px; font-size: 16px; }
-    .color-red { background: var(--roulette-red); }
-    .color-black { background: var(--roulette-black); }
-    .color-low, .color-high { background: #555; }
-
-    /* Индикатор ставки */
-    .bet-indicator {
-        position: absolute; top: -5px; right: -5px;
-        background: var(--accent); color: black;
-        border-radius: 50%; width: 20px; height: 20px;
-        display: flex; justify-content: center; align-items: center;
-        font-size: 10px; font-weight: bold;
-        box-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
-    }
-
-    #currentBetsDisplay {
-        margin-top: 15px; padding: 10px; background: #262626; border-radius: 8px;
-        max-height: 150px; overflow-y: auto;
-    }
-    .bet-line {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 5px 0; border-bottom: 1px solid #333;
-    }
-    .bet-line:last-child { border-bottom: none; }
-    .bet-remove {
-        background: var(--roulette-red); color: white; border: none;
-        border-radius: 4px; padding: 4px 8px; cursor: pointer;
-    }
-    /* ============================== */
-  </style>
+        #restartButton {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        /* Экран магазина */
+        #shopScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .shopItem {
+            padding: 10px 20px; 
+            margin: 10px; 
+            background-color: #555; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+    </style>
 </head>
 <body>
+
+    <canvas id="gameCanvas"></canvas>
     
-    <div id="loadingScreen">
-        <div class="spinner"></div>
-        <span>Подключение к базе данных...</span>
+    <div id="loadingText">Загрузка активов...</div>
+    <div id="scoreDisplay">Счет: 0</div>
+    <div id="rareCoinDisplay">Монеты: 0</div>
+    <button id="shopButton">Магазин Усилений</button>
+
+
+    <div id="gameOverScreen">
+        <h2>Игра окончена!</h2>
+        <p>Ваш счет: <span id="finalScore">0</span></p>
+        <button id="restartButton">Играть снова</button>
     </div>
     
-<div id="craftingScreen" class="full-screen-modal">
-  <div class="modal-header">
-    <span class="modal-title">🛠️ Система Крафтов</span>
-    <button class="modal-close" onclick="toggleCrafting(false)">&times;</button>
-  </div>
-  <div id="craftingContent" class="app-container" style="padding: 15px; padding-bottom: 20px;">
-    </div>
-</div>
-
-<div id="casinoScreen" class="full-screen-modal">
-  <div class="modal-header">
-    <span class="modal-title">🎰 Европейская Рулетка (0-36)</span>
-    <button class="modal-close" onclick="toggleCasino(false)">&times;</button>
-  </div>
-  
-  <div style="padding: 20px; text-align: center; overflow-y: auto; flex-grow: 1;">
-    
-    <div id="rouletteStatus" style="font-size: 16px; margin-bottom: 15px; min-height: 20px;">Сделайте ставку</div>
-    <input type="number" id="currentBetAmount" placeholder="Сумма ставки" min="1" value="100" style="padding: 10px; width: 80%; margin-bottom: 15px; border-radius: 8px; border: 1px solid #444; background: #333; color: white;">
-
-    <div class="roulette-board">
-        <div class="number-grid">
-            <div class="bet-cell num-0" style="grid-column: 1 / span 3;" onclick="addBet('number', 0, parseInt(document.getElementById('currentBetAmount').value))">
-                0 (x36) <span id="chip-number-0" class="bet-indicator" style="display:none;">0</span>
-            </div>
-
-            <div class="bet-cell num-red" onclick="addBet('number', 1, parseInt(document.getElementById('currentBetAmount').value))">1 (x36) <span id="chip-number-1" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 2, parseInt(document.getElementById('currentBetAmount').value))">2 (x36) <span id="chip-number-2" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 3, parseInt(document.getElementById('currentBetAmount').value))">3 (x36) <span id="chip-number-3" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 4, parseInt(document.getElementById('currentBetAmount').value))">4 (x36) <span id="chip-number-4" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 5, parseInt(document.getElementById('currentBetAmount').value))">5 (x36) <span id="chip-number-5" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 6, parseInt(document.getElementById('currentBetAmount').value))">6 (x36) <span id="chip-number-6" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 7, parseInt(document.getElementById('currentBetAmount').value))">7 (x36) <span id="chip-number-7" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 8, parseInt(document.getElementById('currentBetAmount').value))">8 (x36) <span id="chip-number-8" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 9, parseInt(document.getElementById('currentBetAmount').value))">9 (x36) <span id="chip-number-9" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 10, parseInt(document.getElementById('currentBetAmount').value))">10 (x36) <span id="chip-number-10" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 11, parseInt(document.getElementById('currentBetAmount').value))">11 (x36) <span id="chip-number-11" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 12, parseInt(document.getElementById('currentBetAmount').value))">12 (x36) <span id="chip-number-12" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 13, parseInt(document.getElementById('currentBetAmount').value))">13 (x36) <span id="chip-number-13" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 14, parseInt(document.getElementById('currentBetAmount').value))">14 (x36) <span id="chip-number-14" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 15, parseInt(document.getElementById('currentBetAmount').value))">15 (x36) <span id="chip-number-15" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 16, parseInt(document.getElementById('currentBetAmount').value))">16 (x36) <span id="chip-number-16" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 17, parseInt(document.getElementById('currentBetAmount').value))">17 (x36) <span id="chip-number-17" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 18, parseInt(document.getElementById('currentBetAmount').value))">18 (x36) <span id="chip-number-18" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 19, parseInt(document.getElementById('currentBetAmount').value))">19 (x36) <span id="chip-number-19" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 20, parseInt(document.getElementById('currentBetAmount').value))">20 (x36) <span id="chip-number-20" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 21, parseInt(document.getElementById('currentBetAmount').value))">21 (x36) <span id="chip-number-21" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 22, parseInt(document.getElementById('currentBetAmount').value))">22 (x36) <span id="chip-number-22" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 23, parseInt(document.getElementById('currentBetAmount').value))">23 (x36) <span id="chip-number-23" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 24, parseInt(document.getElementById('currentBetAmount').value))">24 (x36) <span id="chip-number-24" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 25, parseInt(document.getElementById('currentBetAmount').value))">25 (x36) <span id="chip-number-25" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 26, parseInt(document.getElementById('currentBetAmount').value))">26 (x36) <span id="chip-number-26" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 27, parseInt(document.getElementById('currentBetAmount').value))">27 (x36) <span id="chip-number-27" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 28, parseInt(document.getElementById('currentBetAmount').value))">28 (x36) <span id="chip-number-28" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 29, parseInt(document.getElementById('currentBetAmount').value))">29 (x36) <span id="chip-number-29" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 30, parseInt(document.getElementById('currentBetAmount').value))">30 (x36) <span id="chip-number-30" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 31, parseInt(document.getElementById('currentBetAmount').value))">31 (x36) <span id="chip-number-31" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 32, parseInt(document.getElementById('currentBetAmount').value))">32 (x36) <span id="chip-number-32" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 33, parseInt(document.getElementById('currentBetAmount').value))">33 (x36) <span id="chip-number-33" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 34, parseInt(document.getElementById('currentBetAmount').value))">34 (x36) <span id="chip-number-34" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-black" onclick="addBet('number', 35, parseInt(document.getElementById('currentBetAmount').value))">35 (x36) <span id="chip-number-35" class="bet-indicator" style="display:none;">0</span></div>
-            <div class="bet-cell num-red" onclick="addBet('number', 36, parseInt(document.getElementById('currentBetAmount').value))">36 (x36) <span id="chip-number-36" class="bet-indicator" style="display:none;">0</span></div>
-
-            <div style="grid-column: 1 / span 3; display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px;">
-                <div class="bet-cell color-cell color-low" onclick="addBet('color', 'low', parseInt(document.getElementById('currentBetAmount').value))">1-18 (x2) <span id="chip-color-low" class="bet-indicator" style="display:none;">0</span></div>
-                <div class="bet-cell color-cell num-even" style="background: #555;" onclick="addBet('color', 'even', parseInt(document.getElementById('currentBetAmount').value))">ЧЕТ (x2) <span id="chip-color-even" class="bet-indicator" style="display:none;">0</span></div>
-                <div class="bet-cell color-cell color-red" onclick="addBet('color', 'red', parseInt(document.getElementById('currentBetAmount').value))">КРАСНЫЙ (x2) <span id="chip-color-red" class="bet-indicator" style="display:none;">0</span></div>
-                <div class="bet-cell color-cell color-black" onclick="addBet('color', 'black', parseInt(document.getElementById('currentBetAmount').value))">ЧЕРНЫЙ (x2) <span id="chip-color-black" class="bet-indicator" style="display:none;">0</span></div>
-                <div class="bet-cell color-cell num-odd" style="background: #555;" onclick="addBet('color', 'odd', parseInt(document.getElementById('currentBetAmount').value))">НЕЧЕТ (x2) <span id="chip-color-odd" class="bet-indicator" style="display:none;">0</span></div>
-                <div class="bet-cell color-cell color-high" onclick="addBet('color', 'high', parseInt(document.getElementById('currentBetAmount').value))">19-36 (x2) <span id="chip-color-high" class="bet-indicator" style="display:none;">0</span></div>
-            </div>
-        </div>
-    </div>
-    
-    <h4 style="margin-top: 20px;">Текущие ставки (<span id="betsCount">0</span>/3):</h4>
-    <div id="currentBetsDisplay">
-        <p style="color: #aaa; font-size: 12px; margin: 0;">Ставок нет. Макс. 3 ставки.</p>
-    </div>
-
-    <button id="rouletteSpinBtn" class="btn btn-buy" style="width: 100%; margin-top: 20px; padding: 15px;" onclick="startRoulette()">
-        КРУТИТЬ (Снять <span id="totalBetAmount">0</span>$)
-    </button>
-  </div>
-</div>
-<div id="notification" class="notification"></div>
-
-<div class="app-container">
-  <div class="stats-bar">
-    <div class="stat-item"><span>Баланс</span><div id="balanceDisp">...</div></div>
-    <div class="stat-item"><span>Клик</span><div id="clickDisp">...</div></div>
-    <div class="stat-item"><span>Авто</span><div id="autoDisp">...</div></div>
-  </div>
-
-  <div class="click-section">
-    <button id="clickBtn" onclick="handleClick()">КЛИК</button>
-    
-    <div class="progress-container">
-      <div class="progress-label">До выпадения кейса: <span id="clicksToDrop">50</span> кликов</div>
-      <div class="progress-bar">
-        <div id="progressFill" class="progress-fill"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section-title">Слот Кейса</div>
-  <div id="dropZone" class="drop-zone">
-    <div style="color: #666; font-size: 14px;">Пусто... Кликай, чтобы найти кейс!</div>
-  </div>
-
-  <div class="section-title">Улучшения</div>
-  <div class="menu-grid">
-    <button class="btn btn-buy" onclick="buyUpgrade('click')">Сила Клика<small id="costClick">50$</small></button>
-    <button class="btn btn-buy" onclick="buyUpgrade('auto')">Авто-Клик<small id="costAuto">100$</small></button>
-  </div>
-
-<div class="section-title">Меню</div>
-  <div class="menu-grid">
-    <button class="btn" onclick="toggleCaseStore(true)">
-      📦 МАГАЗИН КЕЙСОВ
-    </button>
-    <button class="btn" onclick="toggleInventory(true)" style="flex-direction: row;
-justify-content: center; gap: 5px;">
-      🎒 ИНВЕНТАРЬ (<span id="invCount">0</span>)
-    </button>
-    <button class="btn" onclick="toggleCrafting(true)">
-      🛠️ КРАФТ
-    </button>
-    <button class="btn" onclick="toggleCasino(true)">
-      🎰 КАЗИНО (РУЛЕТКА)
-    </button>
-    <button id="dailyRewardBtn" class="btn" onclick="showDailyRewardModal()">
-      💰 ЕЖЕДНЕВНАЯ НАГРАДА
-    </button>
-    </div>
-</div>
-</div>
-
-<div id="inventoryScreen" class="full-screen-modal">
-  <div class="modal-header"><span class="modal-title">Инвентарь</span><button class="modal-close" onclick="toggleInventory(false)">&times;</button></div>
-  <div id="inventoryGrid" class="inventory-grid"></div>
-</div>
-
-<div id="caseStoreScreen" class="full-screen-modal">
-  <div class="modal-header"><span class="modal-title">📦 Каталог Кейсов</span><button class="modal-close" onclick="toggleCaseStore(false)">&times;</button></div>
-  <div id="caseStoreContent" class="case-card-list">
-    </div>
-</div>
-
-<div id="caseDetailsModal" class="full-screen-modal">
-    <div class="modal-header">
-        <span id="caseDetailsTitle" class="modal-title"></span>
-        <button class="modal-close" onclick="hideCaseDetails()">&times;</button>
-    </div>
-    <div id="caseDetailsContent">
-        </div>
-</div>
-
-<div id="rouletteScreen" class="roulette-overlay">
-  <div class="roulette-window"><div class="center-line"></div><div class="items-strip" id="strip"></div></div>
-</div>
-
-<div id="dropModal" class="drop-modal">
-  <h2 id="dName" style="margin: 0 0 10px 0;">Item</h2>
-  <img id="dImg" src="" class="drop-img-large">
-  <div class="drop-stat-row"><span>Качество:</span> <span id="dWear">...</span></div>
-  <div class="drop-stat-row"><span>Цена:</span> <span id="dPrice" style="color: #4caf50; font-weight:bold">...</span></div>
-  <div style="display:flex; gap:10px; justify-content:center; margin-top:15px;">
-    <button class="btn" style="background:#333; width: 100px;" onclick="sellDrop()">Продать</button>
-    <button class="btn btn-buy" style="width: 100px;" onclick="keepDrop()">Забрать</button>
-  </div>
-</div>
-
-<div id="dailyRewardModal" class="drop-modal" style="z-index: 1200; max-width: 280px;">
-    <h2 id="drTitle" style="margin: 0 0 10px 0; color: var(--accent);">Ежедневная Награда</h2>
-    <div id="drStatus" style="font-size: 14px; margin-bottom: 15px;"></div>
-    <div id="drCurrent" style="font-size: 16px; font-weight: bold; margin-bottom: 20px;"></div>
-    <button id="drButton" class="btn btn-buy" style="width: 100%;" onclick="claimDailyReward()">ЗАБРАТЬ</button>
-    <button id="drClose" class="btn" style="background:#333; width: 100%; margin-top: 5px;" onclick="document.getElementById('dailyRewardModal').style.display = 'none';">Закрыть</button>
-</div>
-<script>
-  // !!! ВСТАВЬ СЮДА URL ГУГЛ СКРИПТА !!!
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8S-NX65WkQOl9F0ZCXQsem8csJxN0_8-_S6r3h4KWB9Rn8Dx4KZpidHfCH610G-HB/exec'; 
-
-  const DROP_THRESHOLD = 5; // Сколько кликов нужно для кейса
-
-  // =========================================================================
-  // --- НАСТРОЙКА РУЛЕТКИ (37 СЕКТОРОВ: 0-36) ---
-  // Число: [Цвет, Множитель_Полного_Возврата]
-  // Множитель 36 = Выплата 35:1 (возврат ставки + 35х чистый выигрыш)
-  // =========================================================================
-  const ROULETTE_NUMBERS = {
-    0: ['green', 36], 
-    1: ['red', 36], 2: ['black', 36], 3: ['red', 36], 4: ['black', 36], 
-    5: ['red', 36], 6: ['black', 36], 7: ['red', 36], 8: ['black', 36], 
-    9: ['red', 36], 10: ['black', 36], 11: ['black', 36], 12: ['red', 36], 
-    13: ['black', 36], 14: ['red', 36], 15: ['black', 36], 16: ['red', 36], 
-    17: ['black', 36], 18: ['red', 36], 19: ['red', 36], 20: ['black', 36], 
-    21: ['red', 36], 22: ['black', 36], 23: ['red', 36], 24: ['black', 36], 
-    25: ['red', 36], 26: ['black', 36], 27: ['red', 36], 28: ['black', 36], 
-    29: ['black', 36], 30: ['red', 36], 31: ['black', 36], 32: ['red', 36], 
-    33: ['black', 36], 34: ['red', 36], 35: ['black', 36], 36: ['red', 36], 
-  };
-  const MAX_BETS = 3; // Максимальное количество одновременных ставок
-  // =========================================================================
-  
-  // --- НАСТРОЙКА ЕЖЕДНЕВНОЙ НАГРАДЫ ---
-  const DAILY_REWARD_BASE = 100; // Базовая награда за 1-й день
-  const DAILY_REWARD_INCREMENT = 50; // Увеличение за каждый последующий день серии
-  // =========================================================================
-
-  // =========================================================================
-  // --- НАСТРОЙКА ШАНСОВ ВЫПАДЕНИЯ (ФИКСИРОВАННЫЕ ВЕСА) ---
-  // =========================================================================
-  const RARITY_CHANCES = {
-      // 49.00%
-      gray:   { weight: 49000, color: '#b0c3d9', label: 'Common (49.00%)' }, 
-      // 30.00%
-      blue:   { weight: 30000, color: '#4b69ff', label: 'Rare (30.00%)' },
-      // 15.00%
-      purple: { weight: 15000, color: '#8847ff', label: 'Mythical (15.00%)' },
-      // 4.50%
-      pink:   { weight: 4500,  color: '#d32ce6', label: 'Legendary (4.50%)' },
-      // 1.45%
-      red:    { weight: 1450,  color: '#eb4b4b', label: 'Ancient (1.45%)' },
-      // 0.05%
-      gold:   { weight: 50,    color: '#ffd700', label: 'Extraordinary (0.05%)' }
-  };
-  const RARITY_COLORS = { 
-      gray: RARITY_CHANCES.gray.color, blue: RARITY_CHANCES.blue.color, purple: RARITY_CHANCES.purple.color, 
-      pink: RARITY_CHANCES.pink.color, red: RARITY_CHANCES.red.color, gold: RARITY_CHANCES.gold.color 
-  };
-  const TOTAL_WEIGHT = 100000; // Сумма всех весов
-  // =========================================================================
-
-  // 1. БАЗА КЕЙСОВ И ПРЕДМЕТОВ (ВСЁ В ОДНОМ МЕСТЕ)
-  const CASES = [
-    {
-      id: "case_common", 
-      name: "Обычный Кейс", 
-      keyPrice: 50, 
-      image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/CS%20GO%20Weapon%20Case.png?raw=true",
-      
-      // Items - Группировка предметов по редкости
-      items: {
-          gray: [
-              { name: "P250 | Sand Dune", basePrice: 2, image: "" },
-              { name: "Nova | Polar Mesh", basePrice: 3, image: "" }
-          ],
-          blue: [
-              { name: "SG 553 | Ultraviolet", basePrice: 50, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/SG%20553%20Ultraviolet.png?raw=true" },
-			  { name: "AUG | Wings", basePrice: 17, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AUG%20Wings.png?raw=true" },
-			  { name: "MP7 | Skulls", basePrice: 17, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/MP7%20Skulls.png?raw=true" }
-          ],
-          purple: [
-              { name: "Glock-18 | Dragon Tattoo", basePrice: 161, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/Glock-18%20Dragon%20Tattoo.png?raw=true" },
-			  { name: "M4A1-S | Dark Water", basePrice: 122, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/M4A1-S%20Dark%20Water.png?raw=true" },
-			  { name: "USP-S | Dark Water", basePrice: 101, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/M4A1-S%20Dark%20Water.png?raw=true" }
-          ],
-		  pink: [
-              { name: "AK-47 | Case Hardened", basePrice: 980, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AK-47%20Case%20Hardened.png?raw=true" },
-			  { name: "Desert Eagle | Hypnotic", basePrice: 181, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/Desert%20Eagle%20Hypnotic.png?raw=true" }
-          ],
-          red: [
-              { name: "AWP | Lightning Strike", basePrice: 1100, image: "https://github.com/kgmr8cr7p2-del/telegram-clicker/blob/main/CSGO%20Weapon%20Case/AWP%20Lightning%20Strike.png?raw=true" }
-          ],
-          // Pink и Gold не могут выпасть из этого кейса, но это нормально
-      }
-    },
-    {
-      id: "case_rare", 
-      name: "Редкий Кейс", 
-      keyPrice: 300, 
-      image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQh5hlcX0nvUOGsx8DdQBJjIAVHubSaLwJh1P_NP28b6YywxdCIx6_2MOLUw24H7ZYp2-3I94mjjgXmqkU6ZmHzLdCRJgU9NVvQ-1G-w7u508O5vM_KyHpm7nQ8pSGK01d088Q",
-      
-      items: {
-          purple: [
-              { name: "M4A1-S | Decimator", basePrice: 150, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ],
-          pink: [
-              { name: "AK-47 | Redline", basePrice: 400, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ],
-          red: [
-              { name: "AWP | Asiimov", basePrice: 1500, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ],
-          gold: [
-              { name: "★ Karambit | Fade", basePrice: 10000, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvN0_175QlQ2ZAoBvrWyLgJh0P33d0hu7Ti5m420k_mnIbrVk39UscZz2rCX9Nmm3Qy2-hJtMD30cI-WIFM5Z13Vr1LrlOy918W8757BzCc273V05XfD30vgPCCZ4bE/360fx360f" }
-          ]
-      }
-    }
-  ];
-
-  // =========================================================================
-  // --- БЛОК ДЛЯ ВЫПАДЕНИЯ ПРЕДМЕТОВ С КЛИКА ---
-  // =========================================================================
-  // Шанс 0.1% = 1 из 1000
-  const CLICK_DROP_CHANCE = 0.001; 
-  const SPECIAL_CLICK_DROPS = [
-      // !!! ВСТАВЬТЕ СЮДА ВАШИ ПРЕДМЕТЫ !!!
-      // Они будут иметь РЕДКОСТЬ: gray
-      // Пример: { name: "P250 | Sand Dune", basePrice: 2, image: "" },
-      // { name: "Nova | Polar Mesh", basePrice: 3, image: "" }
-  ];
-  // =========================================================================
-
-  let tg = window.Telegram.WebApp; tg.expand();
-  let userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : 10001; 
-
-  // GLOBAL STATE (ОБНОВЛЕННЫЙ)
-  let state = {
-    balance: 0, clickPower: 1, autoClick: 0, inventory: [],
-    activeCase: null,  // ID выпавшего кейса
-    clicksDone: 0,     // Прогресс до следующего кейса
-    lastRewardDay: null, // Дата последнего получения награды (timestamp)
-    rewardStreak: 0,      // Текущая серия (streak)
-    // НОВОЕ ПОЛЕ ДЛЯ РУЛЕТКИ
-    currentBets: [] // [{id: 1, type: 'number', value: 5, amount: 100}, {id: 2, type: 'color', value: 'red', amount: 50}]
-  };
-  let pendingItem = null;
-  
-  // НОВОЕ СОСТОЯНИЕ ДЛЯ КРАФТА
-  let selectedForCrafting = []; // Индексы выбранных предметов в state.inventory
-  let currentCraftRarity = null; // Редкость, которую собираемся крафтить (например, 'gray')
-
-  // --- INITIALIZATION ---
-  async function initGame() {
-    // document.getElementById('loadingScreen').style.display = 'flex'; // Это уже задано в CSS
-    
-    let data = await apiCall('login');
-    
-    // Скрытие экрана загрузки после получения ответа
-    document.getElementById('loadingScreen').style.display = 'none';
-
-    if (data && data.success) {
-      // Logic to handle old/new save format
-      if (Array.isArray(data.inventory)) {
-        state.balance = data.balance;
-        state.clickPower = data.clickPower;
-        state.autoClick = data.autoClick;
-        state.inventory = data.inventory;
-      } else {
-        state.balance = data.balance;
-        state.clickPower = data.clickPower;
-        state.autoClick = data.autoClick;
-        state.inventory = data.inventory.items || [];
-        state.activeCase = data.inventory.activeCase || null;
-        state.clicksDone = data.inventory.clicksDone || 0;
-      }
-
-      // *** ЛОГИКА ДЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ ***
-      state.lastRewardDay = data.lastRewardDay || null;
-      state.rewardStreak = data.rewardStreak || 0;
-      
-      checkDailyReward(); // Проверка и выдача награды
-      // ********************************************
-      
-      if (data.offlineBonus > 0) notify(`Офлайн доход: +${data.offlineBonus}$`);
-      updateUI();
-      
-      setInterval(() => { if (state.autoClick > 0) { state.balance += state.autoClick; updateUI(); }}, 1000);
-      setInterval(saveGameOriginal, 5000); // Используем non-debounced функцию для регулярного интервала
-    } else {
-        notify("Ошибка подключения к БД. Попробуйте перезапустить.");
-    }
-  }
-
-// --- НОВЫЕ ФУНКЦИИ ДЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ ---
-
-  function getDailyRewardValue(streak) {
-      if (streak < 1) streak = 1;
-      return DAILY_REWARD_BASE + (streak - 1) * DAILY_REWARD_INCREMENT;
-  }
-
-  function isRewardReady() {
-      if (!state.lastRewardDay) return true;
-      const now = new Date();
-      const lastRewardDate = new Date(state.lastRewardDay);
-      // Проверяем, прошло ли 24 часа
-      return (now.getTime() - lastRewardDate.getTime()) / (1000 * 60 * 60) >= 24;
-  }
-
-  function checkDailyReward() {
-      if (isRewardReady()) {
-          const now = new Date();
-          let newStreak = 1;
-          
-          if (state.lastRewardDay) {
-              const lastRewardDate = new Date(state.lastRewardDay);
-              const hoursPassed = (now.getTime() - lastRewardDate.getTime()) / (1000 * 60 * 60);
-              
-              // Если прошло меньше 48 часов (т.е. залогинился второй день подряд)
-              if (hoursPassed < 48) { 
-                  newStreak = state.rewardStreak + 1;
-              } else {
-                  notify("Серия ежедневных наград сброшена.");
-              }
-          }
-          
-          // Показываем модалку сразу при входе, если награда готова
-          showDailyRewardModal(true, newStreak);
-      }
-      // Если награда не готова, модалка не показывается автоматически, 
-      // но состояние кнопки в updateUI будет правильным.
-  }
-
-  function showDailyRewardModal(autoShow = false, calculatedStreak = null) {
-      const modal = document.getElementById('dailyRewardModal');
-      const status = document.getElementById('drStatus');
-      const current = document.getElementById('drCurrent');
-      const button = document.getElementById('drButton');
-
-      // ДОБАВЛЕННАЯ ПРОВЕРКА ОТ ОШИБКИ "Cannot set properties of null"
-      if (!modal || !status || !current || !button) {
-          console.error("DR Modal elements missing. Skipping UI update.");
-          return;
-      }
-      
-      const ready = isRewardReady();
-      const streak = calculatedStreak !== null ? calculatedStreak : state.rewardStreak;
-      const reward = getDailyRewardValue(ready ? streak : streak + 1);
-      
-      if (ready) {
-          status.innerHTML = `<span style="color: #4caf50; font-weight: bold;">Готово к получению!</span><br>Серия: ${streak} д.`;
-          current.innerText = `Награда: ${reward}$`;
-          button.style.display = 'block';
-      } else {
-          status.innerHTML = `<span style="color: #aaa;">Награда уже получена сегодня.</span><br>Текущая серия: ${state.rewardStreak} д.`;
-          current.innerText = `След. награда: ${reward}$`;
-          button.style.display = 'none';
-      }
-      
-      // Показать модалку, если это автопоказ при входе ИЛИ ручной клик
-      if (autoShow || !ready) {
-          modal.style.display = 'block';
-      } else if (ready) {
-          // Показать модалку только в случае, если ручной клик и она готова
-          modal.style.display = 'block';
-      }
-      // При ручном клике на кнопку 'Готово' всегда показываем
-      if (!autoShow && ready) modal.style.display = 'block';
-  }
-
-  window.claimDailyReward = function() {
-      if (!isRewardReady()) return; // Защита от получения
-
-      const now = new Date();
-      
-      let newStreak = 1;
-      if (state.lastRewardDay) {
-          const lastRewardDate = new Date(state.lastRewardDay);
-          const hoursPassed = (now.getTime() - lastRewardDate.getTime()) / (1000 * 60 * 60);
-          
-          if (hoursPassed < 48) {
-              newStreak = state.rewardStreak + 1;
-          }
-      } 
-      
-      const reward = getDailyRewardValue(newStreak);
-      
-      state.balance += reward;
-      state.rewardStreak = newStreak;
-      state.lastRewardDay = now.getTime();
-      
-      saveGame(); // *** ВАЖНО: сохранение после получения награды (debounced) ***
-      updateUI();
-      document.getElementById('dailyRewardModal').style.display = 'none';
-      notify(`🎉 Награда получена: ${reward}$! Серия: ${newStreak} д.`);
-  }
-
-// --- КОНЕЦ НОВЫХ ФУНКЦИЙ ДЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ ---
-
-// --- НОВЫЕ ФУНКЦИИ ДЛЯ КАЗИНО (РУЛЕТКИ) ---
-
-  function toggleCasino(show) {
-      document.getElementById('casinoScreen').style.display = show ? 'flex' : 'none';
-      if (show) {
-          document.getElementById('rouletteStatus').innerText = "Сделайте ставку";
-          // Убедиться, что на входе в казино нет ставок, или перерисовать их
-          renderCurrentBets();
-          updateCasinoUI();
-      }
-  }
-
-  // Обновление UI рулетки (счетчик ставок, общая сумма, состояние кнопки)
-  function updateCasinoUI() {
-      const totalBet = state.currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-      document.getElementById('betsCount').innerText = state.currentBets.length;
-      document.getElementById('totalBetAmount').innerText = totalBet;
-
-      const spinBtn = document.getElementById('rouletteSpinBtn');
-      if (state.currentBets.length > 0 && totalBet <= state.balance) {
-          spinBtn.disabled = false;
-          spinBtn.style.opacity = 1;
-      } else {
-          spinBtn.disabled = true;
-          spinBtn.style.opacity = 0.5;
-      }
-      
-      // Обновление чипов на поле (0-36)
-      for (let i = 0; i <= 36; i++) {
-          const chip = document.getElementById(`chip-number-${i}`);
-          const bets = state.currentBets.filter(b => b.type === 'number' && b.value === i);
-          const amount = bets.reduce((sum, b) => sum + b.amount, 0);
-          if (chip) {
-              chip.innerText = amount;
-              chip.style.display = amount > 0 ? 'flex' : 'none';
-          }
-      }
-      // Обновление чипов на секторах (color, odd, even, low, high)
-      ['red', 'black', 'odd', 'even', 'low', 'high'].forEach(sector => {
-          const chip = document.getElementById(`chip-color-${sector}`);
-          const bets = state.currentBets.filter(b => b.type === 'color' && b.value === sector);
-          const amount = bets.reduce((sum, b) => sum + b.amount, 0);
-          if (chip) {
-              chip.innerText = amount;
-              chip.style.display = amount > 0 ? 'flex' : 'none';
-          }
-      });
-  }
-
-  // Добавление ставки
-  window.addBet = function(type, value, amount) {
-      const statusDiv = document.getElementById('rouletteStatus');
-      
-      if (state.currentBets.length >= MAX_BETS) {
-          statusDiv.innerText = `Лимит: можно сделать только ${MAX_BETS} ставки.`;
-          return;
-      }
-
-      amount = parseInt(amount); // Убедимся, что это число
-      
-      if (isNaN(amount) || amount <= 0) {
-          statusDiv.innerText = "Сумма ставки должна быть больше 0";
-          return;
-      }
-      
-      // Временная проверка баланса
-      const potentialTotalBet = state.currentBets.reduce((sum, bet) => sum + bet.amount, 0) + amount;
-      if (potentialTotalBet > state.balance) {
-          statusDiv.innerText = "Недостаточно средств для этой ставки!";
-          return;
-      }
-
-      // Находим существующую ставку такого же типа/значения.
-      let existingBet = state.currentBets.find(b => b.type === type && b.value === value);
-
-      // При ставке на число разрешаем увеличение
-      if (existingBet && type === 'number') {
-          // Если ставка на число уже есть, увеличиваем ее
-          existingBet.amount += amount;
-          statusDiv.innerText = `Ставка на число ${value} увеличена до ${existingBet.amount}$`;
-      } 
-      // При ставке на сектор запрещаем увеличение, так как это занимает 1 из 3 слотов.
-      else if (existingBet && type === 'color') {
-          statusDiv.innerText = `Вы уже поставили на ${value.toUpperCase()}. Макс. 1 ставка на сектор.`;
-          return;
-      } 
-      // Если это новая ставка или ставка на новый сектор
-      else {
-          // Создаем новую ставку
-          const newBet = {
-              id: Date.now() + Math.random(),
-              type: type, // 'number' или 'color'
-              value: value, // число (0-36) или 'red', 'black', 'odd', 'even', 'low', 'high'
-              amount: amount
-          };
-          state.currentBets.push(newBet);
-          
-          let betLabel = type === 'number' ? `число ${value}` : value.toUpperCase();
-          statusDiv.innerText = `Добавлена ставка на ${betLabel}: ${amount}$`;
-      }
-      
-      // Сброс статуса
-      statusDiv.style.color = 'white'; 
-      
-      renderCurrentBets();
-      updateCasinoUI();
-  }
-
-  // Удаление ставки
-  window.removeBet = function(betId) {
-      const index = state.currentBets.findIndex(bet => bet.id === betId);
-      if (index !== -1) {
-          // Возврат денег игроку, так как ставка еще не сыграла
-          const betAmount = state.currentBets[index].amount;
-          state.currentBets.splice(index, 1);
-          
-          document.getElementById('rouletteStatus').innerText = `Ставка на ${betAmount}$ отменена.`;
-          
-          renderCurrentBets();
-          updateCasinoUI();
-      }
-  }
-
-  // Перерисовка списка текущих ставок
-  function renderCurrentBets() {
-      const display = document.getElementById('currentBetsDisplay');
-      
-      if (state.currentBets.length === 0) {
-          display.innerHTML = '<p style="color: #aaa; font-size: 12px; margin: 0;">Ставок нет. Макс. 3 ставки.</p>';
-          return;
-      }
-      
-      let html = '';
-      state.currentBets.forEach(bet => {
-          let label = '';
-          let multiplier = 0;
-          
-          if (bet.type === 'number') {
-              label = `Число: ${bet.value}`;
-              multiplier = ROULETTE_NUMBERS[bet.value][1]; // 36
-          } else {
-              label = `Сектор: ${bet.value.toUpperCase()}`;
-              multiplier = 2; // 2
-          }
-          
-          // Показываем множитель выигрыша (полный возврат)
-          html += `
-              <div class="bet-line">
-                  <span>${label} (x${multiplier}): <strong>${bet.amount}$</strong></span>
-                  <button class="bet-remove" onclick="removeBet(${bet.id})">
-                      &times;
-                  </button>
-              </div>
-          `;
-      });
-      
-      display.innerHTML = html;
-  }
-
-  // Запуск рулетки
-  window.startRoulette = function() {
-      if (state.currentBets.length === 0) {
-          document.getElementById('rouletteStatus').innerText = "Сначала сделайте ставку!";
-          return;
-      }
-      
-      const totalBet = state.currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-      if (totalBet > state.balance) {
-          document.getElementById('rouletteStatus').innerText = "Недостаточно средств для всех ставок!";
-          // Отменяем запуск
-          return;
-      }
-
-      // 1. Снимаем всю сумму ставок с баланса
-      state.balance -= totalBet;
-      updateUI();
-      
-      // 2. Определяем выигрышное число (0 до 36)
-      const winningNumber = Math.floor(Math.random() * 37); 
-      
-      // 3. Расчет выигрыша
-      const result = calculateWinnings(winningNumber);
-      let netWinnings = result.totalPayout - totalBet;
-
-      // 4. Обновление баланса
-      state.balance += result.totalPayout;
-      
-      // 5. Вывод результата
-      const statusDiv = document.getElementById('rouletteStatus');
-      const winningColor = ROULETTE_NUMBERS[winningNumber][0];
-      statusDiv.style.color = netWinnings >= 0 ? '#4caf50' : '#e74c3c';
-      
-      let statusText = `Выпало: ${winningNumber} (${winningColor.toUpperCase()}). `;
-      if (netWinnings >= 0) {
-          statusText += `🎉 ВЫИГРЫШ: +${netWinnings}$ (Общая выплата: ${result.totalPayout}$)`;
-      } else {
-          statusText += `❌ ПРОИГРЫШ: ${netWinnings}$ (Потеряно: ${totalBet - result.totalPayout}$)`;
-      }
-      statusDiv.innerText = statusText;
-      
-      // 6. Очистка и сохранение
-      state.currentBets = [];
-      renderCurrentBets();
-      updateCasinoUI();
-      updateUI();
-      saveGame(); // (debounced)
-  }
-
-  // Функция расчета выигрышей
-  function calculateWinnings(winningNumber) {
-      let totalPayout = 0;
-      const winningColor = ROULETTE_NUMBERS[winningNumber][0];
-
-      state.currentBets.forEach(bet => {
-          let multiplier = 0;
-          
-          if (bet.type === 'number') {
-              // Ставка на число (0-36)
-              if (bet.value === winningNumber) {
-                  // Выплата 35:1. Полный возврат = 36х.
-                  multiplier = 36; 
-              }
-          } else if (bet.type === 'color') {
-              // Ставка на цвет (red, black)
-              if ((bet.value === 'red' && winningColor === 'red') || 
-                  (bet.value === 'black' && winningColor === 'black')) {
-                  multiplier = 2; // Выплата 1:1. Полный возврат = 2х.
-              }
-              
-              // Зеро (0) не считается ни четным, ни нечетным, ни Low/High
-              if (winningNumber !== 0) { 
-                  // Ставка на чет/нечет
-                  if (bet.value === 'odd' && winningNumber % 2 !== 0) {
-                      multiplier = 2;
-                  }
-                  if (bet.value === 'even' && winningNumber % 2 === 0) {
-                      multiplier = 2;
-                  }
-                  
-                  // Ставка на Low/High (1-18 / 19-36)
-                  if (bet.value === 'low' && winningNumber >= 1 && winningNumber <= 18) {
-                      multiplier = 2;
-                  }
-                  if (bet.value === 'high' && winningNumber >= 19 && winningNumber <= 36) {
-                      multiplier = 2;
-                  }
-              }
-          }
-          
-          totalPayout += bet.amount * multiplier;
-      });
-
-      return { totalPayout };
-  }
-
-// --- КОНЕЦ НОВЫХ ФУНКЦИЙ ДЛЯ КАЗИНО ---
-
-
-// --- ИСПРАВЛЕННАЯ ЛОГИКА КРАФТИНГА С ВЫБОРОМ ---
-
-  const CRAFT_COUNT = 10; // Сколько предметов нужно для крафта
-  // Порядок редкостей от самой низкой до самой высокой
-  const RARITY_ORDER = ['gray', 'blue', 'purple', 'pink', 'red', 'gold'];
-
-  function toggleCrafting(show) {
-    const screen = document.getElementById('craftingScreen');
-    screen.style.display = show ? 'flex' : 'none';
-
-    if (show) {
-      renderCraftingScreen();
-    } else {
-        // Сброс состояния выбора при закрытии
-        selectedForCrafting = [];
-        currentCraftRarity = null;
-    }
-  }
-
-  // ИСПРАВЛЕННАЯ ФУНКЦИЯ: ОТОБРАЖЕНИЕ МЕНЮ КРАФТА
-  function renderCraftingScreen() {
-    const content = document.getElementById('craftingContent');
-    content.innerHTML = '';
-    
-    // Подсчет предметов по редкости
-    const countsByRarity = state.inventory.reduce((acc, item) => {
-        acc[item.rarity] = (acc[item.rarity] || 0) + 1;
-        return acc;
-    }, {});
-
-    let canCraftExists = false;
-    // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Режим выбора активен, если установлена текущая редкость крафта
-    const isSelecting = currentCraftRarity !== null;
-
-    // Перебор редкостей от самой низкой до "red"
-    for (let i = 0; i < RARITY_ORDER.length - 1; i++) {
-        const currentRarity = RARITY_ORDER[i];
-        const nextRarity = RARITY_ORDER[i + 1];
+    <div id="shopScreen">
+        <h2>Магазин Усилений</h2>
+        <p style="margin-bottom: 20px;">Ваши монеты: <span id="shopCoinCount">0</span> 🪙</p>
         
-        // В режиме выбора показываем только выбранную секцию
-        if (isSelecting && currentRarity !== currentCraftRarity) continue; 
-
-        const count = countsByRarity[currentRarity] || 0;
-        const rarityInfo = RARITY_CHANCES[currentRarity];
-        const nextRarityInfo = RARITY_CHANCES[nextRarity];
+        <button class="shopItem" data-powerup="magnet" data-cost="5">
+            Магнитная Ловушка (15 сек) - 5 🪙
+        </button>
         
-        // Показываем секцию, если можно крафтить ИЛИ если она выбрана для крафта
-        if (count >= CRAFT_COUNT || currentRarity === currentCraftRarity) {
-          canCraftExists = true;
-          
-          const maxCrafts = Math.floor(count / CRAFT_COUNT);
-          const nextRarityLabel = nextRarityInfo.label.split(' ')[0];
+        <button id="closeShopButton" style="padding: 10px 20px; margin-top: 30px; background-color: #888; color: white; border: none; border-radius: 5px; cursor: pointer;">Закрыть</button>
+    </div>
 
-          const craftSection = document.createElement('div');
-          craftSection.style.marginBottom = '20px';
-          
-          // ЗАГОЛОВОК
-          let headerHTML = `
-            <h4 style="color: ${rarityInfo.color}; border-left: 4px solid ${rarityInfo.color}; padding-left: 10px; margin-bottom: 10px;">
-              ${rarityInfo.label.split(' ')[0]} -> ${nextRarityLabel}
-            </h4>
-          `;
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // --- КОНФИГУРАЦИЯ ИГРЫ ---
+        const CANVAS_WIDTH = 320; 
+        const CANVAS_HEIGHT = 480; 
 
-          // ПАНЕЛЬ КНОПОК
-          let buttonPanelHTML = '';
-          if (!isSelecting) {
-              // Режим просмотра: кнопка "Выбрать"
-              buttonPanelHTML = `
-                  <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px; border-radius: 8px;">
-                      <span>В наличии: ${count} шт. (${CRAFT_COUNT} = 1 ${nextRarityLabel})</span>
-                      <button class="btn btn-buy" style="padding: 8px 12px;" 
-                              onclick="enterCraftingSelection('${currentRarity}')" ${count < CRAFT_COUNT ? 'disabled' : ''}>
-                          Выбрать ${CRAFT_COUNT}
-                      </button>
-                  </div>
-              `;
-          } else if (currentRarity === currentCraftRarity) {
-              // Режим выбора: счетчик и кнопки "Отмена/Скрафтить"
-              buttonPanelHTML = `
-                  <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-                      <span>Выбрано: <strong style="color: ${selectedForCrafting.length === CRAFT_COUNT ? '#4caf50' : 'var(--accent)'}">${selectedForCrafting.length}</strong> / ${CRAFT_COUNT}</span>
-                      <div style="display:flex; gap: 5px;">
-                          <button class="btn" style="padding: 8px 12px; background: #555;" 
-                                  onclick="cancelCrafting()">
-                              Отмена
-                          </button>
-                          <button class="btn btn-buy" style="padding: 8px 12px;" 
-                                  onclick="performCraft()" ${selectedForCrafting.length !== CRAFT_COUNT ? 'disabled' : ''}>
-                              Скрафтить (1 ${nextRarityLabel})
-                          </button>
-                      </div>
-                  </div>
-              `;
-          }
-          
-          craftSection.innerHTML = headerHTML + buttonPanelHTML;
-          content.appendChild(craftSection);
+        const PLAYER_WIDTH = 60;
+        const PLAYER_HEIGHT = 20;
+        const PLAYER_SPEED = 5; 
+        
+        const ITEM_SIZE = 20;
+        const ITEM_SPEED_MIN = 1.5;
+        const ITEM_SPEED_MAX = 3.5;
+        const ITEM_SPAWN_INTERVAL = 800; 
 
-          // СЕТКА ПРЕДМЕТОВ ДЛЯ ВЫБОРА
-          if (isSelecting && currentRarity === currentCraftRarity) {
-              const invGrid = document.createElement('div');
-              invGrid.className = 'inventory-grid selecting'; // Добавляем класс для стилизации режима выбора
-              
-              state.inventory.forEach((item, index) => {
-                  if (item.rarity === currentRarity) {
-                      const isSelected = selectedForCrafting.includes(index);
-                      
-                      let div = document.createElement('div');
-                      div.className = 'inv-card' + (isSelected ? ' selected' : '');
-                      div.style.borderTopColor = RARITY_COLORS[item.rarity];
-                      div.setAttribute('data-index', index);
-                      // Привязываем клик к функции переключения выбора
-                      div.setAttribute('onclick', `toggleCraftItem(${index})`); 
-                      
-                      let tickHtml = isSelected ? '<div class="selected-tick">✓</div>' : '';
-                      
-                      div.innerHTML = `
-                          ${tickHtml}
-                          <img src="${item.image}">
-                          <div style="font-size:9px; text-align:center; margin-bottom:5px; color:${RARITY_COLORS[item.rarity]}">${item.name}</div>
-                          <button class="inv-sell-btn">${item.price}$</button>
-                      `;
-                      invGrid.appendChild(div);
-                  }
-              });
+        const RARE_ITEM_CHANCE = 0.05; 
+        const POWERUP_CHANCE = 0.02;   
+        
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwihlQR-gtXmLNbkTE9a8gbBqxoR07FQixnJuxPKbmdV8mMCjzRe36Iey-iEbtEIOfFEQ/exec'; 
+        // !!! ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ ЭТОТ URL !!!
 
-              content.appendChild(invGrid);
-          }
+        // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ИГРЫ ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const rareCoinDisplay = document.getElementById('rareCoinDisplay');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreSpan = document.getElementById('finalScore');
+        const restartButton = document.getElementById('restartButton');
+        const shopScreen = document.getElementById('shopScreen');
+        const loadingText = document.getElementById('loadingText');
+
+        let player = {
+            x: CANVAS_WIDTH / 2 - PLAYER_WIDTH / 2,
+            y: CANVAS_HEIGHT - PLAYER_HEIGHT - 10,
+            width: PLAYER_WIDTH,
+            height: PLAYER_HEIGHT,
+            color: '#FF6347'
+        };
+
+        let items = [];
+        let score = 0;
+        let rareCoins = 0;
+        let lastItemSpawnTime = 0;
+        let gameRunning = false;
+        let animationFrameId;
+        
+        let currentPlayerWidth = PLAYER_WIDTH;
+        let multiDropActive = false;
+        let multiDropEndTime = 0; 
+        let magnetActive = false;
+        let magnetEndTime = 0; 
+
+        // Telegram Web Apps SDK
+        let tg = null;
+        let telegramUserId = 'unknown';
+        let telegramUsername = 'Anonymous';
+
+        // --- ЛОГИКА ЗАГРУЗКИ АКТИВОВ (ИЗОБРАЖЕНИЙ) ---
+        const imagePaths = {
+            basket: 'basket.jpg', 
+            common: 'item_common.jpg', 
+            rare_coin: 'coin_rare.jpg', 
+            powerup: 'powerup.jpg'
+        };
+
+        let images = {}; 
+        let imagesLoaded = false; 
+
+        function loadAssets(callback) {
+            let loadedCount = 0;
+            const totalCount = Object.keys(imagePaths).length;
+
+            for (const key in imagePaths) {
+                if (Object.hasOwnProperty.call(imagePaths, key)) {
+                    images[key] = new Image();
+                    images[key].onload = () => {
+                        loadedCount++;
+                        loadingText.textContent = `Загрузка: ${Math.round((loadedCount / totalCount) * 100)}%`;
+                        if (loadedCount === totalCount) {
+                            imagesLoaded = true;
+                            loadingText.style.display = 'none';
+                            console.log('Все изображения загружены.');
+                            callback(); 
+                        }
+                    };
+                    images[key].onerror = () => {
+                        console.error(`Ошибка загрузки изображения: ${imagePaths[key]}. Будет использован резервный цвет.`);
+                        // Даже при ошибке, продолжаем, чтобы не блокировать игру
+                        loadedCount++; 
+                        if (loadedCount === totalCount) {
+                            imagesLoaded = true;
+                            loadingText.style.display = 'none';
+                            callback();
+                        }
+                    };
+                    images[key].src = imagePaths[key];
+                }
+            }
         }
-    }
-    
-    if (!canCraftExists && !isSelecting) {
-        content.innerHTML = '<p style="text-align:center; color:#aaa;">У вас нет 10 одинаковых предметов для крафта.</p>';
-    }
-  }
 
-  // НОВАЯ ФУНКЦИЯ: ИНИЦИАЛИЗАЦИЯ ВЫБОРА
-  window.enterCraftingSelection = function(rarity) {
-      currentCraftRarity = rarity;
-      selectedForCrafting = [];
-      renderCraftingScreen();
-  }
+        // --- ИНИЦИАЛИЗАЦИЯ ---
+        function initTelegramWebApp() {
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = Telegram.WebApp;
+                tg.ready();
+                
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    telegramUserId = tg.initDataUnsafe.user.id;
+                    telegramUsername = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name || 'Anonymous';
+                }
+                
+                // Избегаем методов, несовместимых с версией 6.0
+                if (tg.version >= '6.1') {
+                     if (tg.BackButton) tg.BackButton.hide();
+                     if (tg.MainButton) tg.MainButton.hide();
+                }
 
-  // НОВАЯ ФУНКЦИЯ: ОТМЕНА ВЫБОРА
-  window.cancelCrafting = function() {
-      currentCraftRarity = null;
-      selectedForCrafting = [];
-      renderCraftingScreen();
-  }
-  
-  // НОВАЯ ФУНКЦИЯ: ПЕРЕКЛЮЧЕНИЕ ВЫБРАННОГО ПРЕДМЕТА
-  window.toggleCraftItem = function(index) {
-      const item = state.inventory[index];
-      if (item.rarity !== currentCraftRarity) return; // Защита от выбора неправильной редкости
-
-      const idxInSelected = selectedForCrafting.indexOf(index);
-
-      if (idxInSelected > -1) {
-          // Удалить из выбранных
-          selectedForCrafting.splice(idxInSelected, 1);
-      } else {
-          // Добавить, если не превышает лимит
-          if (selectedForCrafting.length < CRAFT_COUNT) {
-              selectedForCrafting.push(index);
-          } else {
-              notify(`Нужно выбрать ровно ${CRAFT_COUNT} предметов.`);
-          }
-      }
-      renderCraftingScreen(); // Перерисовка для обновления чекбоксов и счетчика
-  }
-
-  // 2. Обновление функции performCraft (теперь без аргументов)
-  window.performCraft = function() {
-      if (selectedForCrafting.length !== CRAFT_COUNT || !currentCraftRarity) {
-          notify(`Для крафта требуется ровно ${CRAFT_COUNT} предметов!`);
-          return;
-      }
-      
-      const rarityToConsume = currentCraftRarity;
-      const nextRarityIndex = RARITY_ORDER.indexOf(rarityToConsume) + 1;
-      const nextRarity = RARITY_ORDER[nextRarityIndex];
-
-      if (!nextRarity || nextRarity === 'gold') {
-          notify("Нельзя скрафтить выше Красного!"); 
-          return;
-      }
-
-      // 1. Удаление выбранных предметов из инвентаря
-      // Важно: сортируем индексы в обратном порядке (от большего к меньшему), 
-      // чтобы state.inventory.splice не сбивал нумерацию при удалении
-      selectedForCrafting.sort((a, b) => b - a).forEach(index => {
-          state.inventory.splice(index, 1);
-      });
-
-      // 2. Добавление нового, более редкого предмета
-      const availableCases = CASES.filter(c => Object.keys(c.items).includes(nextRarity));
-      if (availableCases.length === 0) {
-          notify("Ошибка! Нет кейсов с предметами нужной редкости.");
-          return;
-      }
-      
-      // Выбираем случайный кейс
-      const randomCase = availableCases[Math.floor(Math.random() * availableCases.length)];
-      // Выбираем случайный предмет только нужной редкости
-      const availableItems = randomCase.items[nextRarity];
-      const tpl = availableItems[Math.floor(Math.random() * availableItems.length)];
-      
-      // Генерируем новый предмет с нужной редкостью
-      const newItem = generateItemObj({ ...tpl, rarity: nextRarity });
-      state.inventory.push(newItem);
-      
-      // Сброс состояния выбора
-      currentCraftRarity = null;
-      selectedForCrafting = [];
-      
-      updateUI();
-      saveGame(); // (debounced)
-      renderCraftingScreen(); // Перерисовка меню крафта
-      
-      notify(`Скрафчен 1x ${newItem.name} (${newItem.wear})!`);
-  }
-  
-  // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ КРАФТИНГА ---
-
-  // --- CLICK & DROP LOGIC ---
-  function handleClick() {
-    state.balance += state.clickPower;
-    
-    // *** НОВЫЙ БЛОК: 0.1% ШАНС ВЫПАДЕНИЯ ***
-    if (Math.random() < CLICK_DROP_CHANCE && SPECIAL_CLICK_DROPS.length > 0) {
-        dropSpecialClickItem();
-    }
-    // ***********************************
-
-    if (!state.activeCase) {
-      state.clicksDone++;
-      if (state.clicksDone >= DROP_THRESHOLD) {
-        dropRandomCase();
-        state.clicksDone = 0;
-      }
-    }
-    updateUI();
-  }
-  
-  // --- НОВАЯ ФУНКЦИЯ: ВЫПАДЕНИЕ ПРЕДМЕТА ПРИ КЛИКЕ ---
-  function dropSpecialClickItem() {
-      if (SPECIAL_CLICK_DROPS.length === 0) return;
-
-      // 1. Выбираем случайный предмет из списка
-      const tpl = SPECIAL_CLICK_DROPS[Math.floor(Math.random() * SPECIAL_CLICK_DROPS.length)];
-      
-      // 2. Генерируем полный объект предмета, принудительно устанавливая 'gray' редкость
-      const newItem = generateItemObj({ 
-          ...tpl, 
-          rarity: 'gray' 
-      });
-
-      // 3. Добавляем в инвентарь
-      state.inventory.push(newItem);
-      
-      // 4. Уведомление
-      notify(`🎉 Повезло! Выпал ${newItem.name} (${newItem.wear})!`);
-      
-      // 5. Сохранение (сразу, так как это важное событие, debounced)
-      saveGame(); 
-  }
-
-  function dropRandomCase() {
-    // 80% Common, 20% Rare drop chance for the case itself
-    let isRare = Math.random() > 0.8; 
-    let dropped = isRare ? CASES.find(c => c.id === 'case_rare') : CASES.find(c => c.id === 'case_common');
-    
-    state.activeCase = dropped.id;
-    notify(`ВЫПАЛ ${dropped.name.toUpperCase()}!`);
-    saveGame(); // (debounced)
-  }
-
-  function buyKeyAndOpen() {
-    if (!state.activeCase) return;
-    
-    let caseObj = CASES.find(c => c.id === state.activeCase);
-    if (state.balance >= caseObj.keyPrice) {
-      state.balance -= caseObj.keyPrice;
-      
-      spinRoulette(caseObj);
-      
-      state.activeCase = null;
-      updateUI();
-    } else {
-      notify("Не хватает денег на ключ!");
-    }
-  }
-
-  // --- ROULETTE (CASE OPEN) ---
-  function spinRoulette(caseObj) {
-    const overlay = document.getElementById('rouletteScreen');
-    const strip = document.getElementById('strip');
-    overlay.style.display = 'flex';
-    strip.innerHTML = '';
-    strip.style.transition = 'none';
-    strip.style.transform = 'translateX(0px)';
-
-    let items = [];
-    const winIndex = 35;
-    
-    for(let i=0; i<50; i++) {
-      let tpl = getRandomItemFromCase(caseObj);
-      let item = generateItemObj(tpl);
-      items.push(item);
-      
-      let div = document.createElement('div');
-      div.className = 'roulette-item';
-      let stripe = document.createElement('div');
-      stripe.className = 'rarity-stripe';
-      stripe.style.background = RARITY_COLORS[item.rarity];
-      let img = document.createElement('img');
-      img.src = item.image;
-      div.append(img, stripe);
-      strip.appendChild(div);
-    }
-
-    pendingItem = items[winIndex];
-
-    setTimeout(() => {
-      let offset = (winIndex * 131) - (window.innerWidth / 2) + 65 + (Math.random() * 60 - 30);
-      strip.style.transition = "transform 5s cubic-bezier(0.15, 0, 0.10, 1)";
-      strip.style.transform = `translateX(-${offset}px)`;
-    }, 50);
-
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      showDropModal();
-      saveGame(); // (debounced)
-    }, 5500);
-  }
-
-  // --- HELPERS (NEW LOGIC) ---
-  function getRarityByChance() {
-    let r = Math.random() * TOTAL_WEIGHT; 
-    let currentSum = 0;
-    
-    for (const rarity in RARITY_CHANCES) {
-        currentSum += RARITY_CHANCES[rarity].weight;
-        if (r <= currentSum) {
-            return rarity;
+            } else {
+                console.warn('Telegram Web App SDK not found or not ready. Running in test mode.');
+            }
         }
-    }
-    return 'gray'; 
-  }
 
-  function getRandomItemFromCase(caseObj) {
-      const allRarities = Object.keys(RARITY_CHANCES);
-      let selectedRarity = getRarityByChance();
-      
-      let rarityIndex = allRarities.indexOf(selectedRarity);
-      while(rarityIndex >= 0 && (!caseObj.items[selectedRarity] || caseObj.items[selectedRarity].length === 0)) {
-          rarityIndex++;
-          selectedRarity = allRarities[rarityIndex];
-      }
+        // --- ОСНОВНЫЕ ФУНКЦИИ ИГРЫ ---
 
-      if (!caseObj.items[selectedRarity] || caseObj.items[selectedRarity].length === 0) {
-          const availableRarities = Object.keys(caseObj.items).filter(r => caseObj.items[r].length > 0);
-          if (availableRarities.length > 0) {
-              selectedRarity = availableRarities[Math.floor(Math.random() * availableRarities.length)];
-          } else {
-              return { name: "Ошибка!", rarity: "gray", basePrice: 0, image: "" }; 
-          }
-      }
-      
-      const availableItems = caseObj.items[selectedRarity];
-      const tpl = availableItems[Math.floor(Math.random() * availableItems.length)];
-      
-      return { ...tpl, rarity: selectedRarity };
-  }
-
-  function generateItemObj(tpl) {
-    let float = Math.random(); 
-    let mult = 1 + (0.5 - float);
-    return {
-      id: Date.now() + Math.random(),
-      name: tpl.name, rarity: tpl.rarity, image: tpl.image,
-      float: float.toFixed(3),
-      wear: getWearName(float),
-      price: Math.floor(tpl.basePrice * mult)
-    };
-  }
-
-  function getWearName(f) {
-    if (f < 0.07) return "Прямо с завода";
-    if (f < 0.15) return "Немного поношенное";
-    if (f < 0.38) return "После полевых";
-    if (f < 0.45) return "Поношенное";
-    return "Закаленное в боях";
-  }
-
-  // --- UI UPDATE (ОБНОВЛЕННЫЙ) ---
-  function updateUI() {
-    document.getElementById('balanceDisp').innerText = Math.floor(state.balance) + "$";
-    document.getElementById('clickDisp').innerText = "+" + state.clickPower;
-    document.getElementById('autoDisp').innerText = state.autoClick + "/s";
-    document.getElementById('costClick').innerText = (50 * state.clickPower) + "$";
-    document.getElementById('costAuto').innerText = (100 * (state.autoClick + 1)) + "$";
-    document.getElementById('invCount').innerText = state.inventory.length;
-
-    let progress = Math.min(state.clicksDone, DROP_THRESHOLD);
-    let pct = (progress / DROP_THRESHOLD) * 100;
-    document.getElementById('progressFill').style.width = pct + "%";
-    document.getElementById('clicksToDrop').innerText = Math.max(0, DROP_THRESHOLD - progress);
-
-    const dz = document.getElementById('dropZone');
-    if (state.activeCase) {
-      let c = CASES.find(x => x.id === state.activeCase);
-      dz.className = "drop-zone active";
-      dz.innerHTML = `
-        <div class="case-display">
-          <div class="case-title">${c.name}</div>
-          <img src="${c.image}" class="case-img">
-          <div class="key-price">Цена ключа: ${c.keyPrice}$</div>
-          <button class="btn btn-key" onclick="buyKeyAndOpen()">КУПИТЬ КЛЮЧ</button>
-        </div>
-      `;
-    } else {
-      dz.className = "drop-zone";
-      dz.innerHTML = `<div style="color: #666; font-size: 14px;">Пусто... Кликай (${state.clicksDone}/${DROP_THRESHOLD})</div>`;
-    }
-
-    // Обновление кнопки ежедневной награды
-    const rewardBtn = document.getElementById('dailyRewardBtn');
-    if (isRewardReady()) {
-        const nextStreak = state.rewardStreak + 1;
-        rewardBtn.innerHTML = `
-            💰 ЕЖЕДНЕВНАЯ НАГРАДА
-            <small style="color: #4caf50;">ГОТОВО! +${getDailyRewardValue(nextStreak)}$</small>
-        `;
-        rewardBtn.classList.add('btn-buy');
-    } else {
-        const currentStreak = state.rewardStreak;
-        rewardBtn.innerHTML = `
-            💰 ЕЖЕДНЕВНАЯ НАГРАДА
-            <small style="color: #aaa;">Серия: ${currentStreak} д.</small>
-        `;
-        rewardBtn.classList.remove('btn-buy');
-    }
-  }
-
-  // --- MODALS & API ---
-  function showDropModal() {
-    let m = document.getElementById('dropModal');
-    document.getElementById('dName').innerText = pendingItem.name;
-    document.getElementById('dName').style.color = RARITY_COLORS[pendingItem.rarity];
-    document.getElementById('dImg').src = pendingItem.image;
-    document.getElementById('dWear').innerText = `${pendingItem.wear} (${pendingItem.float})`;
-    document.getElementById('dPrice').innerText = pendingItem.price + "$";
-    m.style.display = 'block';
-  }
-  
-  function sellDrop() { 
-      state.balance += pendingItem.price; 
-      document.getElementById('dropModal').style.display = 'none'; 
-      notify(`+${pendingItem.price}$`); 
-      updateUI(); 
-      saveGame(); // (debounced)
-  }
-  
-function keepDrop() { 
-      state.inventory.push(pendingItem);
-      document.getElementById('dropModal').style.display = 'none'; 
-      notify("В инвентаре"); 
-      updateUI(); 
-      saveGame(); // (debounced)
-      if (document.getElementById('inventoryScreen').style.display === 'flex') {
-          toggleInventory(true);
-      }
-      if (document.getElementById('craftingScreen').style.display === 'flex') {
-          renderCraftingScreen(); // Используем новую функцию для перерисовки
-      }
-  }
-  
-  function toggleInventory(show) {
-    const g = document.getElementById('inventoryGrid');
-    document.getElementById('inventoryScreen').style.display = show ? 'flex' : 'none';
-    if(show) {
-      // Убираем класс selecting на всякий случай, чтобы показать кнопки Продать
-      g.className = 'inventory-grid'; 
-      g.innerHTML = '';
-      state.inventory.forEach((it, idx) => {
-        let div = document.createElement('div'); div.className='inv-card'; div.style.borderTopColor=RARITY_COLORS[it.rarity];
-        div.innerHTML = `<img src="${it.image}"><div style="font-size:9px; text-align:center; margin-bottom:5px; color:${RARITY_COLORS[it.rarity]}">${it.name}</div><button class="inv-sell-btn" onclick="sellInv(${idx})">${it.price}$</button>`;
-        g.appendChild(div);
-      });
-    }
-  }
-  
-  // --- НОВАЯ ЛОГИКА ДЛЯ МАГАЗИНА КЕЙСОВ ---
-  
-  // 1. Отображает список кейсов с кнопкой "Подробнее"
-  function toggleCaseStore(show) {
-    const store = document.getElementById('caseStoreContent');
-    document.getElementById('caseStoreScreen').style.display = show ? 'flex' : 'none';
-
-    if (show) {
-        store.innerHTML = ''; // Очистка перед заполнением
-        
-        CASES.forEach(caseObj => {
-            let cardHTML = `
-                <div class="case-list-item">
-                    <div class="case-list-info">
-                        <img src="${caseObj.image}" alt="${caseObj.name}">
-                        <div>
-                            <h3>${caseObj.name}</h3>
-                            <p>Цена ключа: ${caseObj.keyPrice}$</p>
-                        </div>
-                    </div>
-                    <button class="case-details-btn" onclick="showCaseDetails('${caseObj.id}')">
-                        Подробнее
-                    </button>
-                </div>
-            `;
-            store.innerHTML += cardHTML;
-        });
-    }
-  }
-
-  // 2. Отображает детали выбранного кейса
-  window.showCaseDetails = function(caseId) {
-    const caseObj = CASES.find(c => c.id === caseId);
-    if (!caseObj) return;
-
-    const detailsModal = document.getElementById('caseDetailsModal');
-    const content = document.getElementById('caseDetailsContent');
-    document.getElementById('caseDetailsTitle').innerText = `Содержимое ${caseObj.name}`;
-    content.innerHTML = '';
-    
-    let allItemsHtml = '';
-
-    // Проходим по всем возможным редкостям (от самой редкой к самой обычной)
-    Object.keys(RARITY_CHANCES).reverse().forEach(rarityKey => {
-        const itemsInRarity = caseObj.items[rarityKey];
-        
-        if (itemsInRarity && itemsInRarity.length > 0) {
-            const rarityInfo = RARITY_CHANCES[rarityKey];
+        function startGame() {
+            if (!imagesLoaded) return; // Не запускаем, пока активы не загружены
             
-            let gridHtml = '<div class="details-item-grid">';
+            player.x = CANVAS_WIDTH / 2 - PLAYER_WIDTH / 2;
+            items = [];
+            score = 0; 
             
-            itemsInRarity.forEach(item => {
-                gridHtml += `
-                    <div class="details-item-card" style="border-top-color: ${rarityInfo.color};">
-                        <img src="${item.image}" alt="${item.name}">
-                        <span style="color: ${rarityInfo.color};">${item.name}</span>
-                        <div class="details-item-rarity">${rarityInfo.label.split(' ')[0]}</div>
-                    </div>
-                `;
+            currentPlayerWidth = PLAYER_WIDTH; 
+            multiDropActive = false;
+            magnetActive = false;
+            multiDropEndTime = 0;
+            magnetEndTime = 0;
+
+            scoreDisplay.textContent = `Счет: ${score}`;
+            rareCoinDisplay.textContent = `Монеты: ${rareCoins}`;
+
+            gameOverScreen.style.display = 'none';
+            shopScreen.style.display = 'none';
+
+            gameRunning = true;
+            lastItemSpawnTime = Date.now();
+            
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            gameLoop();
+        }
+
+        function endGame() {
+            gameRunning = false;
+            cancelAnimationFrame(animationFrameId);
+            finalScoreSpan.textContent = score;
+            gameOverScreen.style.display = 'flex';
+            sendScoreToGAS(score);
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            update();
+            draw();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function spawnItem() {
+            const x = Math.random() * (CANVAS_WIDTH - ITEM_SIZE);
+            const speed = ITEM_SPEED_MIN + Math.random() * (ITEM_SPEED_MAX - ITEM_SPEED_MIN);
+            
+            let type = 'common';
+            let color = '#ADFF2F'; 
+            let size = ITEM_SIZE;
+
+            if (Math.random() < POWERUP_CHANCE) {
+                type = 'powerup';
+                color = '#00CED1';
+                size = ITEM_SIZE * 1.5;
+            } 
+            else if (Math.random() < RARE_ITEM_CHANCE) {
+                type = 'rare_coin';
+                color = '#FFD700';
+                size = ITEM_SIZE * 0.75;
+            } 
+
+            items.push({ 
+                x: x, 
+                y: 0, 
+                size: size, 
+                speed: speed, 
+                color: color,
+                type: type
             });
             
-            gridHtml += '</div>';
-
-            allItemsHtml += `
-                <div style="margin-bottom: 20px;">
-                    <h4 style="color: ${rarityInfo.color}; border-left: 4px solid ${rarityInfo.color}; padding-left: 10px;">${rarityInfo.label}</h4>
-                    ${gridHtml}
-                </div>
-            `;
+            if (multiDropActive) {
+                items.push({ 
+                    x: Math.random() * (CANVAS_WIDTH - ITEM_SIZE), 
+                    y: 0, 
+                    size: ITEM_SIZE, 
+                    speed: speed * 1.2, 
+                    color: '#ADFF2F',
+                    type: 'common'
+                 });
+            }
         }
-    });
 
-    if (allItemsHtml === '') {
-        content.innerHTML = '<p style="text-align:center;">Кейс пуст или данные не найдены.</p>';
-    } else {
-        content.innerHTML = allItemsHtml;
-    }
+        function update() {
+            const currentTime = Date.now();
 
-    detailsModal.style.display = 'flex';
-  }
+            if (multiDropActive && currentTime > multiDropEndTime) {
+                multiDropActive = false;
+                console.log('Multi-Drop усиление закончилось.');
+            }
+            if (magnetActive && currentTime > magnetEndTime) {
+                magnetActive = false;
+                console.log('Магнитное усиление закончилось.');
+            }
 
-  // 3. Скрывает детали кейса
-  window.hideCaseDetails = function() {
-    document.getElementById('caseDetailsModal').style.display = 'none';
-  }
-  // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+            if (currentTime - lastItemSpawnTime > ITEM_SPAWN_INTERVAL) {
+                spawnItem();
+                lastItemSpawnTime = currentTime;
+            }
+
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                
+                if (magnetActive) {
+                     const playerCenter = player.x + currentPlayerWidth / 2;
+                     const itemCenter = item.x + item.size / 2;
+                     
+                     if (itemCenter < playerCenter) {
+                         item.x += PLAYER_SPEED * 0.5; 
+                     } else if (itemCenter > playerCenter) {
+                         item.x -= PLAYER_SPEED * 0.5;
+                     }
+                }
+                
+                item.y += item.speed;
+
+                // Проверка столкновения
+                if (
+                    item.y + item.size > player.y &&
+                    item.y < player.y + player.height &&
+                    item.x + item.size > player.x &&
+                    item.x < player.x + currentPlayerWidth
+                ) {
+                    if (item.type === 'common') {
+                        score++;
+                    } else if (item.type === 'rare_coin') {
+                        rareCoins++;
+                        rareCoinDisplay.textContent = `Монеты: ${rareCoins}`;
+                    } else if (item.type === 'powerup') {
+                        activatePowerup();
+                    }
+                    
+                    scoreDisplay.textContent = `Счет: ${score}`;
+                    items.splice(i, 1);
+                } 
+                else if (item.y > CANVAS_HEIGHT) {
+                    items.splice(i, 1);
+                }
+            }
+        }
+
+        // --- ФУНКЦИЯ ОТРИСОВКИ (С ИЗОБРАЖЕНИЯМИ) ---
+        function draw() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); 
+
+            if (!imagesLoaded) {
+                // Если изображения еще не загружены, просто ничего не рисуем (или рисуем текст)
+                return; 
+            }
+
+            // 1. Отрисовываем ловушку (корзинку)
+            if (images.basket && images.basket.complete) {
+                ctx.drawImage(
+                    images.basket, 
+                    player.x, 
+                    player.y, 
+                    currentPlayerWidth, 
+                    player.height
+                );
+            } else {
+                // Резервный вариант
+                ctx.fillStyle = player.color;
+                ctx.fillRect(player.x, player.y, currentPlayerWidth, player.height);
+            }
 
 
-  window.sellInv = function(i) { state.balance += state.inventory[i].price; state.inventory.splice(i, 1); toggleInventory(true); updateUI(); saveGame(); } // (debounced)
-  
-  function buyUpgrade(t) { 
-      let c = t==='click'?50*state.clickPower:100*(state.autoClick+1); 
-      if(state.balance>=c){
-          state.balance-=c; 
-          t==='click'?state.clickPower++:state.autoClick++; 
-          updateUI();
-          saveGame(); // (debounced)
-      } 
-  }
-  
-  // =========================================================================
-  // --- ИСПРАВЛЕННЫЙ БЛОК ДЛЯ СОХРАНЕНИЯ ---
-  // =========================================================================
+            // 2. Отрисовываем падающие предметы
+            items.forEach(item => {
+                let itemImage = null;
+                
+                if (item.type === 'rare_coin') {
+                    itemImage = images.rare_coin;
+                } else if (item.type === 'powerup') {
+                    itemImage = images.powerup;
+                } else {
+                    itemImage = images.common;
+                }
+                
+                if (itemImage && itemImage.complete) {
+                    ctx.drawImage(itemImage, item.x, item.y, item.size, item.size);
+                } else {
+                    // Резервный вариант
+                    ctx.fillStyle = item.color;
+                    ctx.fillRect(item.x, item.y, item.size, item.size);
+                }
+                
+                // Визуальное обозначение притяжения
+                if (magnetActive) {
+                    ctx.strokeStyle = '#FFFFFF'; 
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(item.x - 1, item.y - 1, item.size + 2, item.size + 2);
+                }
+            });
+        }
 
-  // НОВАЯ ФУНКЦИЯ: Debounce Utility
-  function debounce(func, timeout = 1000){
-      let timer;
-      return (...args) => {
-          clearTimeout(timer);
-          timer = setTimeout(() => { func.apply(this, args); }, timeout);
-      };
-  }
-  
-  // Оригинальная функция сохранения (используется для регулярного интервала)
-  async function saveGameOriginal() { 
-      // Мы явно передаем все данные, включая серию наград, в apiCall
-      apiCall('save', { 
-          balance: state.balance, 
-          clickPower: state.clickPower, 
-          autoClick: state.autoClick,
-          // *** ВАЖНО: ПОЛЯ ЕЖЕДНЕВНОЙ НАГРАДЫ (ПЕРЕДАЮТСЯ В PL) ***
-          lastRewardDay: state.lastRewardDay, 
-          rewardStreak: state.rewardStreak 
-          // **********************************************************
-      }); 
-  }
+        // --- ЛОГИКА УСИЛЕНИЙ И МАГАЗИНА ---
 
-  // Переопределение saveGame с дебаунсом (ручные вызовы)
-  window.saveGame = debounce(saveGameOriginal, 1000); // 1000ms = 1 секунда
+        function activatePowerup() {
+            const powerups = ['enlarge', 'multi_drop'];
+            const chosen = powerups[Math.floor(Math.random() * powerups.length)];
+            const DURATION = 10000; 
 
-  // ИСПРАВЛЕННЫЙ apiCall с обработкой ошибки 429 и CORS/Network
-  async function apiCall(act, pl={}) {
-      // В режиме 'save' pl уже содержит balance, clickPower, autoClick и reward fields
-      if(act === 'save') { 
-        pl = { 
-          // Добавляем данные, которые не меняются при покупке улучшений (инвентарь, кейсы)
-          items: state.inventory, 
-          activeCase: state.activeCase, 
-          clicksDone: state.clicksDone, 
-          ...pl 
-        }; 
-      }
-      try { 
-          let r = await fetch(SCRIPT_URL, {
-              method:'POST', 
-              body:JSON.stringify({action:act, telegramId:userId, payload:pl})
-          }); 
-          
-          // НОВОЕ: Обработка 429 Too Many Requests
-          if (r.status === 429) {
-              console.error("API Call Failed: 429 Too Many Requests");
-              notify("Сервер занят (429). Попробуйте позже.");
-              return null;
-          }
+            if (chosen === 'enlarge') {
+                currentPlayerWidth = PLAYER_WIDTH * 1.5; 
+                setTimeout(() => {
+                    currentPlayerWidth = PLAYER_WIDTH; 
+                }, DURATION);
+                console.log('Усиление: Ловушка увеличена!');
 
-          return await r.json(); 
-      } catch(e){
-          // Обработка ошибок сети и CORS
-          console.error("API Call Failed (Network/CORS):", e);
-          return null;
-      }
-  }
-  
-  // =========================================================================
-  // --- КОНЕЦ ИСПРАВЛЕННОГО БЛОКА ---
-  // =========================================================================
+            } else if (chosen === 'multi_drop') {
+                multiDropActive = true;
+                multiDropEndTime = Date.now() + DURATION;
+                console.log('Усиление: Мульти-дроп активирован!');
+            }
+        }
 
-  function notify(m) { let n=document.getElementById('notification'); n.innerText=m; n.style.display='block'; setTimeout(()=>n.style.display='none', 2000); }
-  
-  window.onload = initGame;
-</script>
+        function activateMagnet(durationSeconds) {
+            if (magnetActive) return; 
+            magnetActive = true;
+            magnetEndTime = Date.now() + durationSeconds * 1000;
+            console.log(`Магнитное усиление активировано на ${durationSeconds} секунд.`);
+        }
+
+        function openShop() {
+            if (!gameRunning) return;
+            gameRunning = false;
+            cancelAnimationFrame(animationFrameId);
+
+            document.getElementById('shopCoinCount').textContent = rareCoins;
+            shopScreen.style.display = 'flex';
+        }
+
+        function closeShop() {
+            shopScreen.style.display = 'none';
+            gameRunning = true;
+            gameLoop();
+        }
+
+        function handlePurchase(event) {
+            const powerup = event.target.dataset.powerup;
+            const cost = parseInt(event.target.dataset.cost);
+            
+            if (rareCoins >= cost) {
+                rareCoins -= cost;
+                rareCoinDisplay.textContent = `Монеты: ${rareCoins}`;
+                document.getElementById('shopCoinCount').textContent = rareCoins;
+
+                if (powerup === 'magnet') {
+                    activateMagnet(15);
+                    closeShop();
+                }
+
+            } else {
+                console.warn(`❌ Недостаточно монет: вам не хватает ${cost - rareCoins} монет.`);
+            }
+        }
+
+
+        // --- ОБРАБОТЧИКИ УПРАВЛЕНИЯ ---
+
+        function handleTouchMove(e) {
+            if (!gameRunning) return;
+            e.preventDefault(); 
+            const touchX = e.touches[0].clientX;
+            const rect = canvas.getBoundingClientRect();
+            let newPlayerX = touchX - rect.left - currentPlayerWidth / 2;
+
+            if (newPlayerX < 0) newPlayerX = 0;
+            if (newPlayerX + currentPlayerWidth > CANVAS_WIDTH) newPlayerX = CANVAS_WIDTH - currentPlayerWidth;
+
+            player.x = newPlayerX;
+        }
+
+        function handleMouseMove(e) {
+            if (!gameRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            let newPlayerX = e.clientX - rect.left - currentPlayerWidth / 2;
+
+            if (newPlayerX < 0) newPlayerX = 0;
+            if (newPlayerX + currentPlayerWidth > CANVAS_WIDTH) newPlayerX = CANVAS_WIDTH - currentPlayerWidth;
+
+            player.x = newPlayerX;
+        }
+
+        restartButton.addEventListener('click', startGame);
+
+        // --- ИНТЕГРАЦИЯ С GAS ---
+        async function sendScoreToGAS(currentScore) {
+            if (!GAS_API_URL || GAS_API_URL.includes('ВАШ_ID_РАЗВЕРТЫВАНИЯ')) {
+                console.error('GAS_API_URL не установлен или использует заглушку. Счет не будет отправлен.');
+                return;
+            }
+
+            try {
+                const response = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        telegram_id: telegramUserId,
+                        username: telegramUsername,
+                        score: currentScore,
+                        rare_coins: rareCoins 
+                    }).toString()
+                });
+
+                const responseText = await response.text();
+                
+                try {
+                    const data = JSON.parse(responseText);
+                    if (data.status === 'success') {
+                        console.log(`[GAS] Счет ${currentScore} (Монеты: ${rareCoins}) успешно сохранен.`);
+                    } else {
+                        console.warn(`[GAS] Ошибка сервера при сохранении счета: ${data.message}`);
+                    }
+                } catch (jsonError) {
+                    console.warn('Could not parse GAS response as JSON:', responseText, jsonError);
+                }
+
+            } catch (error) {
+                console.error('Error sending score to GAS:', error);
+            }
+        }
+
+        // --- ЗАПУСК ---
+        window.addEventListener('load', () => {
+            initTelegramWebApp();
+            // Запускаем загрузку активов. Игра начнется в callback-функции.
+            loadAssets(() => {
+                startGame();
+                canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+                canvas.addEventListener('mousemove', handleMouseMove);
+            });
+        });
+
+    </script>
 </body>
 </html>
