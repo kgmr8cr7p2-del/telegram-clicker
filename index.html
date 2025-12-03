@@ -15,18 +15,25 @@
         }
         .card { 
             border: 1px solid var(--tg-theme-hint-color, #ccc); 
-            padding: 10px; 
-            margin-bottom: 10px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
             border-radius: 8px; 
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .button { 
             background-color: var(--tg-theme-button-color, #007bff); 
             color: var(--tg-theme-button-text-color, #ffffff); 
-            padding: 10px 15px; 
+            padding: 8px 12px; 
             border: none; 
             border-radius: 5px; 
             cursor: pointer; 
-            margin-top: 5px;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: var(--tg-theme-button-color, #007bff); /* Используем ту же переменную, но можно затемнить для эффекта */
+            opacity: 0.9;
         }
 
         /* Стили для окна логирования */
@@ -44,20 +51,20 @@
             padding: 5px;
             border-top: 2px solid var(--tg-theme-button-color, #007bff);
             box-sizing: border-box;
-            z-index: 1000; /* Убедимся, что окно сверху */
+            z-index: 1000;
         }
         .log-entry {
-            white-space: pre-wrap; /* Сохраняет переносы строк */
+            white-space: pre-wrap;
             word-break: break-all;
             padding: 2px 0;
             border-bottom: 1px dotted #444;
         }
         .log-error {
-            color: #ff6961; /* Красный для ошибок */
+            color: #ff6961;
             font-weight: bold;
         }
         .log-info {
-            color: #add8e6; /* Светло-голубой для информации */
+            color: #add8e6;
         }
         .clear-log-button {
             float:right; 
@@ -68,6 +75,7 @@
             font-size: 12px;
             font-weight: bold;
             padding: 0 5px;
+            line-height: 1;
         }
     </style>
 </head>
@@ -82,12 +90,11 @@
     
     <div id="log-window">
         <strong>[LOGS]</strong>
-        <button onclick="document.getElementById('log-window').innerHTML = '<strong>[LOGS]</strong><br>'" class="clear-log-button">X</button>
-        <br>
+        <button onclick="document.getElementById('log-window').innerHTML = '<strong>[LOGS]</strong>';" class="clear-log-button">X</button>
     </div>
 
     <script>
-        // *** ЗАМЕНИТЕ ЭТОТ URL НА РАЗВЕРНУТЫЙ URL ВАШЕГО GAS WEB APP ***
+        // *** АКТУАЛЬНЫЙ URL ВАШЕГО GAS WEB APP (проверьте, что он совпадает с развернутым!) ***
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzFjZ9VZUc8kDFsEPaNUnkmybLlWTuthF4Y4Hxvx5PFkOTF7MTzWM1imdB1CZsX2g3Y2A/exec';
         
         // Получаем initData и userId
@@ -96,12 +103,12 @@
         let userId = null;
         
         if (urlParams.has('user')) {
-             try {
+            try {
                 const userObject = JSON.parse(urlParams.get('user'));
                 userId = userObject.id;
-             } catch (e) {
-                customLog("Failed to parse user data from initData: " + e.message, 'error');
-             }
+            } catch (e) {
+                customLog("Не удалось разобрать данные пользователя из initData: " + e.message, 'error');
+            }
         }
 
         if (!userId) {
@@ -111,22 +118,19 @@
         // --- Функция для кастомного логирования ---
         function customLog(message, type = 'info') {
             const logWindow = document.getElementById('log-window');
-            if (!logWindow) return; // Проверка, что элемент существует
+            if (!logWindow) return;
             
-            // Преобразуем объект в строку, если это объект
             let logMessage = (typeof message === 'object' && message !== null) ? JSON.stringify(message, null, 2) : String(message);
 
             const entry = document.createElement('div');
             entry.className = `log-entry log-${type}`;
             
-            // Добавляем текущее время
             const now = new Date().toLocaleTimeString();
             entry.textContent = `[${now}][${type.toUpperCase()}] ${logMessage}`;
 
-            // Добавляем запись в начало окна (после заголовка)
+            // Вставляем после заголовка (первый элемент)
             logWindow.insertBefore(entry, logWindow.children[1]);
             
-            // Ограничение на количество записей (например, 50)
             const maxLogs = 50;
             while (logWindow.children.length > maxLogs) {
                 logWindow.removeChild(logWindow.lastChild);
@@ -135,7 +139,7 @@
         
         // Перехват глобальных ошибок
         window.onerror = function(msg, url, lineNo, columnNo, error) {
-            customLog(`Global Error: ${msg} at line ${lineNo}`, 'error');
+            customLog(`Глобальная ошибка: ${msg} в строке ${lineNo}`, 'error');
             return false;
         };
 
@@ -143,7 +147,7 @@
         // --- Функция для отправки запросов к GAS ---
         async function sendRequest(action, data = {}) {
             if (!userId) {
-                customLog("UserID is not set.", 'error');
+                customLog("ID пользователя не установлен.", 'error');
                 return { status: 'error', message: 'UserID is missing' };
             }
             
@@ -167,7 +171,8 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // При ошибке HTTP (например, 403 Forbidden)
+                    throw new Error(`HTTP error! status: ${response.status} (${response.statusText})`);
                 }
                 
                 const result = await response.json();
@@ -175,8 +180,8 @@
                 return result;
 
             } catch (error) {
-                customLog(`Fetch error for ${action}: ${error.message}`, 'error');
-                window.Telegram.WebApp.showAlert(`Ошибка связи: ${error.message}`);
+                customLog(`Ошибка Fetch для ${action}: ${error.message}`, 'error');
+                window.Telegram.WebApp.showAlert(`Ошибка связи: ${error.message}. Проверьте настройки доступа к GAS.`);
                 return { status: 'error', message: error.message };
             }
         }
@@ -190,8 +195,8 @@
                 document.getElementById('speed').textContent = result.data.miningSpeed;
                 document.getElementById('currency').textContent = result.data.currentCurrency;
             } else {
-                customLog(`Player data load failed: ${result.message}`, 'error');
-                window.Telegram.WebApp.showAlert(result.message || 'Ошибка загрузки данных игрока.');
+                customLog(`Ошибка загрузки данных игрока: ${result.message}`, 'error');
+                // Оставляем алерт только на ошибке Fetch
             }
         }
 
@@ -215,23 +220,22 @@
                     container.appendChild(cardDiv);
                 });
             } else {
-                customLog(`Shop data load failed: ${result.message}`, 'error');
+                customLog(`Ошибка загрузки магазина: ${result.message}`, 'error');
                 container.innerHTML = 'Ошибка загрузки магазина.';
-                window.Telegram.WebApp.showAlert(result.message || 'Ошибка загрузки магазина.');
             }
         }
 
         async function buyCard(cardId) {
             window.Telegram.WebApp.showConfirm(`Вы уверены, что хотите купить карту ID ${cardId}?`, async (isConfirmed) => {
                 if (isConfirmed) {
-                    customLog(`Attempting to buy card ID: ${cardId}`, 'info');
+                    customLog(`Попытка покупки карты ID: ${cardId}`, 'info');
                     const result = await sendRequest('buy_card', { cardId: cardId });
                     
                     if (result.status === 'ok') {
                         window.Telegram.WebApp.showAlert(result.message);
                         loadPlayerData(); // Обновляем баланс после покупки
                     } else {
-                        customLog(`Buy card failed: ${result.message}`, 'error');
+                        customLog(`Покупка карты не удалась: ${result.message}`, 'error');
                         window.Telegram.WebApp.showAlert(result.message || 'Ошибка при покупке.');
                     }
                 }
@@ -243,12 +247,12 @@
             if (window.Telegram.WebApp.initData) {
                 window.Telegram.WebApp.ready();
                 window.Telegram.WebApp.expand(); // Разворачиваем приложение на весь экран
-                customLog('Telegram WebApp initialized and expanded.', 'info');
+                customLog('Telegram WebApp инициализировано и развернуто.', 'info');
                 loadPlayerData();
                 loadShopData();
             } else {
                 document.body.innerHTML = 'Запустите это приложение в контексте Telegram.';
-                customLog('Not running in Telegram context.', 'error');
+                customLog('Запущено вне контекста Telegram.', 'error');
             }
         };
     </script>
