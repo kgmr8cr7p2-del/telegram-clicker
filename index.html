@@ -146,7 +146,8 @@
         const TG = window.Telegram.WebApp;
         let userId = null;
         let userData = {};
-        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx2_LFbGikf7uZFD40ZjMpkpzKsfu9MQNBzA9Bwe2P6eK5e0WC7UABFdEnDFJIELaeU/exec"; // !!! ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ
+        // !!! ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ ЭТУ ЗАГЛУШКУ НА ВАШ АКТУАЛЬНЫЙ URL РАЗВЕРТЫВАНИЯ GAS
+        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbwM_2I1AQyEQxkta6GPNOTS83S1MY_LmgM1aIjPIYCxSZMgE9cZ_-ZdAIAPTIacS9pG/exec"; 
 
         const AVAILABLE_CURRENCIES = ['BTC', 'ETH', 'DOGE'];
 
@@ -156,18 +157,18 @@
             
             if (TG.initDataUnsafe && TG.initDataUnsafe.user) {
                 userId = TG.initDataUnsafe.user.id;
-                logDebug('UserID:', userId);
+                logDebug('UserID', userId);
                 loadFarmData();
             } else {
                 userId = 123456789;
                 document.getElementById('message-log').innerText = "Тестовый режим. ID: " + userId;
-                logDebug('Тестовый режим. ID:', userId); 
+                logDebug('Тестовый режим. ID', userId); 
                 loadFarmData(); 
             }
         });
 
         // ----------------------------------------------------
-        // 1. Управление UI и Дебаг-Консолью (НОВАЯ ФУНКЦИЯ)
+        // 1. Управление UI и Дебаг-Консолью
         // ----------------------------------------------------
 
         function logDebug(title, message, isError = false) {
@@ -180,7 +181,10 @@
             if (isError) {
                 logEntry.classList.add('error-message');
                 htmlContent = `[${now}] 🚨 <strong>СЕРВЕРНАЯ ОШИБКА:</strong> ${message}`;
-                TG.showAlert("Ошибка сервера! См. Отладочную консоль.");
+                // Выводим только критические ошибки в основной алерт
+                if (title !== 'Запрос') {
+                   TG.showAlert(`Ошибка сервера! См. Отладочную консоль. (${title})`);
+                }
             }
             
             logEntry.innerHTML = htmlContent;
@@ -210,53 +214,41 @@
         }
 
         // ----------------------------------------------------
-        // 2. Функции API (Load, Mine, Fetch) - ОБНОВЛЕНО ДЛЯ ДЕБАГА
+        // 2. Функции API (Fetch - ОБНОВЛЕНО ДЛЯ ДЕБАГА)
         // ----------------------------------------------------
 
         async function fetchAPI(action, body = {}) {
-    logDebug('Запрос', action);
-    try {
-        const fetchOptions = {
-            method: 'POST',
-            body: JSON.stringify({ ...body, action: action, user_id: userId }),
-            headers: { 'Content-Type': 'application/json' },
-            // Временно добавляем 'no-cors', чтобы проверить, связана ли ошибка с заголовками
-            // Однако, GAS часто требует стандартный режим для возврата JSON
-            // Оставим пока без no-cors, так как это может сломать чтение JSON.
-            // Вместо этого сфокусируемся на проверке статуса ответа.
-        };
+            logDebug('Запрос', action);
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ ...body, action: action, user_id: userId }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
 
-        const response = await fetch(BACKEND_URL, fetchOptions);
+                // Обработка ошибок HTTP (напр. 500)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    logDebug('HTTP Ошибка', `${response.status} - ${errorText.substring(0, 100)}...`, true);
+                    return { success: false, error: 'HTTP Error' };
+                }
 
-        // Если ответ не 200, пытаемся прочитать текст ошибки
-        if (!response.ok) {
-            const errorText = await response.text();
-            logDebug('HTTP Ошибка', `${response.status} - ${errorText.substring(0, 100)}...`, true);
-            // Возвращаем объект ошибки, чтобы фронтенд мог обработать
-            return { success: false, error: `HTTP Error: ${response.status}` };
+                const data = await response.json();
+
+                if (data.error) {
+                    logDebug('Серверная логика', data.error, true);
+                } else {
+                    logDebug('Успех', action);
+                }
+                
+                return data;
+
+            } catch (error) {
+                // ОБЛАСТЬ ДЛЯ "TypeError: Failed to fetch"
+                logDebug('Сетевая ошибка (Failed to fetch)', error.toString(), true);
+                return { success: false, error: 'Network Error: Failed to fetch' };
+            }
         }
-
-        // Если fetch не сработал (Failed to fetch), это обрабатывается в блоке catch
-        const data = await response.json();
-
-        if (data.error) {
-            logDebug('Серверная логика', data.error, true);
-        } else {
-            logDebug('Успех', action);
-        }
-        
-        return data;
-
-    } catch (error) {
-        // ЭТО ОБЛАСТЬ ДЛЯ "TypeError: Failed to fetch"
-        logDebug('Сетевая ошибка (Failed to fetch)', error.toString(), true);
-        
-        // Добавим подсказку для пользователя
-        TG.showAlert("Критическая сетевая ошибка (Failed to fetch). Убедитесь, что URL в index.html верен и развертывание доступно 'Любому пользователю'.");
-        
-        return { success: false, error: 'Network Error: Failed to fetch' };
-    }
-}
 
         async function loadFarmData(isExplicitUpdate = false) {
             if (!userId) return;
@@ -264,6 +256,7 @@
             
             logDebug('Загрузка', 'Начало');
             try {
+                // Используем GET для загрузки данных
                 const response = await fetch(`${BACKEND_URL}?user_id=${userId}`);
                 const data = await response.json();
 
@@ -296,7 +289,7 @@
         }
 
         // ----------------------------------------------------
-        // 3. Смена Валюты (Логика без изменений)
+        // 3. Смена Валюты
         // ----------------------------------------------------
 
         function openMiningSettings() {
@@ -338,13 +331,12 @@
                 TG.showAlert(`Валюта успешно сменена на ${result.new_currency}!`);
                 loadFarmData(); 
             } else {
-                // Ошибка уже выведена в консоль функцией fetchAPI
                 TG.showAlert('Ошибка смены валюты: ' + (result.error || 'Неизвестная ошибка.'));
             }
         }
 
         // ----------------------------------------------------
-        // 4. Продажа Криптовалюты (Логика без изменений)
+        // 4. Продажа Криптовалюты
         // ----------------------------------------------------
 
         function sellCryptoPrompt() {
@@ -388,7 +380,6 @@
                 TG.showAlert(`Продажа ${amount.toFixed(5)} ${userData.crypto_name} успешна! Получено $${result.usd_earned.toFixed(2)}.`);
                 loadFarmData();
             } else {
-                // Ошибка уже выведена в консоль функцией fetchAPI
                 TG.showAlert('Ошибка продажи: ' + (result.error || 'Неизвестная ошибка.'));
             }
         }
