@@ -3,320 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⛏️ Майнинг-Ферма</title>
+    <title>Crypto Clicker</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            /* Базовые стили для светлой темы (будут перезаписаны TG themeParams) */
-            --tg-theme-bg-color: #fff;
-            --tg-theme-text-color: #000;
-            --tg-theme-secondary-bg-color: #f4f4f5;
-            --tg-theme-button-color: #007bff;
-            --tg-theme-button-text-color: #fff;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
+            font-family: Arial, sans-serif;
             margin: 0;
+            padding: 0;
+            background-color: var(--tg-theme-bg-color, #f4f4f4);
+            color: var(--tg-theme-text-color, #000);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
             padding: 20px;
-            transition: background-color 0.3s, color 0.3s;
+            box-sizing: border-box;
+            text-align: center;
         }
-        .container { max-width: 600px; margin: auto; }
-        h1, h2, h3 { color: var(--tg-theme-text-color); }
-        .balance {
-            font-size: 1.5em; margin-bottom: 20px; padding: 10px;
-            border: 1px solid var(--tg-theme-secondary-bg-color); border-radius: 10px;
+        .balance-box {
+            background-color: var(--tg-theme-secondary-bg-color, #fff);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .card {
-            background-color: var(--tg-theme-secondary-bg-color); padding: 15px;
-            margin-bottom: 10px; border-radius: 8px; display: flex;
-            justify-content: space-between; align-items: center;
+        .main-button {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            background-color: var(--tg-theme-button-color, #007bff);
+            color: var(--tg-theme-button-text-color, #fff);
+            margin-bottom: 20px;
+            transition: transform 0.1s;
+        }
+        .main-button:active {
+            transform: scale(0.98);
         }
         button {
-            background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);
-            border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;
-            margin-top: 10px; transition: opacity 0.2s;
+            padding: 10px 15px;
+            margin: 5px;
+            border: 1px solid var(--tg-theme-hint-color);
+            border-radius: 8px;
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            cursor: pointer;
         }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .shop-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8); display: none; justify-content: center;
-            align-items: center; z-index: 100;
+        /* Стили для симуляции модального окна */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
-        .shop-content {
-            background-color: var(--tg-theme-bg-color); padding: 20px;
-            border-radius: 10px; max-width: 90%; max-height: 80%; overflow-y: auto;
+        .modal-content {
+            background-color: var(--tg-theme-bg-color);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 80%;
+            max-width: 300px;
         }
-        .shop-item {
-            border-bottom: 1px solid var(--tg-theme-secondary-bg-color); padding: 10px 0;
-            display: flex; justify-content: space-between; align-items: center;
+        .modal-content h2 {
+            margin-top: 0;
+            color: var(--tg-theme-text-color);
         }
-        .shop-item:last-child { border-bottom: none; }
+        .modal-content button {
+            margin-top: 15px;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            font-size: 1.1em;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid var(--tg-theme-hint-color);
+            background-color: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>⛏️ Моя Ферма</h1>
-        
-        <div id="status">Инициализация...</div>
-        
-        <div class="balance">
-            Баланс: <span id="money_balance">...</span> | 
-            Крипта: <span id="crypto_balance">...</span>
-        </div>
-        
-        <div id="farm_info">
-            <h2>Общий хешрейт: <span id="total_hashrate">0</span> MH/s</h2>
-            <h3>Текущая валюта: <span id="mining_currency">BTC</span></h3>
-            <h3>Ваши слоты: <span id="slots_used">0</span>/<span id="slots_max">2</span></h3>
-            <div id="cards_list"></div>
-        </div>
-        
-        <button onclick="openShop()">🏪 Магазин Видеокарт</button>
-        <button onclick="openMiningSettings()">⚙️ Сменить Валюту</button>
-        <button onclick="loadFarmData(true)">🔄 Обновить (Майнинг)</button>
-    </div>
 
-    <div id="shop_modal" class="shop-modal" onclick="if(event.target.id === 'shop_modal') closeShop()">
-        <div class="shop-content">
-            <h2>🏪 Магазин</h2>
-            <div id="shop_items">Загрузка товаров...</div>
-            <button onclick="closeShop()">Закрыть</button>
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">Сменить Валюту</h2>
+            <p>Выберите новую криптовалюту для майнинга:</p>
+            <select id="currency-select"></select>
+            <button onclick="changeCurrencyFromSelect()">Сменить</button>
+            <button onclick="closeModal()">Отмена</button>
         </div>
     </div>
     
+    <div class="container">
+        <h1>Крипто-Ферма</h1>
+        
+        <div class="balance-box">
+            <p>Баланс USD: <strong id="usd-balance">$0.00</strong></p>
+            <p>Баланс Крипты: <strong id="crypto-balance">0.00000 BTC</strong></p>
+            <p>Хэшрейт: <strong id="hash-rate">0 H/s</strong></p>
+            <p>Скорость добычи: <strong id="mining-constant">0.00000</strong></p>
+        </div>
+
+        <button class="main-button" onclick="mineCrypto()">⛏️ Майнить!</button>
+
+        <div class="actions">
+            <button onclick="openMiningSettings()">⚙️ Сменить Валюту</button>
+            <button onclick="sellCryptoPrompt()">💸 Продать Крипту</button>
+            <button onclick="loadFarmData(true)">🔄 Обновить (Майнинг)</button>
+        </div>
+
+        <p id="message-log"></p>
+    </div>
+
     <script>
         const TG = window.Telegram.WebApp;
-        
-        // !!! ВАЖНО: Замените этот URL на URL развернутого скрипта Google Apps Script !!!
-        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxjOh8MypssAipH8EnycD7HHGe2n6TcuU1dO9jK-L3s1RPRUBCGrAqPBPSw5yyALWc7/exec'; 
-        
-        let userId;
+        let userId = null;
         let userData = {};
-        const isPopupSupported = TG.isVersionAtLeast('6.1');
-        
-        TG.ready();
-        TG.expand(); 
-        
-        // 1. Инициализация и получение ID пользователя
-        function initApp() {
-            if (TG.initDataUnsafe.user) {
-                userId = TG.initDataUnsafe.user.id;
-            } else {
-                userId = 'TEST_USER_456'; 
-                document.getElementById('status').innerText += " (ТЕСТОВЫЙ РЕЖИМ)";
-            }
-            // Адаптация цветов темы Telegram
-            if (TG.colorScheme === 'dark') {
-                document.documentElement.style.setProperty('--tg-theme-bg-color', TG.themeParams.bg_color || '#1e2124');
-                document.documentElement.style.setProperty('--tg-theme-text-color', TG.themeParams.text_color || '#fff');
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', TG.themeParams.secondary_bg_color || '#2d333a');
-            } else {
-                 document.documentElement.style.setProperty('--tg-theme-bg-color', TG.themeParams.bg_color || '#fff');
-                document.documentElement.style.setProperty('--tg-theme-text-color', TG.themeParams.text_color || '#000');
-                document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', TG.themeParams.secondary_bg_color || '#f4f4f5');
-            }
+        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzz_NlOoyqyyU3jlqoM8WL9EaMaIKxgmZZkNhqCDiZc6keS_ljCnOQUbSwfL-xGQtvC/exec"; // !!! ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ
 
-            loadFarmData();
-        }
+        // Доступные валюты для выбора (должны совпадать с Code.gs)
+        const AVAILABLE_CURRENCIES = ['BTC', 'ETH', 'DOGE'];
 
-        // 2. Загрузка данных (включает расчет майнинга)
-        async function loadFarmData(isManualUpdate = false) {
-            document.getElementById('status').innerText = 'Загрузка данных...';
+        document.addEventListener('DOMContentLoaded', () => {
+            TG.ready();
+            TG.expand();
             
-            try {
-                const url = `${BACKEND_URL}?action=get_farm_data&user_id=${userId}&update_mining=${isManualUpdate ? 'true' : 'false'}`;
-                const response = await fetch(url);
-                userData = await response.json();
-
-                if (userData.error) {
-                    throw new Error(userData.error);
-                }
-
-                if (userData.is_new) {
-                    startQuest();
-                } else {
-                    renderFarm(userData);
-                    document.getElementById('status').innerText = isManualUpdate ? 'Ферма обновлена!' : 'Данные загружены.';
-                }
-
-            } catch (error) {
-                document.getElementById('status').innerText = `Ошибка: ${error.message}. Проверьте URL бэкенда.`;
-                console.error('Fetch error:', error);
-            }
-        }
-        
-        // 3. Отображение данных на странице
-        function renderFarm(data) {
-            document.getElementById('money_balance').innerText = `$${data.money.toFixed(2)}`;
-            document.getElementById('crypto_balance').innerText = `${data.crypto.toFixed(5)} ${data.crypto_name}`;
-            document.getElementById('total_hashrate').innerText = data.total_hashrate;
-            document.getElementById('mining_currency').innerText = data.crypto_name;
-            document.getElementById('slots_used').innerText = data.cards.length;
-            document.getElementById('slots_max').innerText = data.slots_max;
-
-            const cardsList = document.getElementById('cards_list');
-            cardsList.innerHTML = data.cards.map(card => 
-                `<div class="card">${card.name} (${card.hr} MH/s) <button onclick="sellCard('${card.instance_id}', ${card.price})">Продать (+$${(card.price * 0.5).toFixed(2)})</button></div>`
-            ).join('');
-        }
-
-        // 4. Стартовый квест (Исправлено для совместимости v6.0)
-        function startQuest() {
-            if (isPopupSupported) {
-                // Используем showPopup (для Telegram v6.1+)
-                TG.showPopup({
-                    title: '👋 Привет, Сынок!',
-                    message: 'Отец: "Майнинг? Брось это, у тебя ничего не получится. Иди работать!"',
-                    buttons: [{id: 'continue', text: 'Продолжить', type: 'default'}]
-                }, (buttonId) => {
-                    if (buttonId === 'continue') {
-                        TG.showPopup({
-                            title: '💰 Первая Находка',
-                            message: 'Вы находите $500 под подушкой! Этого хватит на первую видеокарту.',
-                            buttons: [{text: 'Начать играть!', type: 'ok'}]
-                        }, () => {
-                            loadFarmData(); 
-                        });
-                    }
-                });
+            // Получаем user_id из TG API
+            if (TG.initDataUnsafe && TG.initDataUnsafe.user) {
+                userId = TG.initDataUnsafe.user.id;
+                loadFarmData();
             } else {
-                 // Используем alert/confirm (для старых версий Telegram)
-                alert('👋 Привет, Сынок!\nОтец: "Майнинг? Брось это, у тебя ничего не получится. Иди работать!"');
-                alert('💰 Первая Находка\nВы находите $500 под подушкой! Этого хватит на первую видеокарту.');
-                loadFarmData(); // Продолжаем игру, предполагая, что бэкенд уже инициализировал $500
+                // Заглушка для тестирования без Telegram
+                userId = 123456789;
+                document.getElementById('message-log').innerText = "Тестовый режим. ID: " + userId;
+                loadFarmData(); 
+            }
+        });
+
+        // ----------------------------------------------------
+        // 1. Управление UI
+        // ----------------------------------------------------
+
+        function updateUI() {
+            if (!userData.user_id) return;
+            
+            document.getElementById('usd-balance').innerText = `$${userData.usd.toFixed(2)}`;
+            document.getElementById('crypto-balance').innerText = `${userData.crypto.toFixed(5)} ${userData.crypto_name}`;
+            document.getElementById('hash-rate').innerText = `${userData.hash_rate} H/s`;
+            document.getElementById('mining-constant').innerText = `${userData.mining_constant.toFixed(6)} (${userData.crypto_name})`;
+
+            // Уведомление об офлайн-майнинге
+            if (userData.mined_offline > 0) {
+                TG.showAlert(`Пока вас не было, намайнено ${userData.mined_offline.toFixed(5)} ${userData.crypto_name}!`);
+                userData.mined_offline = 0; // Сброс после уведомления
             }
         }
 
-        // 5. Магазин
-        async function openShop() {
-            document.getElementById('shop_items').innerHTML = 'Загрузка товаров...';
-            document.getElementById('shop_modal').style.display = 'flex';
-
-            try {
-                const url = `${BACKEND_URL}?action=get_store_data`;
-                const response = await fetch(url);
-                const storeData = await response.json();
-                
-                const shopItemsDiv = document.getElementById('shop_items');
-                shopItemsDiv.innerHTML = storeData.map(item => `
-                    <div class="shop-item">
-                        <span>${item.name} (${item.hr} MH/s)</span>
-                        <div>
-                            $${item.price.toFixed(2)}
-                            <button 
-                                onclick="buyCard('${item.id}', ${item.price})"
-                                ${userData.cards.length >= userData.slots_max || userData.money < item.price ? 'disabled' : ''}
-                            >
-                                Купить
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-
-                if (userData.cards.length >= userData.slots_max) {
-                    shopItemsDiv.innerHTML += '<p style="color: red;">Нет свободных слотов для карт!</p>';
-                }
-
-            } catch (error) {
-                document.getElementById('shop_items').innerText = `Ошибка загрузки магазина: ${error.message}`;
-            }
-        }
-        
-        function closeShop() {
-            document.getElementById('shop_modal').style.display = 'none';
+        function showMessage(text) {
+            document.getElementById('message-log').innerText = text;
         }
 
-        // 6. Покупка карты (обновлена обработка ошибок)
-        async function buyCard(cardId, price) {
-             if (confirm(`Вы уверены, что хотите купить карту за $${price}?`)) {
-                TG.showPopup({ title: 'Покупка', message: 'Обработка покупки...' });
-                try {
-                    const response = await fetch(BACKEND_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'buy_card', user_id: userId, card_id: cardId, price: price })
-                    });
-                    const result = await response.json();
-                    
-                    TG.closePopup();
-                    if (result.success) {
-                        TG.showAlert('Покупка успешна!');
-                        closeShop();
-                        loadFarmData();
-                    } else {
-                        // Выводит сообщение об ошибке, полученное из Google Apps Script
-                        TG.showAlert('Ошибка покупки: ' + (result.error || 'Неизвестная ошибка.'));
-                    }
-                } catch (error) {
-                    TG.closePopup();
-                    TG.showAlert('Ошибка связи с сервером.');
-                }
-            }
-        }
+        // ----------------------------------------------------
+        // 2. Функции API (Load, Mine)
+        // ----------------------------------------------------
 
-        // 7. Продажа карты
-        async function sellCard(cardInstanceId, price) {
-            const sellPrice = (price * 0.5).toFixed(2);
-             if (confirm(`Вы уверены, что хотите продать эту карту за $${sellPrice}?`)) {
-                TG.showPopup({ title: 'Продажа', message: 'Обработка продажи...' });
-                try {
-                    const response = await fetch(BACKEND_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'sell_card', user_id: userId, card_instance_id: cardInstanceId })
-                    });
-                    const result = await response.json();
-                    
-                    TG.closePopup();
-                    if (result.success) {
-                        TG.showAlert('Продажа успешна! Деньги начислены.');
-                        loadFarmData();
-                    } else {
-                        TG.showAlert('Ошибка продажи: ' + (result.error || 'Неизвестная ошибка.'));
-                    }
-                } catch (error) {
-                    TG.closePopup();
-                    TG.showAlert('Ошибка связи с сервером.');
-                }
-            }
-        }
-
-        // 8. Смена валюты
-        function openMiningSettings() {
-            const newCurrency = prompt("Введите новую валюту для майнинга (BTC, ETH, DOGE):", userData.crypto_name);
-            if (newCurrency) {
-                 const upperCurrency = newCurrency.toUpperCase();
-                 if (['BTC', 'ETH', 'DOGE'].includes(upperCurrency)) {
-                    changeMiningCurrency(upperCurrency);
-                } else {
-                    TG.showAlert('Неизвестная валюта. Используйте BTC, ETH или DOGE.');
-                }
-            }
-        }
-        
-        async function changeMiningCurrency(currency) {
-            TG.showPopup({ title: 'Смена валюты', message: 'Обработка...' });
+        async function fetchAPI(action, body = {}) {
             try {
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'change_currency', user_id: userId, currency: currency })
+                    body: JSON.stringify({ ...body, action: action, user_id: userId }),
+                    headers: { 'Content-Type': 'application/json' }
                 });
-                const result = await response.json();
-                
-                TG.closePopup();
-                if (result.success) {
-                    TG.showAlert(`Вы успешно сменили валюту на ${currency}!`);
-                    loadFarmData();
-                } else {
-                    TG.showAlert('Ошибка смены валюты: ' + (result.error || 'Неизвестная ошибка.'));
-                }
+                return await response.json();
             } catch (error) {
-                TG.closePopup();
                 TG.showAlert('Ошибка связи с сервером.');
+                return { success: false, error: 'Network Error' };
             }
         }
 
-        initApp();
+        async function loadFarmData(isExplicitUpdate = false) {
+            if (!userId) return;
+            if (isExplicitUpdate) showMessage('Обновление данных...');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}?user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    TG.showAlert('Ошибка загрузки: ' + data.error);
+                    return;
+                }
+                userData = data;
+                updateUI();
+                if (isExplicitUpdate) showMessage('Данные обновлены.');
+                
+            } catch (error) {
+                TG.showAlert('Ошибка загрузки данных фермы.');
+            }
+        }
+
+        async function mineCrypto() {
+            const result = await fetchAPI('update_mining');
+            
+            if (result.success) {
+                userData.crypto = result.new_balance;
+                updateUI();
+                showMessage(`Намайнено ${result.mined.toFixed(5)} ${userData.crypto_name}!`);
+            } else {
+                TG.showAlert('Ошибка майнинга: ' + (result.error || 'Неизвестная ошибка.'));
+            }
+        }
+
+        // ----------------------------------------------------
+        // 3. Смена Валюты (Новый UI)
+        // ----------------------------------------------------
+
+        function openMiningSettings() {
+            const select = document.getElementById('currency-select');
+            select.innerHTML = '';
+            
+            AVAILABLE_CURRENCIES.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c;
+                option.text = c;
+                if (c === userData.crypto_name) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            document.getElementById('modal-overlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        async function changeCurrencyFromSelect() {
+            const newCurrency = document.getElementById('currency-select').value;
+            closeModal();
+            
+            if (newCurrency === userData.crypto_name) {
+                TG.showAlert("Эта валюта уже выбрана.");
+                return;
+            }
+
+            TG.showPopup({ title: 'Смена Валюты', message: `Меняем на ${newCurrency}...` });
+
+            const result = await fetchAPI('change_currency', { currency: newCurrency });
+            
+            TG.closePopup();
+            if (result.success) {
+                TG.showAlert(`Валюта успешно сменена на ${result.new_currency}!`);
+                loadFarmData(); 
+            } else {
+                TG.showAlert('Ошибка смены валюты: ' + (result.error || 'Неизвестная ошибка.'));
+            }
+        }
+
+        // ----------------------------------------------------
+        // 4. Продажа Криптовалюты
+        // ----------------------------------------------------
+
+        function sellCryptoPrompt() {
+            const cryptoName = userData.crypto_name;
+            const currentCrypto = userData.crypto;
+            
+            if (currentCrypto <= 0) {
+                TG.showAlert(`У вас нет ${cryptoName} для продажи!`);
+                return;
+            }
+            
+            // Запрос количества для продажи
+            const amountStr = prompt(
+                `Продажа ${cryptoName}:\nУ вас есть ${currentCrypto.toFixed(5)} ${cryptoName}.\nКакое количество вы хотите продать?`, 
+                currentCrypto.toFixed(5)
+            );
+            
+            if (amountStr === null || amountStr === "") return;
+            
+            const amount = Number(amountStr);
+            
+            if (isNaN(amount) || amount <= 0) {
+                TG.showAlert("Введите корректное положительное число.");
+                return;
+            }
+            
+            if (amount > currentCrypto) {
+                TG.showAlert(`Вы не можете продать больше, чем у вас есть (${currentCrypto.toFixed(5)} ${cryptoName}).`);
+                return;
+            }
+            
+            // Вызов функции продажи на сервере
+            sellCrypto(amount);
+        }
+
+        async function sellCrypto(amount) {
+            TG.showPopup({ title: 'Продажа Крипты', message: 'Обработка продажи...' });
+
+            const result = await fetchAPI('sell_crypto', { amount: amount });
+            
+            TG.closePopup();
+            if (result.success) {
+                TG.showAlert(`Продажа ${amount.toFixed(5)} ${userData.crypto_name} успешна! Получено $${result.usd_earned.toFixed(2)}.`);
+                loadFarmData();
+            } else {
+                TG.showAlert('Ошибка продажи: ' + (result.error || 'Неизвестная ошибка.'));
+            }
+        }
+
     </script>
 </body>
 </html>
