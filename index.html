@@ -4,9 +4,71 @@
     <title>Crypto Miner Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
-        .card { border: 1px solid var(--tg-theme-hint-color); padding: 10px; margin-bottom: 10px; border-radius: 8px; }
-        .button { background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        /* Базовые стили для Telegram WebApp */
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background-color: var(--tg-theme-bg-color, #ffffff); 
+            color: var(--tg-theme-text-color, #000000); 
+            margin: 0;
+            padding-bottom: 160px; /* Отступ для лог-окна */
+        }
+        .card { 
+            border: 1px solid var(--tg-theme-hint-color, #ccc); 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            border-radius: 8px; 
+        }
+        .button { 
+            background-color: var(--tg-theme-button-color, #007bff); 
+            color: var(--tg-theme-button-text-color, #ffffff); 
+            padding: 10px 15px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-top: 5px;
+        }
+
+        /* Стили для окна логирования */
+        #log-window {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            max-height: 150px; /* Ограничиваем высоту */
+            overflow-y: auto; /* Добавляем скролл */
+            background-color: #333;
+            color: #eee;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 5px;
+            border-top: 2px solid var(--tg-theme-button-color, #007bff);
+            box-sizing: border-box;
+            z-index: 1000; /* Убедимся, что окно сверху */
+        }
+        .log-entry {
+            white-space: pre-wrap; /* Сохраняет переносы строк */
+            word-break: break-all;
+            padding: 2px 0;
+            border-bottom: 1px dotted #444;
+        }
+        .log-error {
+            color: #ff6961; /* Красный для ошибок */
+            font-weight: bold;
+        }
+        .log-info {
+            color: #add8e6; /* Светло-голубой для информации */
+        }
+        .clear-log-button {
+            float:right; 
+            background:none; 
+            border:none; 
+            color:white; 
+            cursor:pointer;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -18,6 +80,12 @@
     <h2>🛒 Магазин Видеокарт</h2>
     <div id="shop-container">Загрузка...</div>
     
+    <div id="log-window">
+        <strong>[LOGS]</strong>
+        <button onclick="document.getElementById('log-window').innerHTML = '<strong>[LOGS]</strong><br>'" class="clear-log-button">X</button>
+        <br>
+    </div>
+
     <script>
         // *** ЗАМЕНИТЕ ЭТОТ URL НА РАЗВЕРНУТЫЙ URL ВАШЕГО GAS WEB APP ***
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzZZL9vL2NgdZ0Dyt08aFH17xbj4XQ2BUj5A1nj6zBJRkTEHatNyFk7D8SFbpsuQlsh9g/exec';
@@ -25,14 +93,14 @@
         // Получаем initData и userId
         const initData = window.Telegram.WebApp.initData;
         const urlParams = new URLSearchParams(initData);
-        // Из initData парсим user=...
         let userId = null;
+        
         if (urlParams.has('user')) {
              try {
                 const userObject = JSON.parse(urlParams.get('user'));
                 userId = userObject.id;
              } catch (e) {
-                console.error("Failed to parse user data from initData:", e);
+                customLog("Failed to parse user data from initData: " + e.message, 'error');
              }
         }
 
@@ -40,10 +108,42 @@
             document.body.innerHTML = 'Ошибка: Не удалось получить ID пользователя Telegram. Убедитесь, что приложение запущено в Telegram.';
         }
 
+        // --- Функция для кастомного логирования ---
+        function customLog(message, type = 'info') {
+            const logWindow = document.getElementById('log-window');
+            if (!logWindow) return; // Проверка, что элемент существует
+            
+            // Преобразуем объект в строку, если это объект
+            let logMessage = (typeof message === 'object' && message !== null) ? JSON.stringify(message, null, 2) : String(message);
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            
+            // Добавляем текущее время
+            const now = new Date().toLocaleTimeString();
+            entry.textContent = `[${now}][${type.toUpperCase()}] ${logMessage}`;
+
+            // Добавляем запись в начало окна (после заголовка)
+            logWindow.insertBefore(entry, logWindow.children[1]);
+            
+            // Ограничение на количество записей (например, 50)
+            const maxLogs = 50;
+            while (logWindow.children.length > maxLogs) {
+                logWindow.removeChild(logWindow.lastChild);
+            }
+        }
+        
+        // Перехват глобальных ошибок
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            customLog(`Global Error: ${msg} at line ${lineNo}`, 'error');
+            return false;
+        };
+
+
         // --- Функция для отправки запросов к GAS ---
         async function sendRequest(action, data = {}) {
             if (!userId) {
-                console.error("UserID is not set.");
+                customLog("UserID is not set.", 'error');
                 return { status: 'error', message: 'UserID is missing' };
             }
             
@@ -52,6 +152,8 @@
                 userId: userId,
                 ...data
             };
+
+            customLog(`Request: ${action}, Payload: ${JSON.stringify(payload)}`, 'info');
 
             try {
                 const response = await fetch(GAS_WEB_APP_URL, {
@@ -69,11 +171,12 @@
                 }
                 
                 const result = await response.json();
+                customLog(`Response for ${action}, Status: ${result.status}`, 'info');
                 return result;
 
             } catch (error) {
-                console.error('Fetch error:', error);
-                window.Telegram.WebApp.showAlert('Ошибка связи с сервером.');
+                customLog(`Fetch error for ${action}: ${error.message}`, 'error');
+                window.Telegram.WebApp.showAlert(`Ошибка связи: ${error.message}`);
                 return { status: 'error', message: error.message };
             }
         }
@@ -87,6 +190,7 @@
                 document.getElementById('speed').textContent = result.data.miningSpeed;
                 document.getElementById('currency').textContent = result.data.currentCurrency;
             } else {
+                customLog(`Player data load failed: ${result.message}`, 'error');
                 window.Telegram.WebApp.showAlert(result.message || 'Ошибка загрузки данных игрока.');
             }
         }
@@ -111,20 +215,23 @@
                     container.appendChild(cardDiv);
                 });
             } else {
+                customLog(`Shop data load failed: ${result.message}`, 'error');
                 container.innerHTML = 'Ошибка загрузки магазина.';
                 window.Telegram.WebApp.showAlert(result.message || 'Ошибка загрузки магазина.');
             }
         }
 
         async function buyCard(cardId) {
-            window.Telegram.WebApp.showConfirm(`Вы уверены, что хотите купить карту ${cardId}?`, async (isConfirmed) => {
+            window.Telegram.WebApp.showConfirm(`Вы уверены, что хотите купить карту ID ${cardId}?`, async (isConfirmed) => {
                 if (isConfirmed) {
+                    customLog(`Attempting to buy card ID: ${cardId}`, 'info');
                     const result = await sendRequest('buy_card', { cardId: cardId });
                     
                     if (result.status === 'ok') {
                         window.Telegram.WebApp.showAlert(result.message);
                         loadPlayerData(); // Обновляем баланс после покупки
                     } else {
+                        customLog(`Buy card failed: ${result.message}`, 'error');
                         window.Telegram.WebApp.showAlert(result.message || 'Ошибка при покупке.');
                     }
                 }
@@ -136,10 +243,12 @@
             if (window.Telegram.WebApp.initData) {
                 window.Telegram.WebApp.ready();
                 window.Telegram.WebApp.expand(); // Разворачиваем приложение на весь экран
+                customLog('Telegram WebApp initialized and expanded.', 'info');
                 loadPlayerData();
                 loadShopData();
             } else {
                 document.body.innerHTML = 'Запустите это приложение в контексте Telegram.';
+                customLog('Not running in Telegram context.', 'error');
             }
         };
     </script>
