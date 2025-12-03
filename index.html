@@ -1,388 +1,147 @@
 ﻿<!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Clicker</title>
+    <title>Crypto Miner Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--tg-theme-bg-color, #f4f4f4);
-            color: var(--tg-theme-text-color, #000);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            box-sizing: border-box;
-            text-align: center;
-        }
-        .balance-box {
-            background-color: var(--tg-theme-secondary-bg-color, #fff);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .main-button {
-            width: 100%;
-            padding: 20px;
-            font-size: 1.5em;
-            cursor: pointer;
-            border: none;
-            border-radius: 12px;
-            background-color: var(--tg-theme-button-color, #007bff);
-            color: var(--tg-theme-button-text-color, #fff);
-            margin-bottom: 20px;
-            transition: transform 0.1s;
-        }
-        .main-button:active {
-            transform: scale(0.98);
-        }
-        button {
-            padding: 10px 15px;
-            margin: 5px;
-            border: 1px solid var(--tg-theme-hint-color);
-            border-radius: 8px;
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            cursor: pointer;
-        }
-        /* Стили для модального окна */
-        #modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: var(--tg-theme-bg-color);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            width: 80%;
-            max-width: 300px;
-        }
-        /* Стили для отладочной консоли */
-        #debug-log {
-            text-align: left;
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid var(--tg-theme-link-color, #007bff);
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-link-color, #007bff);
-            font-family: monospace;
-            font-size: 0.8em;
-            border-radius: 8px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        .error-message {
-            color: var(--tg-theme-destructive-text-color, #ff3b30);
-            font-weight: bold;
-        }
-        select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border: 1px solid var(--tg-theme-hint-color);
-            background-color: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-        }
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
+        .card { border: 1px solid var(--tg-theme-hint-color); padding: 10px; margin-bottom: 10px; border-radius: 8px; }
+        .button { background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div id="modal-overlay">
-        <div class="modal-content">
-            <h2 id="modal-title">Сменить Валюту</h2>
-            <p>Выберите новую криптовалюту для майнинга:</p>
-            <select id="currency-select"></select>
-            <button onclick="changeCurrencyFromSelect()">Сменить</button>
-            <button onclick="closeModal()">Отмена</button>
-        </div>
-    </div>
+    <h1>⛏️ Моя Майнинг Ферма</h1>
+    <p>Баланс: <span id="balance">...</span></p>
+    <p>Общий Хешрейт: <span id="speed">...</span></p>
+    <p>Текущая валюта: <span id="currency">...</span></p>
     
-    <div class="container">
-        <h1>Крипто-Ферма</h1>
-        
-        <div class="balance-box">
-            <p>Баланс USD: <strong id="usd-balance">$0.00</strong></p>
-            <p>Баланс Крипты: <strong id="crypto-balance">0.00000 BTC</strong></p>
-            <p>Хэшрейт: <strong id="hash-rate">0 H/s</strong></p>
-            <p>Скорость добычи: <strong id="mining-constant">0.00000</strong></p>
-        </div>
-
-        <button class="main-button" onclick="mineCrypto()">⛏️ Майнить!</button>
-
-        <div class="actions">
-            <button onclick="openMiningSettings()">⚙️ Сменить Валюту</button>
-            <button onclick="sellCryptoPrompt()">💸 Продать Крипту</button>
-            <button onclick="loadFarmData(true)">🔄 Обновить (Майнинг)</button>
-        </div>
-
-        <p id="message-log"></p>
-
-        <div id="debug-log">
-            **Отладочная консоль:**
-        </div>
-    </div>
-
+    <h2>🛒 Магазин Видеокарт</h2>
+    <div id="shop-container">Загрузка...</div>
+    
     <script>
-        const TG = window.Telegram.WebApp;
+        // *** ЗАМЕНИТЕ ЭТОТ URL НА РАЗВЕРНУТЫЙ URL ВАШЕГО GAS WEB APP ***
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzZZL9vL2NgdZ0Dyt08aFH17xbj4XQ2BUj5A1nj6zBJRkTEHatNyFk7D8SFbpsuQlsh9g/exec';
+        
+        // Получаем initData и userId
+        const initData = window.Telegram.WebApp.initData;
+        const urlParams = new URLSearchParams(initData);
+        // Из initData парсим user=...
         let userId = null;
-        let userData = {};
-        // !!! ОБЯЗАТЕЛЬНО ЗАМЕНИТЕ ЭТУ ЗАГЛУШКУ НА ВАШ АКТУАЛЬНЫЙ URL РАЗВЕРТЫВАНИЯ GAS
-        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxLUla0XA6IV3L_Xm5jSYGbuUDWF5MtgbhjhSzIbblqm2sNDB6O4Qnrnsw5bBOzZx5F/exec"; 
-
-        const AVAILABLE_CURRENCIES = ['BTC', 'ETH', 'DOGE'];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            TG.ready();
-            TG.expand();
-            
-            if (TG.initDataUnsafe && TG.initDataUnsafe.user) {
-                userId = TG.initDataUnsafe.user.id;
-                logDebug('UserID', userId);
-                loadFarmData();
-            } else {
-                userId = 123456789;
-                document.getElementById('message-log').innerText = "Тестовый режим. ID: " + userId;
-                logDebug('Тестовый режим. ID', userId); 
-                loadFarmData(); 
-            }
-        });
-
-        // ----------------------------------------------------
-        // 1. Управление UI и Дебаг-Консолью
-        // ----------------------------------------------------
-
-        function logDebug(title, message, isError = false) {
-            const logElement = document.getElementById('debug-log');
-            const now = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            
-            let htmlContent = `[${now}] <strong>${title}:</strong> ${message}`;
-
-            if (isError) {
-                logEntry.classList.add('error-message');
-                htmlContent = `[${now}] 🚨 <strong>СЕРВЕРНАЯ ОШИБКА:</strong> ${message}`;
-                // Выводим только критические ошибки в основной алерт
-                if (title !== 'Запрос') {
-                   TG.showAlert(`Ошибка сервера! См. Отладочную консоль. (${title})`);
-                }
-            }
-            
-            logEntry.innerHTML = htmlContent;
-            
-            // Добавляем запись в конец
-            logElement.appendChild(logEntry);
-            // Прокручиваем вниз
-            logElement.scrollTop = logElement.scrollHeight;
+        if (urlParams.has('user')) {
+             try {
+                const userObject = JSON.parse(urlParams.get('user'));
+                userId = userObject.id;
+             } catch (e) {
+                console.error("Failed to parse user data from initData:", e);
+             }
         }
 
-        function updateUI() {
-            if (!userData.user_id) return;
-            
-            document.getElementById('usd-balance').innerText = `$${userData.usd.toFixed(2)}`;
-            document.getElementById('crypto-balance').innerText = `${userData.crypto.toFixed(5)} ${userData.crypto_name}`;
-            document.getElementById('hash-rate').innerText = `${userData.hash_rate} H/s`;
-            document.getElementById('mining-constant').innerText = `${userData.mining_constant.toFixed(6)} (${userData.crypto_name})`;
+        if (!userId) {
+            document.body.innerHTML = 'Ошибка: Не удалось получить ID пользователя Telegram. Убедитесь, что приложение запущено в Telegram.';
+        }
 
-            if (userData.mined_offline > 0) {
-                TG.showAlert(`Пока вас не было, намайнено ${userData.mined_offline.toFixed(5)} ${userData.crypto_name}!`);
-                userData.mined_offline = 0; 
+        // --- Функция для отправки запросов к GAS ---
+        async function sendRequest(action, data = {}) {
+            if (!userId) {
+                console.error("UserID is not set.");
+                return { status: 'error', message: 'UserID is missing' };
             }
-        }
+            
+            const payload = {
+                action: action,
+                userId: userId,
+                ...data
+            };
 
-        function showMessage(text) {
-            document.getElementById('message-log').innerText = text;
-        }
-
-        // ----------------------------------------------------
-        // 2. Функции API (Fetch - ОБНОВЛЕНО ДЛЯ ДЕБАГА)
-        // ----------------------------------------------------
-
-        async function fetchAPI(action, body = {}) {
-            logDebug('Запрос', action);
             try {
-                const response = await fetch(BACKEND_URL, {
+                const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ ...body, action: action, user_id: userId }),
-                    headers: { 'Content-Type': 'application/json' }
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
 
-                // Обработка ошибок HTTP (напр. 500)
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    logDebug('HTTP Ошибка', `${response.status} - ${errorText.substring(0, 100)}...`, true);
-                    return { success: false, error: 'HTTP Error' };
-                }
-
-                const data = await response.json();
-
-                if (data.error) {
-                    logDebug('Серверная логика', data.error, true);
-                } else {
-                    logDebug('Успех', action);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
-                return data;
+                const result = await response.json();
+                return result;
 
             } catch (error) {
-                // ОБЛАСТЬ ДЛЯ "TypeError: Failed to fetch"
-                logDebug('Сетевая ошибка (Failed to fetch)', error.toString(), true);
-                return { success: false, error: 'Network Error: Failed to fetch' };
+                console.error('Fetch error:', error);
+                window.Telegram.WebApp.showAlert('Ошибка связи с сервером.');
+                return { status: 'error', message: error.message };
+            }
+        }
+        
+        // --- Логика игры ---
+
+        async function loadPlayerData() {
+            const result = await sendRequest('get_player_data');
+            if (result.status === 'ok') {
+                document.getElementById('balance').textContent = result.data.balance.toFixed(2);
+                document.getElementById('speed').textContent = result.data.miningSpeed;
+                document.getElementById('currency').textContent = result.data.currentCurrency;
+            } else {
+                window.Telegram.WebApp.showAlert(result.message || 'Ошибка загрузки данных игрока.');
             }
         }
 
-        async function loadFarmData(isExplicitUpdate = false) {
-            if (!userId) return;
-            if (isExplicitUpdate) showMessage('Обновление данных...');
-            
-            logDebug('Загрузка', 'Начало');
-            try {
-                // Используем GET для загрузки данных
-                const response = await fetch(`${BACKEND_URL}?user_id=${userId}`);
-                const data = await response.json();
+        async function loadShopData() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = 'Загрузка магазина...';
 
-                if (data.error) {
-                    logDebug('Ошибка загрузки', data.error, true);
-                    return;
+            const result = await sendRequest('get_shop_data');
+            
+            if (result.status === 'ok' && result.cards) {
+                container.innerHTML = '';
+                result.cards.forEach(card => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'card';
+                    cardDiv.innerHTML = `
+                        <strong>${card.name}</strong> (ID: ${card.id})<br>
+                        Цена: ${card.price}<br>
+                        Хешрейт: ${card.hashRate}
+                        <button class="button" onclick="buyCard('${card.id}')">Купить</button>
+                    `;
+                    container.appendChild(cardDiv);
+                });
+            } else {
+                container.innerHTML = 'Ошибка загрузки магазина.';
+                window.Telegram.WebApp.showAlert(result.message || 'Ошибка загрузки магазина.');
+            }
+        }
+
+        async function buyCard(cardId) {
+            window.Telegram.WebApp.showConfirm(`Вы уверены, что хотите купить карту ${cardId}?`, async (isConfirmed) => {
+                if (isConfirmed) {
+                    const result = await sendRequest('buy_card', { cardId: cardId });
+                    
+                    if (result.status === 'ok') {
+                        window.Telegram.WebApp.showAlert(result.message);
+                        loadPlayerData(); // Обновляем баланс после покупки
+                    } else {
+                        window.Telegram.WebApp.showAlert(result.message || 'Ошибка при покупке.');
+                    }
                 }
-                
-                userData = data;
-                updateUI();
-                if (isExplicitUpdate) showMessage('Данные обновлены.');
-                logDebug('Загрузка', 'Успех');
-                
-            } catch (error) {
-                logDebug('Ошибка загрузки', error.toString(), true);
-            }
-        }
-
-        async function mineCrypto() {
-            const result = await fetchAPI('update_mining');
-            
-            if (result.success) {
-                userData.crypto = result.new_balance;
-                updateUI();
-                showMessage(`Намайнено ${result.mined.toFixed(5)} ${userData.crypto_name}!`);
-            } else if (result.error) {
-                // Ошибка уже выведена в консоль функцией fetchAPI
-                TG.showAlert('Ошибка майнинга: ' + result.error);
-            }
-        }
-
-        // ----------------------------------------------------
-        // 3. Смена Валюты
-        // ----------------------------------------------------
-
-        function openMiningSettings() {
-            const select = document.getElementById('currency-select');
-            select.innerHTML = '';
-            
-            AVAILABLE_CURRENCIES.forEach(c => {
-                const option = document.createElement('option');
-                option.value = c;
-                option.text = c;
-                if (c === userData.crypto_name) {
-                    option.selected = true;
-                }
-                select.appendChild(option);
             });
-            
-            document.getElementById('modal-overlay').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-
-        async function changeCurrencyFromSelect() {
-            const newCurrency = document.getElementById('currency-select').value;
-            closeModal();
-            
-            if (newCurrency === userData.crypto_name) {
-                TG.showAlert("Эта валюта уже выбрана.");
-                return;
-            }
-
-            TG.showPopup({ title: 'Смена Валюты', message: `Меняем на ${newCurrency}...` });
-
-            const result = await fetchAPI('change_currency', { currency: newCurrency });
-            
-            TG.closePopup();
-            if (result.success) {
-                TG.showAlert(`Валюта успешно сменена на ${result.new_currency}!`);
-                loadFarmData(); 
+        // --- Инициализация ---
+        window.onload = function() {
+            if (window.Telegram.WebApp.initData) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand(); // Разворачиваем приложение на весь экран
+                loadPlayerData();
+                loadShopData();
             } else {
-                TG.showAlert('Ошибка смены валюты: ' + (result.error || 'Неизвестная ошибка.'));
+                document.body.innerHTML = 'Запустите это приложение в контексте Telegram.';
             }
-        }
-
-        // ----------------------------------------------------
-        // 4. Продажа Криптовалюты
-        // ----------------------------------------------------
-
-        function sellCryptoPrompt() {
-            const cryptoName = userData.crypto_name;
-            const currentCrypto = userData.crypto;
-            
-            if (currentCrypto <= 0) {
-                TG.showAlert(`У вас нет ${cryptoName} для продажи!`);
-                return;
-            }
-            
-            const amountStr = prompt(
-                `Продажа ${cryptoName}:\nУ вас есть ${currentCrypto.toFixed(5)} ${cryptoName}.\nКакое количество вы хотите продать?`, 
-                currentCrypto.toFixed(5)
-            );
-            
-            if (amountStr === null || amountStr === "") return;
-            
-            const amount = Number(amountStr);
-            
-            if (isNaN(amount) || amount <= 0) {
-                TG.showAlert("Введите корректное положительное число.");
-                return;
-            }
-            
-            if (amount > currentCrypto) {
-                TG.showAlert(`Вы не можете продать больше, чем у вас есть (${currentCrypto.toFixed(5)} ${cryptoName}).`);
-                return;
-            }
-            
-            sellCrypto(amount);
-        }
-
-        async function sellCrypto(amount) {
-            TG.showPopup({ title: 'Продажа Крипты', message: 'Обработка продажи...' });
-
-            const result = await fetchAPI('sell_crypto', { amount: amount });
-            
-            TG.closePopup();
-            if (result.success) {
-                TG.showAlert(`Продажа ${amount.toFixed(5)} ${userData.crypto_name} успешна! Получено $${result.usd_earned.toFixed(2)}.`);
-                loadFarmData();
-            } else {
-                TG.showAlert('Ошибка продажи: ' + (result.error || 'Неизвестная ошибка.'));
-            }
-        }
+        };
     </script>
 </body>
 </html>
