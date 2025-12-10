@@ -1,260 +1,534 @@
-﻿<!DOCTYPE html>
-<html>
+﻿
+
+<!DOCTYPE html>
+<html lang="ru">
 <head>
-    <title>Crypto Miner Mini App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Miner Tycoon</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Базовые стили для Telegram WebApp */
-        body { 
-            font-family: Arial, sans-serif; 
-            padding: 20px; 
-            background-color: var(--tg-theme-bg-color, #ffffff); 
-            color: var(--tg-theme-text-color, #000000); 
-            margin: 0;
-            padding-bottom: 160px; /* Отступ для лог-окна */
-        }
-        .card { 
-            border: 1px solid var(--tg-theme-hint-color, #ccc); 
-            padding: 15px; 
-            margin-bottom: 15px; 
-            border-radius: 8px; 
-            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .button { 
-            background-color: var(--tg-theme-button-color, #007bff); 
-            color: var(--tg-theme-button-text-color, #ffffff); 
-            padding: 8px 12px; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            margin-top: 10px;
-            transition: background-color 0.2s;
-        }
-        .button:hover {
-            background-color: var(--tg-theme-button-color, #007bff); /* Используем ту же переменную, но можно затемнить для эффекта */
-            opacity: 0.9;
+        :root {
+            --bg-color: #1c1c1e;
+            --card-bg: #2c2c2e;
+            --text-color: #ffffff;
+            --accent-color: #34c759;
+            --danger-color: #ff3b30;
+            --btn-color: #007aff;
         }
 
-        /* Стили для окна логирования */
-        #log-window {
-            position: fixed;
-            bottom: 0;
-            left: 0;
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+
+        h1, h2, h3 { margin: 0 0 10px 0; }
+        .container { max-width: 600px; margin: 0 auto; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .balance { font-size: 1.5em; font-weight: bold; color: var(--accent-color); }
+        .hashrate { font-size: 0.9em; color: #8e8e93; }
+
+        .mining-section { text-align: center; margin-bottom: 20px; }
+        .coin-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+
+        .coin-btn {
+            background: var(--card-bg);
+            border: 2px solid transparent;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .coin-btn.active {
+            border-color: var(--btn-color);
+            background: #3a3a3c;
+        }
+
+        .click-area {
+            background: radial-gradient(circle, #444 0%, #2c2c2e 70%);
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+            border: 4px solid var(--btn-color);
+        }
+        .click-area:active { transform: scale(0.95); }
+        .click-area span { font-size: 2em; }
+        .crypto-balance { margin-top: 10px; font-size: 1.2em; }
+        
+        .sell-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: bold;
             width: 100%;
-            max-height: 150px; /* Ограничиваем высоту */
-            overflow-y: auto; /* Добавляем скролл */
-            background-color: #333;
-            color: #eee;
-            font-family: monospace;
-            font-size: 10px;
-            padding: 5px;
-            border-top: 2px solid var(--tg-theme-button-color, #007bff);
-            box-sizing: border-box;
-            z-index: 1000;
+            cursor: pointer;
         }
-        .log-entry {
-            white-space: pre-wrap;
-            word-break: break-all;
-            padding: 2px 0;
-            border-bottom: 1px dotted #444;
+
+        .shop-section { margin-top: 30px; }
+        .gpu-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .log-error {
-            color: #ff6961;
-            font-weight: bold;
+        .gpu-info h3 { font-size: 1em; }
+        .gpu-info p { font-size: 0.8em; color: #aaa; margin: 0; }
+
+        .buy-btn {
+            background: var(--btn-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
         }
-        .log-info {
-            color: #add8e6;
+        .buy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .inventory-list { margin-top: 20px; }
+        .sell-gpu-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
+            font-size: 0.8em;
+            cursor: pointer;
         }
-        .clear-log-button {
-            float:right; 
-            background:none; 
-            border:none; 
-            color:white; 
-            cursor:pointer;
-            font-size: 12px;
-            font-weight: bold;
-            padding: 0 5px;
-            line-height: 1;
-        }
+
     </style>
 </head>
 <body>
-    <h1>⛏️ Моя Майнинг Ферма3.0</h1>
-    <p>Баланс: <span id="balance">...</span></p>
-    <p>Общий Хешрейт: <span id="speed">...</span></p>
-    <p>Текущая валюта: <span id="currency">...</span></p>
-    
-    <h2>🛒 Магазин Видеокарт</h2>
-    <div id="shop-container">Загрузка...</div>
-    
-    <div id="log-window">
-        <strong>[LOGS]</strong>
-        <button onclick="document.getElementById('log-window').innerHTML = '<strong>[LOGS]</strong>';" class="clear-log-button">X</button>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <div>Баланс</div>
+            <div class="balance">$<span id="usd-balance">0.00</span></div>
+        </div>
+        <div style="text-align: right;">
+            <div>Мощность</div>
+            <div class="hashrate"><span id="total-hashrate">0</span> H/s</div>
+        </div>
     </div>
 
-    <script>
-        // *** АКТУАЛЬНЫЙ URL ВАШЕГО GAS WEB APP (проверьте, что он совпадает с развернутым!) ***
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxmMxubhFMWaVXQKpFxA5sqveZkkw8pKzPBb5SSMFZ1rHMa-YC_GMXuCQNZ4-b6ZzwhFA/exec';
+    <div class="mining-section">
+        <div class="coin-selector" id="coin-selector"></div>
+
+        <div class="click-area" id="mine-btn">
+            <span id="current-coin-icon">₿</span>
+            <small>CLICK</small>
+        </div>
+
+        <div class="crypto-balance">
+            Намайнено: <span id="coin-balance">0.000000</span> <span id="coin-ticker">BTC</span>
+        </div>
         
-        // Получаем initData и userId
-        const initData = window.Telegram.WebApp.initData;
-        const urlParams = new URLSearchParams(initData);
-        let userId = null;
+        <button class="sell-btn" id="exchange-btn">
+            Продать все <span id="exchange-ticker">BTC</span> за $<span id="exchange-value">0</span>
+        </button>
+    </div>
+
+    <hr style="border-color: #444;">
+
+    <div class="shop-section">
+        <h2 style="display:flex; justify-content:space-between; align-items:center;">
+            Магазин GPU 
+            <span id="slot-status" style="font-size: 0.7em; color: #ccc;"></span>
+        </h2>
+        <div id="shop-list"></div>
+    </div>
+
+    <div class="shop-section">
+        <h2>Моя Ферма</h2>
+        <div id="inventory-list" class="inventory-list">
+            <p style="color: #666; text-align: center;">Нет видеокарт</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =======================================================
+    // !!! ВАЖНО: ВСТАВЬТЕ СЮДА АДРЕС ВАШЕГО РАЗВЕРНУТОГО GOOGLE APPS SCRIPT !!!
+    // =======================================================
+    const SERVER_URL = "https://script.google.com/macros/s/AKfycbyrEkaD1xXWt_BkibpLguRrBNdxSk6jCsNTcm-n37uyadRaqhWuNE8OP8D9CYOmTITL/exec"; 
+
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const userId = tg.initDataUnsafe?.user?.id || 999;
+
+    // Базовые курсы и волатильность
+    const baseRates = {
+        BTC: { name: 'Bitcoin', icon: '₿', price: 65000, difficulty: 100000, volatility: 0.05 },
+        ETH: { name: 'Ethereum', icon: 'Ξ', price: 3500, difficulty: 8000, volatility: 0.08 },
+        DOGE: { name: 'Dogecoin', icon: 'Ð', price: 0.15, difficulty: 10, volatility: 0.15 },
+        TON: { name: 'Toncoin', icon: '💎', price: 7.50, difficulty: 100, volatility: 0.1 }
+    };
+
+    // Текущие курсы - будут меняться
+    let currencies = JSON.parse(JSON.stringify(baseRates));
+
+    const gpus = [
+        { id: 1, name: 'GTX 1060', price: 100, power: 10 },
+        { id: 2, name: 'RTX 3060', price: 400, power: 50 },
+        { id: 3, name: 'RTX 4090', price: 1500, power: 250 },
+        { id: 4, name: 'Mining ASIC', price: 5000, power: 1000 }
+    ];
+
+    let state = {
+        user_id: userId,
+        usd: 0,
+        balances: { BTC: 0, ETH: 0, DOGE: 0, TON: 0 },
+        inventory: [],
+        activeCoin: 'BTC',
+        totalHashrate: 0,
+        last_login_time: Date.now(), 
+        max_slots: 3 
+    };
+
+    const OFFLINE_CAP_HOURS = 12; // Максимум оффлайн-майнинга
+
+    // --- ДИНАМИЧЕСКИЕ КУРСЫ ---
+
+    function updateRates() {
+        // Меняем курсы в пределах волатильности базовой цены
+        for (const key in currencies) {
+            const basePrice = baseRates[key].price;
+            const volatility = baseRates[key].volatility;
+            
+            // Случайное изменение (например, +/- 5% от базовой цены)
+            const changePercent = (Math.random() * 2 - 1) * volatility; 
+            const newPrice = baseRates[key].price * (1 + changePercent);
+            
+            currencies[key].price = Math.max(0.01, newPrice); 
+        }
+        updateUI();
+    }
+
+    // --- ОФФЛАЙН МАЙНИНГ С УВЕДОМЛЕНИЕМ ---
+
+    // --- ОФФЛАЙН МАЙНИНГ С УВЕДОМЛЕНИЕМ ---
+
+    function calculateOfflineGain(lastTime) {
+        // Проверяем, есть ли что майнить и было ли время отсутствия
+        if (state.totalHashrate === 0 || lastTime === 0) return;
+
+        const currentTime = Date.now();
+        const timeDiffSeconds = Math.floor((currentTime - lastTime) / 1000);
         
-        if (urlParams.has('user')) {
-            try {
-                const userObject = JSON.parse(urlParams.get('user'));
-                userId = userObject.id;
-            } catch (e) {
-                customLog("Не удалось разобрать данные пользователя из initData: " + e.message, 'error');
-            }
-        }
+        const capSeconds = OFFLINE_CAP_HOURS * 3600; 
+        const actualTimeMined = Math.min(timeDiffSeconds, capSeconds);
 
-        if (!userId) {
-            document.body.innerHTML = 'Ошибка: Не удалось получить ID пользователя Telegram. Убедитесь, что приложение запущено в Telegram.';
-        }
-
-        // --- Функция для кастомного логирования ---
-        function customLog(message, type = 'info') {
-            const logWindow = document.getElementById('log-window');
-            if (!logWindow) return;
-            
-            let logMessage = (typeof message === 'object' && message !== null) ? JSON.stringify(message, null, 2) : String(message);
-
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type}`;
-            
-            const now = new Date().toLocaleTimeString();
-            entry.textContent = `[${now}][${type.toUpperCase()}] ${logMessage}`;
-
-            // Вставляем после заголовка (первый элемент)
-            logWindow.insertBefore(entry, logWindow.children[1]);
-            
-            const maxLogs = 50;
-            while (logWindow.children.length > maxLogs) {
-                logWindow.removeChild(logWindow.lastChild);
-            }
-        }
+        // УДАЛЕНО УСЛОВИЕ: if (actualTimeMined <= 60) return; 
         
-        // Перехват глобальных ошибок
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            customLog(`Глобальная ошибка: ${msg} в строке ${lineNo}`, 'error');
-            return false;
-        };
+        // Если время отсутствия равно или меньше нуля, ничего не начисляем
+        if (actualTimeMined <= 0) return; 
 
-
-        // --- Функция для отправки запросов к GAS ---
-        async function sendRequest(action, data = {}) {
-            if (!userId) {
-                customLog("ID пользователя не установлен.", 'error');
-                return { status: 'error', message: 'UserID is missing' };
-            }
-            
-            const payload = {
-                action: action,
-                userId: userId,
-                ...data
-            };
-
-            customLog(`Request: ${action}, Payload: ${JSON.stringify(payload)}`, 'info');
-
-            try {
-                const response = await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    cache: 'no-cache',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    // При ошибке HTTP (например, 403 Forbidden)
-                    throw new Error(`HTTP error! status: ${response.status} (${response.statusText})`);
-                }
-                
-                const result = await response.json();
-                customLog(`Response for ${action}, Status: ${result.status}`, 'info');
-                return result;
-
-            } catch (error) {
-                customLog(`Ошибка Fetch для ${action}: ${error.message}`, 'error');
-                window.Telegram.WebApp.showAlert(`Ошибка связи: ${error.message}. Проверьте настройки доступа к GAS.`);
-                return { status: 'error', message: error.message };
-            }
-        }
+        // Расчет ведется по текущей активной монете
+        const coinKey = state.activeCoin;
+        const coin = baseRates[coinKey]; 
         
-        // --- Логика игры ---
+        // Формула: Мощность * Время в секундах / Сложность
+        const minedAmount = (state.totalHashrate * actualTimeMined) / coin.difficulty;
+        
+        state.balances[coinKey] += minedAmount;
+        const minedTotalUSD = minedAmount * coin.price;
 
-        async function loadPlayerData() {
-            const result = await sendRequest('get_player_data');
-            if (result.status === 'ok') {
-                document.getElementById('balance').textContent = result.data.balance.toFixed(2);
-                document.getElementById('speed').textContent = result.data.miningSpeed;
-                document.getElementById('currency').textContent = result.data.currentCurrency;
-            } else {
-                customLog(`Ошибка загрузки данных игрока: ${result.message}`, 'error');
-                // Оставляем алерт только на ошибке Fetch
-            }
-        }
+        // ЭТА СТРОКА ОТВЕЧАЕТ ЗА УВЕДОМЛЕНИЕ
+        const hours = (actualTimeMined / 3600).toFixed(2);
+        tg.showAlert(`✅ Оффлайн доход за ${hours} ч. (макс. ${OFFLINE_CAP_HOURS}) на сумму: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})`);
+    }
 
-        async function loadShopData() {
-            const container = document.getElementById('shop-container');
-            container.innerHTML = 'Загрузка магазина...';
+    // --- СЕТЕВЫЕ ФУНКЦИИ ---
 
-            const result = await sendRequest('get_shop_data');
+    async function loadGame() {
+        try {
+            const response = await fetch(`${SERVER_URL}?user_id=${userId}`);
             
-            if (result.status === 'ok' && result.cards) {
-                container.innerHTML = '';
-                result.cards.forEach(card => {
-                    const cardDiv = document.createElement('div');
-                    cardDiv.className = 'card';
-                    cardDiv.innerHTML = `
-                        <strong>${card.name}</strong> (ID: ${card.id})<br>
-                        Цена: ${card.price}<br>
-                        Хешрейт: ${card.hashRate}
-                        <button class="button" onclick="buyCard('${card.id}')">Купить</button>
-                    `;
-                    container.appendChild(cardDiv);
-                });
-            } else {
-                customLog(`Ошибка загрузки магазина: ${result.message}`, 'error');
-                container.innerHTML = 'Ошибка загрузки магазина.';
-            }
-        }
-
-        async function buyCard(cardId) {
-            window.Telegram.WebApp.showConfirm(`Вы уверены, что хотите купить карту ID ${cardId}?`, async (isConfirmed) => {
-                if (isConfirmed) {
-                    customLog(`Попытка покупки карты ID: ${cardId}`, 'info');
-                    const result = await sendRequest('buy_card', { cardId: cardId });
+            if (response.ok) {
+                const data = await response.json();
+                if (data) {
+                    state.usd = parseFloat(data.usd) || 0; 
+                    state.balances = data.balances || { BTC: 0, ETH: 0, DOGE: 0, TON: 0 };
+                    state.inventory = data.inventory || [];
+                    state.max_slots = parseInt(data.max_slots) || 3; 
                     
-                    if (result.status === 'ok') {
-                        window.Telegram.WebApp.showAlert(result.message);
-                        loadPlayerData(); // Обновляем баланс после покупки
-                    } else {
-                        customLog(`Покупка карты не удалась: ${result.message}`, 'error');
-                        window.Telegram.WebApp.showAlert(result.message || 'Ошибка при покупке.');
+                    if (data.last_login_time) {
+                        calculateOfflineGain(data.last_login_time);
                     }
                 }
+            }
+        } catch (e) {
+            console.error("Ошибка загрузки:", e);
+        } finally {
+            updateUI(); 
+            // Запуск игровых циклов
+            setInterval(saveGame, 5000);
+            setInterval(updateRates, 60000); 
+        }
+    }
+
+    async function saveGame() {
+        state.last_login_time = Date.now(); // Обновляем время перед сохранением
+
+        try {
+            const dataToSend = {
+                user_id: state.user_id,
+                usd: state.usd,
+                balances: state.balances,
+                inventory: state.inventory,
+                max_slots: state.max_slots
+            };
+
+            await fetch(SERVER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(dataToSend)
             });
+        } catch (e) {
+            console.error("Ошибка сохранения:", e);
+        }
+    }
+
+    // --- UI и ЛОГИКА ---
+
+    function updateUI() {
+        document.getElementById('usd-balance').textContent = state.usd.toFixed(2);
+        
+        let passiveHash = state.inventory.reduce((acc, item) => acc + item.power, 0);
+        state.totalHashrate = passiveHash;
+        document.getElementById('total-hashrate').textContent = state.totalHashrate;
+
+        const coin = currencies[state.activeCoin];
+        document.getElementById('coin-balance').textContent = state.balances[state.activeCoin].toFixed(6);
+        document.getElementById('coin-ticker').textContent = state.activeCoin;
+        document.getElementById('current-coin-icon').textContent = coin.icon;
+        document.getElementById('exchange-ticker').textContent = state.activeCoin;
+        
+        const value = state.balances[state.activeCoin] * coin.price;
+        // Отображаем текущий курс в кнопке продажи
+        document.getElementById('exchange-value').innerHTML = `${value.toFixed(2)} (Rate: $${coin.price.toFixed(2)})`;
+
+        renderInventory();
+        checkShopButtons();
+        renderUpgradeSlots(); 
+    }
+
+    function renderUpgradeSlots() {
+        const slotSection = document.getElementById('slot-upgrade-section');
+        if (!slotSection) return;
+
+        const currentSlots = state.inventory.length;
+        const maxSlots = state.max_slots;
+        const upgradeCost = (maxSlots + 1) * 1000; 
+
+        // Обновляем статус слотов в заголовке магазина
+        document.getElementById('slot-status').textContent = `Слотов: ${currentSlots}/${maxSlots}`;
+
+        let html = `
+            <div class="gpu-card" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="gpu-info">
+                    <h3>Улучшение слотов</h3>
+                    <p>+1 Слот</p>
+                </div>
+                <div style="text-align:right">
+        `;
+        
+        if (maxSlots < 10) { 
+            html += `<div style="margin-bottom:5px; font-weight:bold">$${upgradeCost}</div>`;
+            html += `<button class="buy-btn" onclick="buySlot(${upgradeCost})" ${state.usd < upgradeCost ? 'disabled' : ''}>+1 Слот</button>`;
+        } else {
+            html += `<p style="color:#aaa;">Максимум слотов (10)</p>`;
         }
 
-        // --- Инициализация ---
-        window.onload = function() {
-            if (window.Telegram.WebApp.initData) {
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand(); // Разворачиваем приложение на весь экран
-                customLog('Telegram WebApp инициализировано и развернуто.', 'info');
-                loadPlayerData();
-                loadShopData();
-            } else {
-                document.body.innerHTML = 'Запустите это приложение в контексте Telegram.';
-                customLog('Запущено вне контекста Telegram.', 'error');
+        html += '</div></div>';
+        slotSection.innerHTML = html;
+    }
+
+    function buySlot(cost) {
+        if (state.usd >= cost) {
+            state.usd -= cost;
+            state.max_slots += 1;
+            tg.HapticFeedback.notificationOccurred('success');
+            updateUI();
+            saveGame();
+        } else {
+            tg.HapticFeedback.notificationOccurred('error');
+        }
+    }
+
+
+    function initCoinSelector() {
+        const container = document.getElementById('coin-selector');
+        container.innerHTML = '';
+        Object.keys(currencies).forEach(key => {
+            const btn = document.createElement('div');
+            btn.className = `coin-btn ${state.activeCoin === key ? 'active' : ''}`;
+            btn.textContent = key;
+            btn.onclick = () => {
+                state.activeCoin = key;
+                initCoinSelector();
+                updateUI();
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function initShop() {
+        const container = document.getElementById('shop-list');
+        container.innerHTML = '';
+        gpus.forEach(gpu => {
+            const card = document.createElement('div');
+            card.className = 'gpu-card';
+            card.innerHTML = `
+                <div class="gpu-info">
+                    <h3>${gpu.name}</h3>
+                    <p>+${gpu.power} H/s</p>
+                </div>
+                <div style="text-align:right">
+                    <div style="margin-bottom:5px; font-weight:bold">$${gpu.price}</div>
+                    <button class="buy-btn" id="buy-btn-${gpu.id}" onclick="buyGPU(${gpu.id})">Купить</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        
+        const slotUpgradeContainer = document.createElement('div');
+        slotUpgradeContainer.id = 'slot-upgrade-section';
+        container.appendChild(slotUpgradeContainer);
+    }
+
+    function checkShopButtons() {
+        const slotsAvailable = state.inventory.length < state.max_slots;
+
+        gpus.forEach(gpu => {
+            const btn = document.getElementById(`buy-btn-${gpu.id}`);
+            if (btn) {
+                btn.disabled = state.usd < gpu.price || !slotsAvailable;
+                if (!slotsAvailable) {
+                     btn.textContent = 'Нет слотов';
+                } else {
+                     btn.textContent = 'Купить';
+                }
             }
-        };
-    </script>
+        });
+    }
+
+    function buyGPU(id) {
+        const gpu = gpus.find(g => g.id === id);
+        if (state.usd >= gpu.price && state.inventory.length < state.max_slots) {
+            state.usd -= gpu.price;
+            state.inventory.push(gpu);
+            tg.HapticFeedback.notificationOccurred('success');
+            updateUI();
+            saveGame(); 
+        } else if (state.inventory.length >= state.max_slots) {
+             tg.showAlert("Сначала купите дополнительный слот для GPU!");
+             tg.HapticFeedback.notificationOccurred('warning');
+        } else {
+            tg.HapticFeedback.notificationOccurred('error');
+        }
+    }
+
+    function sellGPU(index) {
+        const gpu = state.inventory[index];
+        state.usd += gpu.price * 0.7;
+        state.inventory.splice(index, 1);
+        updateUI();
+        saveGame();
+    }
+
+    function renderInventory() {
+        const container = document.getElementById('inventory-list');
+        if (state.inventory.length === 0) {
+            container.innerHTML = '<p style="color: #666; text-align: center;">Нет видеокарт</p>';
+            return;
+        }
+        container.innerHTML = '';
+        state.inventory.forEach((gpu, index) => {
+            const item = document.createElement('div');
+            item.className = 'gpu-card';
+            item.innerHTML = `
+                <div class="gpu-info">
+                    <h3>${gpu.name}</h3>
+                    <p>+${gpu.power} H/s</p>
+                </div>
+                <button class="sell-gpu-btn" onclick="sellGPU(${index})">Продать ($${(gpu.price * 0.7).toFixed(0)})</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    document.getElementById('mine-btn').addEventListener('click', () => {
+        const coin = currencies[state.activeCoin];
+        const amount = (100 / coin.difficulty); 
+        state.balances[state.activeCoin] += amount;
+        
+        tg.HapticFeedback.impactOccurred('light');
+        const btn = document.getElementById('mine-btn');
+        btn.style.transform = 'scale(0.95)';
+        setTimeout(() => btn.style.transform = 'scale(1)', 100);
+
+        updateUI();
+    });
+
+    document.getElementById('exchange-btn').addEventListener('click', () => {
+        const coin = currencies[state.activeCoin];
+        const amount = state.balances[state.activeCoin];
+        if (amount <= 0) return;
+
+        state.usd += amount * coin.price;
+        state.balances[state.activeCoin] = 0;
+        
+        tg.HapticFeedback.notificationOccurred('success');
+        updateUI();
+        saveGame();
+    });
+
+    // Пассивный доход
+    setInterval(() => {
+        if (state.totalHashrate > 0) {
+            const coin = currencies[state.activeCoin];
+            const mined = (state.totalHashrate / coin.difficulty); 
+            state.balances[state.activeCoin] += mined;
+            updateUI();
+        }
+    }, 1000);
+
+    // СТАРТ
+    initCoinSelector();
+    initShop();
+    loadGame(); 
+
+</script>
 </body>
 </html>
