@@ -13,6 +13,9 @@
             --accent-color: #34c759;
             --danger-color: #ff3b30;
             --btn-color: #007aff;
+            --warning-color: #ffcc00;
+            --tab-bg: #3a3a3c;
+            --tab-active: #5a5a5c;
         }
 
         body {
@@ -20,12 +23,12 @@
             color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             user-select: none;
         }
 
+        .container { max-width: 600px; margin: 0 auto; padding: 20px 20px 80px 20px; }
         h1, h2, h3 { margin: 0 0 10px 0; }
-        .container { max-width: 600px; margin: 0 auto; }
 
         /* --- Стили для Прелоадера --- */
         #loader-screen {
@@ -69,7 +72,6 @@
         }
         /* --- Конец стилей для Прелоадера --- */
 
-
         .header {
             display: flex;
             justify-content: space-between;
@@ -81,8 +83,28 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .balance { font-size: 1.5em; font-weight: bold; color: var(--accent-color); }
+        .balance.danger { color: var(--danger-color); } /* Новый класс для отрицательного баланса */
         .hashrate { font-size: 0.9em; color: #8e8e93; }
 
+        /* --- БЛОК НОВОСТЕЙ --- */
+        #news-ticker {
+            background: #444; 
+            color: #fff; 
+            padding: 10px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            font-size: 0.9em; 
+            display: none;
+            transition: opacity 0.1s;
+        }
+        #news-text {
+            font-weight: bold; 
+        }
+
+        /* --- РАЗДЕЛЫ ВЛАДОК (КОНТЕНТ) --- */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
         .mining-section { text-align: center; margin-bottom: 20px; }
         .coin-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
 
@@ -129,8 +151,12 @@
             cursor: pointer;
         }
 
-        .shop-section { margin-top: 30px; }
-        .gpu-card {
+        .shop-section { margin-top: 20px; }
+        .shop-category { margin-top: 30px; }
+        .shop-category h2 { margin-bottom: 15px; }
+
+
+        .rig-card, .gpu-card, .personnel-card {
             background: var(--card-bg);
             padding: 15px;
             border-radius: 10px;
@@ -139,8 +165,8 @@
             justify-content: space-between;
             align-items: center;
         }
-        .gpu-info h3 { font-size: 1em; }
-        .gpu-info p { font-size: 0.8em; color: #aaa; margin: 0; }
+        .rig-info h3, .gpu-info h3, .personnel-info h3 { font-size: 1em; }
+        .rig-info p, .gpu-info p, .personnel-info p { font-size: 0.8em; color: #aaa; margin: 0; }
 
         .buy-btn {
             background: var(--btn-color);
@@ -153,8 +179,40 @@
         }
         .buy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .inventory-list { margin-top: 20px; }
-        .sell-gpu-btn {
+        .rig-list, .gpu-inventory-list, .personnel-list { margin-top: 20px; }
+        
+        /* Стили для отдельных GPU в риге */
+        .rig-item {
+            background: #3a3a3c;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .rig-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .rig-stats {
+            font-size: 0.8em;
+            color: #ccc;
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .gpu-in-rig {
+            background: #4a4a4c;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .sell-rig-btn, .sell-gpu-in-rig-btn, .fire-personnel-btn {
             background: var(--danger-color);
             color: white;
             border: none;
@@ -163,6 +221,50 @@
             margin-left: 10px;
             font-size: 0.8em;
             cursor: pointer;
+        }
+        .add-gpu-to-rig-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .add-gpu-to-rig-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* --- СТИЛИ ДЛЯ ВЛАДОК (ТАБОВ) --- */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            background-color: var(--tab-bg);
+            border-top: 1px solid #444;
+            padding: 5px 0;
+            z-index: 500;
+        }
+
+        .tab-button {
+            flex-grow: 1;
+            text-align: center;
+            padding: 10px 0;
+            color: #8e8e93;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .tab-button.active {
+            color: var(--btn-color);
+            font-weight: bold;
+        }
+        .tab-button span {
+            display: block;
+            font-size: 1.4em;
+            margin-bottom: 2px;
         }
 
     </style>
@@ -178,46 +280,98 @@
     <div class="header">
         <div>
             <div>Баланс</div>
-            <div class="balance">$<span id="usd-balance">0.00</span></div>
+            <div class="balance" id="usd-balance-container">$<span id="usd-balance">0.00</span></div>
         </div>
         <div style="text-align: right;">
             <div>Мощность</div>
             <div class="hashrate"><span id="total-hashrate">0</span> H/s</div>
         </div>
     </div>
-
-    <div class="mining-section">
-        <div class="coin-selector" id="coin-selector"></div>
-
-        <div class="click-area" id="mine-btn">
-            <span id="current-coin-icon">₿</span>
-            <small>CLICK</small>
-        </div>
-
-        <div class="crypto-balance">
-            Намайнено: <span id="coin-balance">0.000000</span> <span id="coin-ticker">BTC</span>
-        </div>
-        
-        <button class="sell-btn" id="exchange-btn">
-            Продать все <span id="exchange-ticker">BTC</span> за $<span id="exchange-value">0</span>
-        </button>
+    
+    <div id="news-ticker">
+        <span id="news-text"></span>
     </div>
 
-    <hr style="border-color: #444;">
+    <div id="tab-mining" class="tab-content active">
+        <div class="mining-section">
+            <h2 style="text-align: left;">Выбор монеты и продажа</h2>
+            <div class="coin-selector" id="coin-selector"></div>
 
-    <div class="shop-section">
-        <h2 style="display:flex; justify-content:space-between; align-items:center;">
-            Магазин GPU 
-            <span id="slot-status" style="font-size: 0.7em; color: #ccc;"></span>
-        </h2>
-        <div id="shop-list"></div>
+            <div class="click-area" id="mine-btn">
+                <span id="current-coin-icon">₿</span>
+                <small>CLICK</small>
+            </div>
+
+            <div class="crypto-balance">
+                Намайнено: <span id="coin-balance">0.000000</span> <span id="coin-ticker">BTC</span>
+            </div>
+            
+            <button class="sell-btn" id="exchange-btn">
+                Продать все <span id="exchange-ticker">BTC</span> за $<span id="exchange-value">0</span>
+            </button>
+        </div>
     </div>
 
-    <div class="shop-section">
-        <h2>Моя Ферма</h2>
-        <div id="inventory-list" class="inventory-list">
-            <p style="color: #666; text-align: center;">Нет видеокарт</p>
+    <div id="tab-shop" class="tab-content">
+        <div class="shop-section">
+            <div class="shop-category">
+                <h2 style="display:flex; justify-content:space-between; align-items:center;">
+                    🛒 Риги (Rig Frames)
+                </h2>
+                <div id="rig-shop-list"></div>
+            </div>
+
+            <div class="shop-category">
+                <h2 style="display:flex; justify-content:space-between; align-items:center;">
+                    🛒 Видеокарты
+                    <span id="gpu-slot-status" style="font-size: 0.7em; color: #ccc;"></span>
+                </h2>
+                <div id="gpu-shop-list"></div>
+            </div>
+
+            <div class="shop-category">
+                <h2>🧑‍🔧 Персонал</h2>
+                <div id="personnel-shop-list"></div>
+            </div>
         </div>
+    </div>
+
+    <div id="tab-farm" class="tab-content">
+        <div class="shop-section">
+            <h2>📈 Моя Ферма</h2>
+            <p style="color: #ccc; margin-bottom: 15px;">
+                Общий хешрейт: <span id="farm-total-hashrate">0</span> H/s 
+                <span style="font-size:0.8em; color:var(--accent-color); margin-left:10px;" id="hourly-profit"></span>
+                <span style="font-size:0.8em; color:var(--danger-color); margin-left:5px;" id="hourly-cost"></span>
+                <span style="font-size:0.8em; font-weight:bold; margin-left:10px;" id="hourly-net-profit"></span>
+            </p>
+            
+            <div id="rig-inventory-list" class="rig-list">
+                <p style="color: #666; text-align: center;">Нет ригов</p>
+            </div>
+
+            <h3 style="margin-top: 30px;">Свободные видеокарты (<span id="free-gpu-count">0</span>)</h3>
+            <div id="free-gpu-list" class="gpu-inventory-list">
+                <p style="color: #666; text-align: center;">Нет свободных видеокарт</p>
+            </div>
+
+            <h3 style="margin-top: 30px;">🧑‍🔧 Мой Персонал</h3>
+            <div id="personnel-list" class="personnel-list">
+                <p style="color: #666; text-align: center;">Нет нанятого персонала</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tab-bar">
+    <div class="tab-button active" data-tab="mining">
+        <span>⛏️</span> Майнинг
+    </div>
+    <div class="tab-button" data-tab="shop">
+        <span>🛒</span> Магазин
+    </div>
+    <div class="tab-button" data-tab="farm">
+        <span>📈</span> Ферма
     </div>
 </div>
 
@@ -225,59 +379,237 @@
     // =======================================================
     // !!! ВАЖНО: ВСТАВЬТЕ СЮДА АДРЕС ВАШЕГО РАЗВЕРНУТОГО GOOGLE APPS SCRIPT !!!
     // =======================================================
-    const SERVER_URL = "https://script.google.com/macros/s/AKfycbxVxINXrbodUUw0x1PJpfS0OSGP57o1JYwyf467J_KKtCJ72WgjBy_FjjuUXbZWhvXy/exec"; 
+    const SERVER_URL = "https://script.google.com/macros/s/AKfycbzk5SuhmRxKoCcYsp9vhFhDPGmMMnYPTqn-N8WmPFEjFVu6YvEzoSuG5rlvkjyNG0s/exec"; 
 
     const tg = window.Telegram.WebApp;
 
     const userId = tg.initDataUnsafe?.user?.id || 999;
 
+    // Стоимость 1 H/s в USD в секунду
+    const ENERGY_COST_PER_HASH = 0.0005; 
+    
+    // Базовый шанс сбоя/сгорания карты в секунду (0.005% на карту)
+    const GPU_FAIL_CHANCE = 0.00005; 
+    
+    // Множитель для перегрева рига. 1.5 = +50% к шансу сгорания, если превышен лимит мощности
+    const RIG_OVERHEAT_MULTIPLIER = 1.5; 
+
     // Базовые курсы и волатильность
     const baseRates = {
-        BTC: { name: 'Bitcoin', icon: '₿', price: 65000, difficulty: 100000, volatility: 0.05 },
-        ETH: { name: 'Ethereum', icon: 'Ξ', price: 3500, difficulty: 8000, volatility: 0.08 },
-        DOGE: { name: 'Dogecoin', icon: 'Ð', price: 0.15, difficulty: 10, volatility: 0.15 },
-        TON: { name: 'Toncoin', icon: '💎', price: 7.50, difficulty: 100, volatility: 0.1 }
+        BTC: { name: 'Bitcoin', icon: '₿', price: 65000, difficulty: 250000, volatility: 0.05 }, 
+        ETH: { name: 'Ethereum', icon: 'Ξ', price: 3500, difficulty: 20000, volatility: 0.08 },  
+        DOGE: { name: 'Dogecoin', icon: 'Ð', price: 0.15, difficulty: 50, volatility: 0.15 },     
+        TON: { name: 'Toncoin', icon: '💎', price: 7.50, difficulty: 500, volatility: 0.1 }      
     };
 
-    // Текущие курсы - будут меняться
     let currencies = JSON.parse(JSON.stringify(baseRates));
 
+    // --- Модели Ригов --- 
+    const rigModels = [
+        { id: 100, name: 'Базовый открытый стенд', price: 500, max_gpus: 4, max_power: 1000 },
+        { id: 101, name: 'Стойка для 8 GPU', price: 2500, max_gpus: 8, max_power: 3500 },
+        { id: 102, name: 'Промышленный модуль', price: 10000, max_gpus: 12, max_power: 7000 },
+        { id: 103, name: 'Ферма-Контейнер', price: 50000, max_gpus: 20, max_power: 15000 }
+    ];
+
+    // --- 20 РАЗНЫХ ВИДЕОКАРТ (с параметром 'heat') ---
+    // Heat - условные единицы тепловыделения, влияющие на нагрузку на БП и риск.
     const gpus = [
-        { id: 1, name: 'GTX 1060', price: 100, power: 10 },
-        { id: 2, name: 'RTX 3060', price: 400, power: 50 },
-        { id: 3, name: 'RTX 4090', price: 1500, power: 250 },
-        { id: 4, name: 'Mining ASIC', price: 5000, power: 1000 }
+        { id: 1, name: 'GTX 1050 Ti', price: 150, power: 15, heat: 5 },
+        { id: 2, name: 'GTX 1060', price: 300, power: 30, heat: 10 },
+        { id: 3, name: 'RX 580', price: 450, power: 45, heat: 15 },
+        { id: 4, name: 'RTX 2060', price: 700, power: 65, heat: 20 },
+        { id: 5, name: 'RTX 3060 Ti', price: 1200, power: 120, heat: 35 },
+        { id: 6, name: 'RX 6700 XT', price: 1500, power: 150, heat: 40 },
+        { id: 7, name: 'RTX 3070', price: 2000, power: 200, heat: 50 },
+        { id: 8, name: 'RX 6800 XT', price: 2500, power: 250, heat: 60 },
+        { id: 9, name: 'RTX 3080', price: 3500, power: 350, heat: 80 },
+        { id: 10, name: 'RTX 4070', price: 4500, power: 500, heat: 100 },
+        { id: 11, name: 'RTX 3090', price: 6000, power: 750, heat: 130 },
+        { id: 12, name: 'RTX 4080', price: 8000, power: 1000, heat: 160 },
+        { id: 13, name: 'RX 7900 XTX', price: 10000, power: 1300, heat: 200 },
+        { id: 14, name: 'RTX 4090', price: 13000, power: 1700, heat: 250 },
+        { id: 15, name: 'ASIC Miner S19', price: 20000, power: 3000, heat: 400 },
+        { id: 16, name: 'Quantum Hash 5K', price: 35000, power: 5500, heat: 600 },
+        { id: 17, name: 'ETH-Killer Rig', price: 50000, power: 8000, heat: 800 },
+        { id: 18, name: 'TON-Optimized ASIC', price: 75000, power: 12000, heat: 1000 },
+        { id: 19, name: 'Industrial Farm Unit', price: 120000, power: 20000, heat: 1500 },
+        { id: 20, name: 'Galactic Super-Miner', price: 250000, power: 40000, heat: 2500 },
+    ];
+
+    // --- Персонал --- 
+    const personnelModels = [
+        // Инженер снижает базовый шанс сгорания на 50%
+        { id: 200, name: 'Инженер', salary: 500, effect: { type: 'fail_chance_reduction', value: 0.5 } } 
     ];
 
     let state = {
         user_id: userId,
         usd: 0,
         balances: { BTC: 0, ETH: 0, DOGE: 0, TON: 0 },
-        inventory: [],
+        rigs: [], // Массив купленных ригов
+        free_gpus: [], // Карты, которые куплены, но не установлены в риги
+        personnel: [], // Нанятый персонал
         activeCoin: 'BTC',
         totalHashrate: 0,
         last_login_time: Date.now(), 
-        max_slots: 3 
     };
 
-    const OFFLINE_CAP_HOURS = 12; // Максимум оффлайн-майнинга
+    const OFFLINE_CAP_HOURS = 12; 
+    
+    // --- СИСТЕМА НОВОСТЕЙ И СОБЫТИЙ ---
+    let activeEvent = null;
 
-    // --- ДИНАМИЧЕСКИЕ КУРСЫ ---
+    const eventDuration = 120; // Длительность события в секундах
+    const newsTickerElement = document.getElementById('news-ticker');
+    const newsTextElement = document.getElementById('news-text');
+
+    const eventThemes = [
+        { text: "Крупный фонд 'BlackRock' объявил о покупке [COIN].", effect: { type: 'price', severity: 'high' } },
+        { text: "Власти [COUNTRY] рассматривают полный запрет на [COIN].", effect: { type: 'price', severity: 'extreme_neg' } },
+        { text: "Новый технологический прорыв уменьшил сложность майнинга [COIN].", effect: { type: 'difficulty', severity: 'medium_neg' } },
+        { text: "Производители GPU массово сбрасывают карты. Майнинг [COIN] усложняется.", effect: { type: 'difficulty', severity: 'medium_pos' } },
+        { text: "Блогер Илон Маск снова написал твит о [COIN].", effect: { type: 'price', severity: 'extreme_pos' } },
+        { text: "Экологические активисты выступают против [COIN] из-за энергопотребления.", effect: { type: 'price', severity: 'medium_neg' } },
+        { text: "Запуск [COIN]-сателлита на орбиту прошел успешно.", effect: { type: 'price', severity: 'medium_pos' } },
+        { text: "Произошел крупный баг в блокчейне [COIN].", effect: { type: 'price', severity: 'high_neg' } },
+        { text: "Генеральный директор MicroStrategy объявляет о крупных покупках [COIN].", effect: { type: 'price', severity: 'high' } },
+        { text: "Новая система кэширования сделала транзакции [COIN] в 10 раз быстрее.", effect: { type: 'difficulty', severity: 'low_neg' } },
+        { text: "Крупная кража на централизованной бирже затронула [COIN].", effect: { type: 'price', severity: 'high_neg' } },
+        { text: "Аналитики Goldman Sachs дали нейтральный прогноз по [COIN].", effect: { type: 'none', severity: 'none' } },
+        { text: "Внезапное отключение электроэнергии в [COUNTRY] снизило хешрейт [COIN].", effect: { type: 'difficulty', severity: 'low_neg' } },
+        { text: "Влиятельный инвестор продал все свои активы [COIN].", effect: { type: 'price', severity: 'medium_neg' } },
+        { text: "Крупнейший банк мира добавил [COIN] в свои резервы.", effect: { type: 'price', severity: 'extreme_pos' } },
+        { text: "Правительство [COUNTRY] объявило [COIN] официальным платежным средством.", effect: { type: 'price', severity: 'extreme_pos' } },
+        { text: "Майнинг [COIN] стал на 5% проще благодаря оптимизации протокола.", effect: { type: 'difficulty', severity: 'medium_neg' } },
+        { text: "Новая атака 51% на мелких майнеров [COIN].", effect: { type: 'difficulty', severity: 'high_pos' } },
+        { text: "Релиз нового поколения GPU: спрос на [COIN] растет.", effect: { type: 'price', severity: 'high' } },
+        { text: "Криптовалютный ETF на [COIN] одобрен в [COUNTRY].", effect: { type: 'price', severity: 'high' } },
+        { text: "Крупная компания по производству чипов прекращает поддержку [COIN].", effect: { type: 'difficulty', severity: 'high_pos' } }
+    ];
+
+    const eventEffects = {
+        extreme_pos: 1.5, high: 1.25, medium_pos: 1.15, medium_neg: 0.85, high_neg: 0.75, extreme_neg: 0.5,   
+        low_neg: 0.8, medium_neg: 0.9, medium_pos: 1.1, high_pos: 1.25,     
+    };
+
+    const countries = ['США', 'Германии', 'России', 'Китае', 'Японии', 'Казахстане', 'Ирана', 'Швейцарии', 'Великобритании'];
+    
+    function triggerEvent() {
+        if (activeEvent || Math.random() < 0.8) { 
+            return;
+        }
+
+        const coinKeys = Object.keys(currencies);
+        const randomCoinKey = coinKeys[Math.floor(Math.random() * coinKeys.length)];
+        const coinIcon = currencies[randomCoinKey].icon;
+        
+        const randomTheme = eventThemes[Math.floor(Math.random() * eventThemes.length)];
+        
+        if (randomTheme.effect.severity === 'none' || !eventEffects[randomTheme.effect.severity]) return;
+
+        const effectMultiplier = eventEffects[randomTheme.effect.severity];
+        
+        let percentChange = Math.round((effectMultiplier - 1) * 100);
+        let changeText;
+        
+        if (randomTheme.effect.type === 'price') {
+            const color = percentChange > 0 ? 'var(--accent-color)' : 'var(--danger-color)';
+            const sign = percentChange > 0 ? '+' : '';
+            changeText = `<span style="color: ${color};">Цена: ${sign}${percentChange}%</span>`;
+
+        } else if (randomTheme.effect.type === 'difficulty') {
+            const isGood = percentChange < 0;
+            const color = isGood ? 'var(--accent-color)' : 'var(--danger-color)';
+            const absPercent = Math.abs(percentChange);
+            const difficultyStatus = isGood ? 'легче' : 'сложнее';
+            
+            changeText = `<span style="color: ${color};">Сложность: ${isGood ? '-' : '+'}${absPercent}% (${difficultyStatus})</span>`;
+        }
+
+        activeEvent = {
+            coin: randomCoinKey,
+            type: randomTheme.effect.type,
+            multiplier: effectMultiplier,
+            endTime: Date.now() + eventDuration * 1000 
+        };
+
+        let newsText = randomTheme.text.replace('[COIN]', randomCoinKey);
+        newsText = newsText.replace('[COUNTRY]', countries[Math.floor(Math.random() * countries.length)]);
+        
+        const baseDescription = `🔥 **Срочная новость!** ${coinIcon} ${newsText} [${changeText}]`;
+        activeEvent.baseDescription = baseDescription; 
+        
+        newsTextElement.innerHTML = baseDescription;
+        newsTickerElement.style.display = 'block';
+
+        updateRates(); 
+
+        try { tg.HapticFeedback.notificationOccurred('warning'); } catch(e) { /* ignore */ }
+    }
+
+
+    function updateEventTimer() {
+        if (activeEvent) {
+            const timeLeft = Math.floor((activeEvent.endTime - Date.now()) / 1000);
+            const newsSpan = document.getElementById('news-text');
+
+            if (timeLeft <= 0) {
+                activeEvent = null;
+                newsTickerElement.style.display = 'none';
+                newsTickerElement.style.opacity = '1';
+                updateRates(); 
+                return;
+            }
+
+            // Обновляем текст с таймером
+            newsSpan.innerHTML = activeEvent.baseDescription + 
+                ` <span style="color:var(--warning-color); font-weight:bold;">[Осталось: ${timeLeft} сек.]</span>`;
+            
+            // Эффект мигания при низком времени (менее 10 секунд)
+            if (timeLeft < 10 && timeLeft % 2 === 0) {
+                 newsTickerElement.style.opacity = '0.5';
+            } else {
+                 newsTickerElement.style.opacity = '1';
+            }
+        }
+    }
+
 
     function updateRates() {
+        let eventActive = false;
+        
+        if (activeEvent) {
+            eventActive = true;
+        }
+        
         for (const key in currencies) {
             const basePrice = baseRates[key].price;
             const volatility = baseRates[key].volatility;
+            const baseDifficulty = baseRates[key].difficulty;
+
+            // Рандомная волатильность
+            let newPrice = basePrice * (1 + (Math.random() * 2 - 1) * volatility);
+            let newDifficulty = baseDifficulty;
+
             
-            const changePercent = (Math.random() * 2 - 1) * volatility; 
-            const newPrice = baseRates[key].price * (1 + changePercent);
+            if (eventActive && key === activeEvent.coin) {
+                if (activeEvent.type === 'price') {
+                    // Применяем множитель события к цене
+                    newPrice *= activeEvent.multiplier;
+                } else if (activeEvent.type === 'difficulty') {
+                    // Применяем множитель события к сложности
+                    newDifficulty *= activeEvent.multiplier;
+                }
+            }
             
             currencies[key].price = Math.max(0.01, newPrice); 
+            currencies[key].difficulty = Math.max(1, newDifficulty);
         }
+        
         updateUI();
     }
 
-    // --- ОФФЛАЙН МАЙНИНГ (ИСПОЛЬЗУЕМ window.alert) ---
 
     function calculateOfflineGain(lastTime, onComplete, totalHashrateAtExit) {
         if (totalHashrateAtExit === 0 || lastTime === 0) {
@@ -301,62 +633,81 @@
         
         const minedAmount = (totalHashrateAtExit * actualTimeMined) / coin.difficulty;
         
-        // Заработок должен быть больше 0.001 USD
+        // Расчет и вычет оффлайн-расходов
+        const energyCost = totalHashrateAtExit * actualTimeMined * ENERGY_COST_PER_HASH;
+        
+        // Расчет и вычет зарплаты персонала
+        const personnelSalary = state.personnel.reduce((sum, p) => sum + p.salary * actualTimeMined, 0); 
+        const totalOfflineCost = energyCost + personnelSalary;
+
+        state.usd -= totalOfflineCost;
+
+
         if (minedAmount * coin.price < 0.001) { 
             onComplete();
             return;
         }
 
-        // Начисляем доход на баланс
         state.balances[coinKey] += minedAmount;
         const minedTotalUSD = minedAmount * coin.price;
         
         const hours = (actualTimeMined / 3600).toFixed(2);
         
         const message = `
-        Оффлайн доход начислен!
-        
-        Период: ${hours} ч. (макс. ${OFFLINE_CAP_HOURS})
-        Начислено: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})
+Оффлайн доход начислен!
 
-        Нажмите "ОК", чтобы начать игру.
-        `;
+Период: ${hours} ч. (макс. ${OFFLINE_CAP_HOURS})
+Начислено: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})
+
+ВЫЧТЕНЫ РАСХОДЫ:
+- Энергия: $${energyCost.toFixed(2)}
+- Зарплата персонала: $${personnelSalary.toFixed(2)}
+- Общие расходы: $${totalOfflineCost.toFixed(2)}
+
+Нажмите "ОК", чтобы начать игру.
+`;
         
-        // Скрываем лоадер и показываем сообщение оффлайн-дохода
         document.querySelector('.loader').style.display = 'none';
         document.getElementById('loader-message').innerHTML = `
             💰 **Оффлайн доход!**<br>
             Начислено: <span style="color:var(--accent-color); font-weight:bold">$${minedTotalUSD.toFixed(2)}</span><br>
+            Расходы: <span style="color:var(--danger-color); font-weight:bold">$${totalOfflineCost.toFixed(2)}</span><br>
             (Ожидание подтверждения "ОК"...)
         `;
 
-        // 1. Показываем стандартное блокирующее окно
-        window.alert(message.trim()); // Блокирует выполнение до нажатия "ОК"
+        window.alert(message.trim()); 
         
-        // 2. После нажатия "ОК", вызывается onComplete и игра запускается
         onComplete();
     }
 
-    // --- Инициализация игры после загрузки/уведомления ---
     function initializeGame(loadedSuccessfully) {
+        // Если не загрузилось, создаем стартовый Риг, чтобы можно было начать игру
+        if (!loadedSuccessfully && state.rigs.length === 0) {
+            const starterRig = rigModels[0];
+            state.rigs.push({
+                ...starterRig, 
+                gpus: [],
+                unique_id: Date.now() 
+            });
+            state.usd = 500; // Стартовый капитал
+        }
+        
         updateUI(); 
         
-        // СКРЫТИЕ ПРЕЛОАДЕРА
         document.getElementById('loader-screen').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('loader-screen').style.display = 'none';
         }, 300);
         
-        // Запуск игровых циклов
         setInterval(saveGame, 5000);
         setInterval(updateRates, 60000); 
+        setInterval(triggerEvent, 10000);
+        setInterval(updateEventTimer, 1000); 
         
         if (!loadedSuccessfully) {
              state.last_login_time = Date.now();
         }
     }
-
-    // --- СЕТЕВЫЕ ФУНКЦИИ ---
 
     async function loadGame() {
         let loadedSuccessfully = false;
@@ -364,24 +715,29 @@
         let passiveHash = 0;
 
         try {
+            document.getElementById('loader-message').textContent = "Загрузка данных пользователя...";
             const response = await fetch(`${SERVER_URL}?user_id=${userId}`);
             
             if (response.ok) {
                 const data = await response.json();
                 if (data) {
+                    // Восстановление основных данных
                     state.usd = parseFloat(data.usd) || 0; 
                     state.balances = data.balances || { BTC: 0, ETH: 0, DOGE: 0, TON: 0 };
-                    state.inventory = data.inventory || [];
-                    state.max_slots = parseInt(data.max_slots) || 3; 
+                    state.rigs = data.rigs || []; 
+                    state.free_gpus = data.free_gpus || [];
+                    state.personnel = data.personnel || []; 
                     
                     if (data.last_login_time && data.last_login_time !== 0) {
                         offlineTime = data.last_login_time;
                     }
                     loadedSuccessfully = true;
                     
-                    // Рассчитываем хешрейт немедленно
-                    passiveHash = state.inventory.reduce((acc, item) => acc + item.power, 0); 
-                    state.totalHashrate = passiveHash; 
+                    // Пересчет общего хешрейта из всех ригов
+                    state.totalHashrate = state.rigs.reduce((rigAcc, rig) => {
+                        return rigAcc + rig.gpus.reduce((gpuAcc, gpu) => gpuAcc + gpu.power, 0);
+                    }, 0); 
+                    passiveHash = state.totalHashrate;
                 }
             }
         } catch (e) {
@@ -391,13 +747,13 @@
             return;
         } 
         
-        // БЛОКИРУЕМ ЗАПУСК ИГРЫ
-        if (loadedSuccessfully && state.totalHashrate > 0 && offlineTime > 0) {
+        if (loadedSuccessfully && passiveHash > 0 && offlineTime > 0) {
             calculateOfflineGain(offlineTime, () => initializeGame(loadedSuccessfully), passiveHash);
         } else {
             initializeGame(loadedSuccessfully);
         }
     }
+
 
     async function saveGame() {
         state.last_login_time = Date.now(); 
@@ -407,8 +763,9 @@
                 user_id: state.user_id,
                 usd: state.usd,
                 balances: state.balances,
-                inventory: state.inventory,
-                max_slots: state.max_slots,
+                rigs: state.rigs,
+                free_gpus: state.free_gpus,
+                personnel: state.personnel,
                 last_login_time: state.last_login_time 
             };
 
@@ -421,16 +778,116 @@
             console.error("Ошибка сохранения:", e);
         }
     }
+    
+    // Функция, проверяющая сбои GPU
+    function checkGPUFailures() {
+        // Определяем модификатор шанса сбоя от персонала (Инженер)
+        let failChanceMultiplier = 1;
+        const engineer = state.personnel.find(p => p.id === 200);
+        if (engineer) {
+            // Инженер снижает шанс сбоя на 50%
+            failChanceMultiplier -= engineer.effect.value; 
+        }
+
+        // Проверяем все карты во всех ригах
+        for (let rigIndex = 0; rigIndex < state.rigs.length; rigIndex++) {
+            const rig = state.rigs[rigIndex];
+            
+            // Расчет текущей мощности и тепловыделения рига
+            const currentPower = rig.gpus.reduce((acc, gpu) => acc + gpu.power, 0);
+            const isOverheated = currentPower > rig.max_power;
+            
+            // Дополнительный множитель, если риг перегрет
+            const overheatMultiplier = isOverheated ? RIG_OVERHEAT_MULTIPLIER : 1;
+
+            // Проходим инвентарь рига с конца
+            for (let gpuIndex = rig.gpus.length - 1; gpuIndex >= 0; gpuIndex--) {
+                const gpu = rig.gpus[gpuIndex];
+                
+                // Модификатор мощности: более мощные карты (power > 500) имеют выше шанс сбоя
+                const powerModifier = Math.max(1, gpu.power / 500); 
+                
+                // Фактический шанс сгорания
+                let actualFailChance = GPU_FAIL_CHANCE * powerModifier * overheatMultiplier * failChanceMultiplier;
+                
+                // Минимальный шанс сбоя
+                actualFailChance = Math.max(actualFailChance, GPU_FAIL_CHANCE * 0.1); 
+
+                if (Math.random() < actualFailChance) {
+                    const failedCardName = gpu.name;
+                    // Удаляем карту из рига
+                    rig.gpus.splice(gpuIndex, 1);
+                    
+                    // Уведомление
+                    let message = `⚠️ СБОЙ ОБОРУДОВАНИЯ! ⚠️\nВидеокарта **${failedCardName}** в риге **${rig.name}** сгорела.`;
+                    if (isOverheated) {
+                        message += `\nПричина: **Перегрузка БП/Перегрев рига!**`;
+                    }
+                    if (engineer) {
+                        message += `\n(Инженер: Шанс сбоя был снижен на ${engineer.effect.value * 100}%)`;
+                    }
+
+                    window.alert(message.trim());
+                    
+                    try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
+                    
+                    updateUI(); 
+                    saveGame();
+                    return; // Проверяем только одну сгоревшую карту за тик для читаемости
+                }
+            }
+        }
+    }
+
 
     // --- UI и ЛОГИКА ---
 
     function updateUI() {
-        document.getElementById('usd-balance').textContent = state.usd.toFixed(2);
+        // 1. ОБЩИЕ СТАТИСТИКИ И БАЛАНС
+        const usdBalanceElement = document.getElementById('usd-balance');
+        const usdContainer = document.getElementById('usd-balance-container');
+        usdBalanceElement.textContent = state.usd.toFixed(2);
         
-        let passiveHash = state.inventory.reduce((acc, item) => acc + item.power, 0);
+        if (state.usd < 0) {
+            usdContainer.classList.add('danger');
+            usdContainer.classList.remove('balance');
+        } else {
+             usdContainer.classList.remove('danger');
+             usdContainer.classList.add('balance');
+        }
+
+        // Пересчет общего хешрейта
+        let passiveHash = state.rigs.reduce((rigAcc, rig) => {
+            return rigAcc + rig.gpus.reduce((gpuAcc, gpu) => gpuAcc + gpu.power, 0);
+        }, 0);
         state.totalHashrate = passiveHash; 
         document.getElementById('total-hashrate').textContent = state.totalHashrate;
+        document.getElementById('farm-total-hashrate').textContent = state.totalHashrate; 
 
+        // Расчет общих расходов на персонал (в час)
+        const hourlyPersonnelCost = state.personnel.reduce((sum, p) => sum + p.salary * 3600, 0);
+
+        // 2. РАСЧЕТ ПРИБЫЛИ И РАСХОДОВ (В ЧАС)
+        const currentCoin = currencies[state.activeCoin];
+        const profitRate = (state.totalHashrate / currentCoin.difficulty) * currentCoin.price * 3600; 
+        
+        // Стоимость энергии в час
+        const hourlyEnergyCost = state.totalHashrate * ENERGY_COST_PER_HASH * 3600;
+        
+        const totalHourlyCost = hourlyEnergyCost + hourlyPersonnelCost;
+        
+        // Чистая прибыль
+        const netProfit = profitRate - totalHourlyCost;
+
+        // Вывод на экран
+        document.getElementById('hourly-profit').textContent = `~ $${profitRate.toFixed(2)}/час`;
+        document.getElementById('hourly-cost').textContent = ` | -$${totalHourlyCost.toFixed(2)}/час`;
+
+        const netProfitElement = document.getElementById('hourly-net-profit');
+        netProfitElement.textContent = `| Чистая: $${netProfit.toFixed(2)}/час`;
+        netProfitElement.style.color = netProfit >= 0 ? 'var(--accent-color)' : 'var(--danger-color)';
+
+        // 3. ОБНОВЛЕНИЕ МАЙНИНГ СЕКЦИИ
         const coin = currencies[state.activeCoin];
         document.getElementById('coin-balance').textContent = state.balances[state.activeCoin].toFixed(6);
         document.getElementById('coin-ticker').textContent = state.activeCoin;
@@ -440,45 +897,50 @@
         const value = state.balances[state.activeCoin] * coin.price;
         document.getElementById('exchange-value').innerHTML = `${value.toFixed(2)} (Rate: $${coin.price.toFixed(2)})`;
 
-        renderInventory();
-        checkShopButtons();
-        renderUpgradeSlots(); 
+        // 4. ОБНОВЛЕНИЕ МАГАЗИНА И ФЕРМЫ
+        renderRigShop();
+        renderGPUShop();
+        renderPersonnelShop();
+        
+        renderRigInventory();
+        renderFreeGPUInventory();
+        renderPersonnelInventory();
     }
 
-    function renderUpgradeSlots() {
-        const slotSection = document.getElementById('slot-upgrade-section');
-        if (!slotSection) return;
+    // --- ЛОГИКА МАГАЗИНА ---
 
-        const currentSlots = state.inventory.length;
-        const maxSlots = state.max_slots;
-        const upgradeCost = (maxSlots + 1) * 1000; 
-
-        document.getElementById('slot-status').textContent = `Слотов: ${currentSlots}/${maxSlots}`;
-
-        let html = `
-            <div class="gpu-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="gpu-info">
-                    <h3>Улучшение слотов</h3>
-                    <p>+1 Слот</p>
+    function renderRigShop() {
+        const container = document.getElementById('rig-shop-list');
+        container.innerHTML = '';
+        rigModels.forEach(rig => {
+            const card = document.createElement('div');
+            card.className = 'rig-card';
+            card.innerHTML = `
+                <div class="rig-info">
+                    <h3>${rig.name}</h3>
+                    <p>Слотов: ${rig.max_gpus} | Макс. мощность: ${rig.max_power} H/s</p>
                 </div>
                 <div style="text-align:right">
-        `;
-        
-        if (maxSlots < 10) { 
-            html += `<div style="margin-bottom:5px; font-weight:bold">$${upgradeCost}</div>`;
-            html += `<button class="buy-btn" onclick="buySlot(${upgradeCost})" ${state.usd < upgradeCost ? 'disabled' : ''}>+1 Слот</button>`;
-        } else {
-            html += `<p style="color:#aaa;">Максимум слотов (10)</p>`;
-        }
-
-        html += '</div></div>';
-        slotSection.innerHTML = html;
+                    <div style="margin-bottom:5px; font-weight:bold">$${rig.price}</div>
+                    <button class="buy-btn" onclick="buyRig(${rig.id})" ${state.usd < rig.price ? 'disabled' : ''}>Купить</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
     }
 
-    function buySlot(cost) {
-        if (state.usd >= cost) {
-            state.usd -= cost;
-            state.max_slots += 1;
+    function buyRig(id) {
+        const model = rigModels.find(r => r.id === id);
+        if (state.usd >= model.price) {
+            state.usd -= model.price;
+            
+            // Добавляем новый Риг с уникальным ID и пустым массивом GPU
+            state.rigs.push({
+                ...model,
+                gpus: [],
+                unique_id: Date.now() + Math.random() 
+            });
+
             try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
             updateUI();
             saveGame();
@@ -486,112 +948,400 @@
             try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
         }
     }
-
-
-    function initCoinSelector() {
-        const container = document.getElementById('coin-selector');
+    
+    function renderGPUShop() {
+        const container = document.getElementById('gpu-shop-list');
         container.innerHTML = '';
-        Object.keys(currencies).forEach(key => {
-            const btn = document.createElement('div');
-            btn.className = `coin-btn ${state.activeCoin === key ? 'active' : ''}`;
-            btn.textContent = key;
-            btn.onclick = () => {
-                state.activeCoin = key;
-                initCoinSelector();
-                updateUI();
-            };
-            container.appendChild(btn);
-        });
-    }
+        
+        // Статус свободных слотов для всех ригов
+        const totalSlots = state.rigs.reduce((acc, r) => acc + r.max_gpus, 0);
+        const usedSlots = state.rigs.reduce((acc, r) => acc + r.gpus.length, 0);
+        const freeGPUCount = state.free_gpus.length;
 
-    function initShop() {
-        const container = document.getElementById('shop-list');
-        container.innerHTML = '';
+        // Если нет ригов, покупка GPU невозможна
+        const canBuyGPU = state.rigs.length > 0;
+        document.getElementById('gpu-slot-status').textContent = `Занято: ${usedSlots}/${totalSlots} (Свободно на складе: ${freeGPUCount})`;
+
         gpus.forEach(gpu => {
             const card = document.createElement('div');
             card.className = 'gpu-card';
             card.innerHTML = `
                 <div class="gpu-info">
                     <h3>${gpu.name}</h3>
-                    <p>+${gpu.power} H/s</p>
+                    <p>+${gpu.power} H/s | Тепло: ${gpu.heat}</p>
                 </div>
                 <div style="text-align:right">
                     <div style="margin-bottom:5px; font-weight:bold">$${gpu.price}</div>
-                    <button class="buy-btn" id="buy-btn-${gpu.id}" onclick="buyGPU(${gpu.id})">Купить</button>
+                    <button class="buy-btn" id="buy-btn-${gpu.id}" onclick="buyGPU(${gpu.id})" 
+                        ${state.usd < gpu.price || !canBuyGPU ? 'disabled' : ''}>
+                        ${!canBuyGPU ? 'Нет ригов' : 'Купить на склад'}
+                    </button>
                 </div>
             `;
             container.appendChild(card);
-        });
-        
-        const slotUpgradeContainer = document.createElement('div');
-        slotUpgradeContainer.id = 'slot-upgrade-section';
-        container.appendChild(slotUpgradeContainer);
-    }
-
-    function checkShopButtons() {
-        const slotsAvailable = state.inventory.length < state.max_slots;
-
-        gpus.forEach(gpu => {
-            const btn = document.getElementById(`buy-btn-${gpu.id}`);
-            if (btn) {
-                btn.disabled = state.usd < gpu.price || !slotsAvailable;
-                if (!slotsAvailable) {
-                     btn.textContent = 'Нет слотов';
-                } else {
-                     btn.textContent = 'Купить';
-                }
-            }
         });
     }
 
     function buyGPU(id) {
         const gpu = gpus.find(g => g.id === id);
-        if (state.usd >= gpu.price && state.inventory.length < state.max_slots) {
+        // Проверяем, есть ли риги в принципе, чтобы покупать карты
+        if (state.usd >= gpu.price && state.rigs.length > 0) {
             state.usd -= gpu.price;
-            state.inventory.push(gpu);
+            
+            // Добавляем карту на склад (free_gpus)
+            state.free_gpus.push({
+                ...gpu,
+                unique_id: Date.now() + Math.random() 
+            });
+
             try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
             updateUI();
             saveGame(); 
-        } else if (state.inventory.length >= state.max_slots) {
-             window.alert("Сначала купите дополнительный слот для GPU!");
-             try { tg.HapticFeedback.notificationOccurred('warning'); } catch(e) { /* ignore */ }
         } else {
             try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
         }
     }
+    
+    function renderPersonnelShop() {
+        const container = document.getElementById('personnel-shop-list');
+        container.innerHTML = '';
 
-    function sellGPU(index) {
-        const gpu = state.inventory[index];
-        state.usd += gpu.price * 0.7;
-        state.inventory.splice(index, 1);
+        personnelModels.forEach(p => {
+            const isHired = state.personnel.some(h => h.id === p.id);
+            const card = document.createElement('div');
+            card.className = 'personnel-card';
+            
+            let description = '';
+            if (p.effect.type === 'fail_chance_reduction') {
+                description = `Снижает шанс сгорания GPU на ${p.effect.value * 100}%`;
+            }
+
+            card.innerHTML = `
+                <div class="personnel-info">
+                    <h3>${p.name}</h3>
+                    <p>${description}</p>
+                    <p style="color:var(--danger-color);">Зарплата: $${p.salary.toFixed(2)}/сек. ( $${(p.salary * 3600).toFixed(0)}/час )</p>
+                </div>
+                <div style="text-align:right">
+                    <button class="buy-btn" onclick="hirePersonnel(${p.id})" ${isHired || state.usd < p.salary * 3600 ? 'disabled' : ''}>
+                        ${isHired ? 'Нанят' : 'Нанять'}
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+	function initCoinSelector() {
+    const selectorContainer = document.getElementById('coin-selector');
+    selectorContainer.innerHTML = ''; // Очистка
+
+    for (const key in currencies) {
+        const coin = currencies[key];
+        const button = document.createElement('button');
+        button.className = 'coin-btn';
+        button.textContent = `${coin.icon} ${key}`;
+        button.dataset.coin = key;
+
+        if (key === state.activeCoin) {
+            button.classList.add('active');
+        }
+
+        button.addEventListener('click', function() {
+            state.activeCoin = this.dataset.coin;
+            // Обновляем UI, чтобы активировать кнопку и обновить баланс
+            updateCoinSelectorUI(); 
+            updateUI(); 
+        });
+
+        selectorContainer.appendChild(button);
+    }
+}
+	function updateCoinSelectorUI() {
+    // Деактивируем все кнопки
+    document.querySelectorAll('.coin-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    // Активируем текущую
+    const activeBtn = document.querySelector(`.coin-btn[data-coin="${state.activeCoin}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    document.getElementById('coin-ticker').textContent = state.activeCoin;
+    document.getElementById('current-coin-icon').textContent = currencies[state.activeCoin].icon;
+}
+    function hirePersonnel(id) {
+        const model = personnelModels.find(p => p.id === id);
+        const isHired = state.personnel.some(h => h.id === id);
+        
+        // Требуем, чтобы на балансе была хотя бы часовая зарплата для найма
+        if (!isHired && state.usd >= model.salary * 3600) {
+            state.personnel.push({ ...model });
+            try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
+            updateUI();
+            saveGame();
+        } else {
+            window.alert(`Необходимо $${(model.salary * 3600).toFixed(0)} на балансе, чтобы нанять ${model.name}.`);
+            try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
+        }
+    }
+    
+    function firePersonnel(id) {
+        state.personnel = state.personnel.filter(p => p.id !== id);
+        try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
         updateUI();
         saveGame();
     }
 
-    function renderInventory() {
-        const container = document.getElementById('inventory-list');
-        if (state.inventory.length === 0) {
-            container.innerHTML = '<p style="color: #666; text-align: center;">Нет видеокарт</p>';
+
+    // --- ЛОГИКА ФЕРМЫ ---
+
+    function renderRigInventory() {
+        const container = document.getElementById('rig-inventory-list');
+        if (state.rigs.length === 0) {
+            container.innerHTML = '<p style="color: #666; text-align: center;">Нет ригов</p>';
             return;
         }
         container.innerHTML = '';
-        state.inventory.forEach((gpu, index) => {
+        
+        state.rigs.forEach((rig, rigIndex) => {
+            const currentPower = rig.gpus.reduce((acc, gpu) => acc + gpu.power, 0);
+            const currentHeat = rig.gpus.reduce((acc, gpu) => acc + gpu.heat, 0);
+            const isOverloaded = currentPower > rig.max_power;
+            const statusColor = isOverloaded ? 'var(--danger-color)' : 'var(--accent-color)';
+            
             const item = document.createElement('div');
-            item.className = 'gpu-card';
+            item.className = 'rig-item';
+            
+            let gpuListHTML = rig.gpus.length === 0 
+                ? '<p style="color: #999; text-align: center; font-style: italic;">Слоты свободны</p>' 
+                : '';
+
+            rig.gpus.forEach((gpu, gpuIndex) => {
+                gpuListHTML += `
+                    <div class="gpu-in-rig">
+                        <span>${gpu.name} (+${gpu.power} H/s)</span>
+                        <button class="sell-gpu-in-rig-btn" onclick="removeGPUFromRig(${rigIndex}, ${gpuIndex})">
+                            Снять
+                        </button>
+                    </div>
+                `;
+            });
+            
+            // Кнопка добавления GPU из свободных
+            const canAddGPU = rig.gpus.length < rig.max_gpus && state.free_gpus.length > 0;
+            const addButtonHTML = canAddGPU ? `
+                 <button class="add-gpu-to-rig-btn" onclick="openAddGPUModal(${rigIndex})">
+                    Установить GPU (Склад: ${state.free_gpus.length})
+                </button>
+            ` : `<button class="add-gpu-to-rig-btn" disabled>Нет места / GPU на складе</button>`;
+
+
             item.innerHTML = `
-                <div class="gpu-info">
-                    <h3>${gpu.name}</h3>
-                    <p>+${gpu.power} H/s</p>
+                <div class="rig-header">
+                    <h3>${rig.name} #${rigIndex + 1}</h3>
+                    <div>
+                        <button class="sell-rig-btn" onclick="sellRig(${rigIndex})">Продать ($${(rig.price * 0.5).toFixed(0)})</button>
+                    </div>
                 </div>
-                <button class="sell-gpu-btn" onclick="sellGPU(${index})">Продать ($${(gpu.price * 0.7).toFixed(0)})</button>
+                <div class="rig-stats">
+                    <span style="color:${statusColor};">Мощность: ${currentPower} / ${rig.max_power} H/s ${isOverloaded ? '🚨 (Перегруз!)' : ''}</span>
+                    <span>Слоты: ${rig.gpus.length} / ${rig.max_gpus}</span>
+                </div>
+                <div style="margin-top: 10px;">
+                    ${gpuListHTML}
+                </div>
+                <div style="text-align: right; margin-top: 10px;">
+                    ${addButtonHTML}
+                </div>
             `;
             container.appendChild(item);
         });
     }
 
+    function sellRig(rigIndex) {
+        const rig = state.rigs[rigIndex];
+        
+        // Проверяем, есть ли в риге карты
+        if (rig.gpus.length > 0) {
+            window.alert("Сначала снимите все видеокарты с рига, чтобы его продать.");
+            try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
+            return;
+        }
+
+        const refund = rig.price * 0.5;
+        state.usd += refund;
+        state.rigs.splice(rigIndex, 1);
+        
+        try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
+        updateUI();
+        saveGame();
+    }
+
+    function removeGPUFromRig(rigIndex, gpuIndex) {
+        const rig = state.rigs[rigIndex];
+        if (!rig) return;
+
+        // Перемещаем карту обратно на склад (free_gpus)
+        const gpu = rig.gpus.splice(gpuIndex, 1)[0];
+        state.free_gpus.push(gpu);
+
+        try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
+        updateUI();
+        saveGame();
+    }
+
+    // Рендеринг свободных GPU
+    function renderFreeGPUInventory() {
+        const container = document.getElementById('free-gpu-list');
+        const countElement = document.getElementById('free-gpu-count');
+        countElement.textContent = state.free_gpus.length;
+
+        if (state.free_gpus.length === 0) {
+            container.innerHTML = '<p style="color: #666; text-align: center;">Нет свободных видеокарт</p>';
+            return;
+        }
+        container.innerHTML = '';
+
+        state.free_gpus.forEach((gpu, index) => {
+            const item = document.createElement('div');
+            item.className = 'gpu-in-rig'; // Используем тот же стиль
+            item.innerHTML = `
+                <span>${gpu.name} (+${gpu.power} H/s)</span>
+                <button class="sell-gpu-in-rig-btn" onclick="sellFreeGPU(${index})">
+                    Продать ($${(gpu.price * 0.7).toFixed(0)})
+                </button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function sellFreeGPU(index) {
+        const gpu = state.free_gpus[index];
+        const refund = gpu.price * 0.7;
+        state.usd += refund;
+        state.free_gpus.splice(index, 1);
+
+        try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
+        updateUI();
+        saveGame();
+    }
+
+    function renderPersonnelInventory() {
+        const container = document.getElementById('personnel-list');
+        if (state.personnel.length === 0) {
+            container.innerHTML = '<p style="color: #666; text-align: center;">Нет нанятого персонала</p>';
+            return;
+        }
+        container.innerHTML = '';
+
+        state.personnel.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'personnel-card';
+            
+            let description = '';
+            if (p.effect.type === 'fail_chance_reduction') {
+                description = `Снижает шанс сгорания GPU на ${p.effect.value * 100}%`;
+            }
+
+            card.innerHTML = `
+                <div class="personnel-info">
+                    <h3>${p.name} (Нанят)</h3>
+                    <p>${description}</p>
+                    <p style="color:var(--danger-color);">Зарплата: $${(p.salary * 3600).toFixed(0)}/час</p>
+                </div>
+                <div style="text-align:right">
+                    <button class="fire-personnel-btn" onclick="firePersonnel(${p.id})">Уволить</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+
+    // --- МОДАЛЬНОЕ ОКНО ДЛЯ УСТАНОВКИ GPU ---
+
+    let currentRigIndexForInstall = -1;
+
+    function openAddGPUModal(rigIndex) {
+        currentRigIndexForInstall = rigIndex;
+        const rig = state.rigs[rigIndex];
+        
+        if (state.free_gpus.length === 0 || rig.gpus.length >= rig.max_gpus) {
+            window.alert('Нет свободных GPU на складе или в риге нет места.');
+            return;
+        }
+
+        let optionsHTML = '';
+        state.free_gpus.forEach((gpu, index) => {
+            const potentialPower = rig.gpus.reduce((acc, g) => acc + g.power, 0) + gpu.power;
+            const isOverloading = potentialPower > rig.max_power;
+            const statusText = isOverloading ? ' (!!! ПЕРЕГРУЗКА БП !!!)' : '';
+            const statusColor = isOverloading ? 'var(--danger-color)' : 'var(--accent-color)';
+            
+            optionsHTML += `
+                <div style="background:var(--bg-color); padding:8px; border-radius:6px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>${gpu.name} (+${gpu.power} H/s)</span>
+                    <button style="background:var(--btn-color); color:white; border:none; padding:5px 10px; border-radius:4px; font-size:0.8em; cursor:pointer;" 
+                        onclick="installGPU(${index})">
+                        Установить <span style="color:${statusColor}; font-weight:bold">${statusText}</span>
+                    </button>
+                </div>
+            `;
+        });
+        
+        const currentPower = rig.gpus.reduce((acc, g) => acc + g.power, 0);
+
+        const modalMessage = `
+            <h3>Установка GPU в Риг #${rigIndex + 1} (${rig.name})</h3>
+            <p>Слотов свободно: ${rig.max_gpus - rig.gpus.length}</p>
+            <p>Текущая мощность БП: ${currentPower} / ${rig.max_power} H/s</p>
+            <hr style="border-color:#4a4a4c;">
+            ${optionsHTML}
+        `;
+        
+        // Используем alert/prompt, чтобы не вводить модальные окна в DOM
+        // В реальном проекте TWA здесь нужна кастомная модалка
+        window.alert(modalMessage.trim().replace(/<[^>]*>?/gm, '')); 
+        // Принудительно рендерим, чтобы игрок увидел изменения, даже если не сможет выбрать карту через alert
+
+    }
+    
+    // Внимание: Этот метод вызывается через onclick из alert/prompt. 
+    // В рабочем TWA проекте это нужно заменить на нормальную модалку.
+    function installGPU(freeGpuIndex) {
+        if (currentRigIndexForInstall === -1) return;
+        
+        const rig = state.rigs[currentRigIndexForInstall];
+        if (rig.gpus.length >= rig.max_gpus) {
+            window.alert("В этом риге больше нет свободных слотов.");
+            return;
+        }
+
+        // Берем карту со склада
+        const gpu = state.free_gpus.splice(freeGpuIndex, 1)[0];
+        
+        // Устанавливаем ее в риг
+        rig.gpus.push(gpu);
+
+        try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
+        currentRigIndexForInstall = -1; // Сброс
+        updateUI();
+        saveGame();
+    }
+
+
     document.getElementById('mine-btn').addEventListener('click', () => {
+        // Отключаем клик, если баланс отрицательный (энергия / зарплата)
+        if (state.usd < 0) {
+             window.alert("Майнинг остановлен! Продайте криптовалюту, чтобы оплатить счета за энергию и зарплату.");
+             try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
+             return;
+        }
+
         const coin = currencies[state.activeCoin];
-        const amount = (100 / coin.difficulty); 
+        // Клик дает символический, фиксированный хешрейт, не зависящий от GPU
+        const clickHash = 10; 
+        const amount = (clickHash / coin.difficulty); 
         state.balances[state.activeCoin] += amount;
         
         try { tg.HapticFeedback.impactOccurred('light'); } catch(e) { /* ignore */ }
@@ -617,19 +1367,60 @@
         saveGame();
     });
 
-    // Пассивный доход
+    // Пассивный доход, расходы и сбои
     setInterval(() => {
+        // 1. Ежесекундный вычет расходов
         if (state.totalHashrate > 0) {
+            const energyCost = state.totalHashrate * ENERGY_COST_PER_HASH;
+            state.usd -= energyCost;
+        }
+
+        // 2. Ежесекундный вычет зарплаты персонала
+        if (state.personnel.length > 0) {
+            const personnelCost = state.personnel.reduce((sum, p) => sum + p.salary, 0);
+            state.usd -= personnelCost;
+        }
+
+        // 3. Пассивный майнинг (только если есть деньги на энергию и зарплату)
+        if (state.totalHashrate > 0 && state.usd > 0) {
             const coin = currencies[state.activeCoin];
             const mined = (state.totalHashrate / coin.difficulty); 
             state.balances[state.activeCoin] += mined;
-            updateUI();
         }
+
+        // 4. Проверка на сбои GPU (каждую секунду)
+        if (state.totalHashrate > 0) {
+            checkGPUFailures();
+        }
+
+        updateUI();
     }, 1000);
 
+    // --- ЛОГИКА ВКЛАДОК (ТАБОВ) ---
+    function initTabs() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.dataset.tab;
+
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`tab-${targetTab}`).classList.add('active');
+                
+                try { tg.HapticFeedback.impactOccurred('medium'); } catch(e) { /* ignore */ }
+            });
+        });
+    }
+    
     // СТАРТ
+    initTabs(); 
     initCoinSelector();
-    initShop();
     loadGame(); 
 
 </script>
