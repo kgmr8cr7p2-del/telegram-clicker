@@ -1,5 +1,4 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -28,7 +27,7 @@
         h1, h2, h3 { margin: 0 0 10px 0; }
         .container { max-width: 600px; margin: 0 auto; }
 
-        /* --- Стили для Прелоадера (НОВЫЙ БЛОК) --- */
+        /* --- Стили для Прелоадера --- */
         #loader-screen {
             position: fixed;
             top: 0;
@@ -262,12 +261,10 @@
     // --- ДИНАМИЧЕСКИЕ КУРСЫ ---
 
     function updateRates() {
-        // Меняем курсы в пределах волатильности базовой цены
         for (const key in currencies) {
             const basePrice = baseRates[key].price;
             const volatility = baseRates[key].volatility;
             
-            // Случайное изменение (например, +/- 5% от базовой цены)
             const changePercent = (Math.random() * 2 - 1) * volatility; 
             const newPrice = baseRates[key].price * (1 + changePercent);
             
@@ -279,7 +276,6 @@
     // --- ОФФЛАЙН МАЙНИНГ С УВЕДОМЛЕНИЕМ ---
 
     function calculateOfflineGain(lastTime) {
-        // Проверяем, есть ли что майнить и было ли время отсутствия
         if (state.totalHashrate === 0 || lastTime === 0) return;
 
         const currentTime = Date.now();
@@ -288,14 +284,11 @@
         const capSeconds = OFFLINE_CAP_HOURS * 3600; 
         const actualTimeMined = Math.min(timeDiffSeconds, capSeconds);
 
-        // Начисление работает с первой секунды
         if (actualTimeMined <= 0) return; 
 
-        // Расчет ведется по текущей активной монете
         const coinKey = state.activeCoin;
         const coin = baseRates[coinKey]; 
         
-        // Формула: Мощность * Время в секундах / Сложность
         const minedAmount = (state.totalHashrate * actualTimeMined) / coin.difficulty;
         
         state.balances[coinKey] += minedAmount;
@@ -306,9 +299,10 @@
         tg.showAlert(`✅ Оффлайн доход за ${hours} ч. (макс. ${OFFLINE_CAP_HOURS}) на сумму: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})`);
     }
 
-    // --- СЕТЕВЫЕ ФУНКЦИИ (ИСПРАВЛЕНО ДЛЯ СКРЫТИЯ ПРЕЛОАДЕРА) ---
+    // --- СЕТЕВЫЕ ФУНКЦИИ (ИСПРАВЛЕНО ДЛЯ СКРЫТИЯ ПРЕЛОАДЕРА И ВРЕМЕНИ) ---
 
     async function loadGame() {
+        let loadedSuccessfully = false;
         try {
             const response = await fetch(`${SERVER_URL}?user_id=${userId}`);
             
@@ -320,9 +314,10 @@
                     state.inventory = data.inventory || [];
                     state.max_slots = parseInt(data.max_slots) || 3; 
                     
-                    if (data.last_login_time) {
+                    if (data.last_login_time && data.last_login_time !== 0) {
                         calculateOfflineGain(data.last_login_time);
                     }
+                    loadedSuccessfully = true;
                 }
             }
         } catch (e) {
@@ -335,16 +330,20 @@
             document.getElementById('loader-screen').style.opacity = '0';
             setTimeout(() => {
                 document.getElementById('loader-screen').style.display = 'none';
-            }, 300); // Для плавности
+            }, 300);
             
             // Запуск игровых циклов
             setInterval(saveGame, 5000);
             setInterval(updateRates, 60000); 
+            
+            if (!loadedSuccessfully) {
+                 state.last_login_time = Date.now();
+            }
         }
     }
 
     async function saveGame() {
-        state.last_login_time = Date.now(); // Обновляем время перед сохранением
+        state.last_login_time = Date.now(); 
 
         try {
             const dataToSend = {
@@ -352,7 +351,8 @@
                 usd: state.usd,
                 balances: state.balances,
                 inventory: state.inventory,
-                max_slots: state.max_slots
+                max_slots: state.max_slots,
+                last_login_time: state.last_login_time 
             };
 
             await fetch(SERVER_URL, {
