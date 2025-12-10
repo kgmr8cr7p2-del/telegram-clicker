@@ -1,5 +1,4 @@
 ﻿
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -28,6 +27,44 @@
 
         h1, h2, h3 { margin: 0 0 10px 0; }
         .container { max-width: 600px; margin: 0 auto; }
+
+        /* --- Стили для Прелоадера (НОВЫЙ БЛОК) --- */
+        #loader-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color); /* Фон */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; 
+            transition: opacity 0.3s ease;
+        }
+
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid var(--accent-color); 
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #loader-message {
+            color: #8e8e93;
+            font-size: 0.9em;
+        }
+        /* --- Конец стилей для Прелоадера --- */
+
 
         .header {
             display: flex;
@@ -127,6 +164,11 @@
     </style>
 </head>
 <body>
+
+<div id="loader-screen">
+    <div class="loader"></div>
+    <div id="loader-message">Подключение к блокчейну...</div>
+</div>
 
 <div class="container">
     <div class="header">
@@ -236,8 +278,6 @@
 
     // --- ОФФЛАЙН МАЙНИНГ С УВЕДОМЛЕНИЕМ ---
 
-    // --- ОФФЛАЙН МАЙНИНГ С УВЕДОМЛЕНИЕМ ---
-
     function calculateOfflineGain(lastTime) {
         // Проверяем, есть ли что майнить и было ли время отсутствия
         if (state.totalHashrate === 0 || lastTime === 0) return;
@@ -248,9 +288,7 @@
         const capSeconds = OFFLINE_CAP_HOURS * 3600; 
         const actualTimeMined = Math.min(timeDiffSeconds, capSeconds);
 
-        // УДАЛЕНО УСЛОВИЕ: if (actualTimeMined <= 60) return; 
-        
-        // Если время отсутствия равно или меньше нуля, ничего не начисляем
+        // Начисление работает с первой секунды
         if (actualTimeMined <= 0) return; 
 
         // Расчет ведется по текущей активной монете
@@ -263,12 +301,12 @@
         state.balances[coinKey] += minedAmount;
         const minedTotalUSD = minedAmount * coin.price;
 
-        // ЭТА СТРОКА ОТВЕЧАЕТ ЗА УВЕДОМЛЕНИЕ
+        // Уведомление: показываем дробное число часов для точности
         const hours = (actualTimeMined / 3600).toFixed(2);
         tg.showAlert(`✅ Оффлайн доход за ${hours} ч. (макс. ${OFFLINE_CAP_HOURS}) на сумму: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})`);
     }
 
-    // --- СЕТЕВЫЕ ФУНКЦИИ ---
+    // --- СЕТЕВЫЕ ФУНКЦИИ (ИСПРАВЛЕНО ДЛЯ СКРЫТИЯ ПРЕЛОАДЕРА) ---
 
     async function loadGame() {
         try {
@@ -289,8 +327,16 @@
             }
         } catch (e) {
             console.error("Ошибка загрузки:", e);
+            document.getElementById('loader-message').textContent = "Ошибка подключения. Проверьте сеть или URL.";
         } finally {
             updateUI(); 
+            
+            // СКРЫТИЕ ПРЕЛОАДЕРА
+            document.getElementById('loader-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loader-screen').style.display = 'none';
+            }, 300); // Для плавности
+            
             // Запуск игровых циклов
             setInterval(saveGame, 5000);
             setInterval(updateRates, 60000); 
@@ -335,7 +381,6 @@
         document.getElementById('exchange-ticker').textContent = state.activeCoin;
         
         const value = state.balances[state.activeCoin] * coin.price;
-        // Отображаем текущий курс в кнопке продажи
         document.getElementById('exchange-value').innerHTML = `${value.toFixed(2)} (Rate: $${coin.price.toFixed(2)})`;
 
         renderInventory();
@@ -351,7 +396,6 @@
         const maxSlots = state.max_slots;
         const upgradeCost = (maxSlots + 1) * 1000; 
 
-        // Обновляем статус слотов в заголовке магазина
         document.getElementById('slot-status').textContent = `Слотов: ${currentSlots}/${maxSlots}`;
 
         let html = `
