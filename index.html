@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crypto Miner Tycoon</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -24,7 +24,10 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
+            /* 🛑 ЗАПРЕТ ВЫДЕЛЕНИЯ ТЕКСТА 🛑 */
             user-select: none;
+            /* Запрет скролла */
+            overflow-x: hidden; 
         }
 
         .container { max-width: 600px; margin: 0 auto; padding: 20px 20px 80px 20px; }
@@ -115,6 +118,7 @@
             padding: 10px 15px;
             border-radius: 8px;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent; /* 🛑 УБРАТЬ СЕРОЕ ВЫДЕЛЕНИЕ ПРИ НАЖАТИИ 🛑 */
         }
         .coin-btn.active {
             border-color: var(--btn-color);
@@ -134,6 +138,7 @@
             cursor: pointer;
             transition: transform 0.1s;
             border: 4px solid var(--btn-color);
+            -webkit-tap-highlight-color: transparent; /* 🛑 УБРАТЬ СЕРОЕ ВЫДЕЛЕНИЕ ПРИ НАЖАТИИ 🛑 */
         }
         .click-area:active { transform: scale(0.95); }
         .click-area span { font-size: 2em; }
@@ -149,6 +154,7 @@
             font-weight: bold;
             width: 100%;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent; /* 🛑 УБРАТЬ СЕРОЕ ВЫДЕЛЕНИЕ ПРИ НАЖАТИИ 🛑 */
         }
 
         .shop-section { margin-top: 20px; }
@@ -176,6 +182,7 @@
             border-radius: 6px;
             font-size: 0.9em;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent; /* 🛑 УБРАТЬ СЕРОЕ ВЫДЕЛЕНИЕ ПРИ НАЖАТИИ 🛑 */
         }
         .buy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -221,6 +228,7 @@
             margin-left: 10px;
             font-size: 0.8em;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent; /* 🛑 УБРАТЬ СЕРОЕ ВЫДЕЛЕНИЕ ПРИ НАЖАТИИ 🛑 */
         }
         .add-gpu-to-rig-btn {
             background: var(--btn-color);
@@ -231,6 +239,7 @@
             font-size: 0.8em;
             cursor: pointer;
             margin-left: 10px;
+            -webkit-tap-highlight-color: transparent; /* 🛑 УБРАТЬ СЕРОЕ ВЫДЕЛЕНИЕ ПРИ НАЖАТИИ 🛑 */
         }
         .add-gpu-to-rig-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -255,6 +264,7 @@
             font-size: 0.8em;
             cursor: pointer;
             transition: color 0.2s;
+            -webkit-tap-highlight-color: transparent; /* 🛑 УБРАТЬ СЕРОЕ ВЫДЕЛЕНИЕ ПРИ НАЖАТИИ 🛑 */
         }
 
         .tab-button.active {
@@ -443,7 +453,8 @@
     const GPU_FAIL_CHANCE = 0.00005; 
     
     // Множитель для перегрева рига. 1.5 = +50% к шансу сгорания, если превышен лимит мощности
-    const RIG_OVERHEAT_MULTIPLIER = 1.5; 
+    // 🛑 ВАЖНО: Этот множитель больше не активен, так как мы полностью запретили превышение мощности! 🛑
+    const RIG_OVERHEAT_MULTIPLIER = 1; 
 
     // Базовые курсы и волатильность
     const baseRates = {
@@ -455,19 +466,18 @@
 
     let currencies = JSON.parse(JSON.stringify(baseRates));
 
-    // --- Модели Ригов (ДОБАВЛЕНЫ НОВЫЕ) --- 
+    // --- Модели Ригов --- 
     const rigModels = [
         { id: 100, name: 'Базовый открытый стенд', price: 500, max_gpus: 4, max_power: 1000 },
         { id: 101, name: 'Стойка для 8 GPU', price: 2500, max_gpus: 8, max_power: 3500 },
-        { id: 102, name: 'Стеллаж с охлаждением', price: 6000, max_gpus: 10, max_power: 5000 }, // НОВЫЙ
+        { id: 102, name: 'Стеллаж с охлаждением', price: 6000, max_gpus: 10, max_power: 5000 }, 
         { id: 103, name: 'Промышленный модуль', price: 10000, max_gpus: 12, max_power: 7000 },
         { id: 104, name: 'Ферма-Контейнер', price: 50000, max_gpus: 20, max_power: 15000 },
-        { id: 105, name: 'Дата-центр Мини', price: 150000, max_gpus: 30, max_power: 30000 }, // НОВЫЙ
-        { id: 106, name: 'Гиперкуб ASIC', price: 500000, max_gpus: 50, max_power: 75000 } // НОВЫЙ
+        { id: 105, name: 'Дата-центр Мини', price: 150000, max_gpus: 30, max_power: 30000 }, 
+        { id: 106, name: 'Гиперкуб ASIC', price: 500000, max_gpus: 50, max_power: 75000 } 
     ];
 
-    // --- 20 РАЗНЫХ ВИДЕОКАРТ (с параметром 'power' и 'heat') ---
-    // Power - хешрейт (H/s); Heat - условные единицы тепловыделения, влияющие на нагрузку на БП и риск.
+    // --- 20 РАЗНЫХ ВИДЕОКАРТ ---
     const gpus = [
         { id: 1, name: 'GTX 1050 Ti', price: 150, power: 15, heat: 5 },
         { id: 2, name: 'GTX 1060', price: 300, power: 30, heat: 10 },
@@ -776,12 +786,12 @@
             if (response.ok) {
                 const data = await response.json();
                 if (data) {
-                    // Восстановление основных данных
+                    // Восстановление основных данных с безопасными значениями по умолчанию
                     state.usd = parseFloat(data.usd) || 0; 
                     state.balances = data.balances || { BTC: 0, ETH: 0, DOGE: 0, TON: 0 };
-                    state.rigs = data.rigs || []; 
-                    state.free_gpus = data.free_gpus || [];
-                    state.personnel = data.personnel || []; 
+                    state.rigs = data.rigs || []; // 👈 Безопасное значение по умолчанию: пустой массив
+                    state.free_gpus = data.free_gpus || []; // 👈 Безопасное значение по умолчанию: пустой массив
+                    state.personnel = data.personnel || []; // 👈 Безопасное значение по умолчанию: пустой массив
                     
                     if (data.last_login_time && data.last_login_time !== 0) {
                         offlineTime = data.last_login_time;
@@ -790,7 +800,8 @@
                     
                     // Пересчет общего хешрейта из всех ригов
                     state.totalHashrate = state.rigs.reduce((rigAcc, rig) => {
-                        return rigAcc + rig.gpus.reduce((gpuAcc, gpu) => gpuAcc + gpu.power, 0);
+                        // 🛑 ИСПРАВЛЕНИЕ: Используем (rig.gpus || []) для защиты от null/undefined 🛑
+                        return rigAcc + (rig.gpus || []).reduce((gpuAcc, gpu) => gpuAcc + gpu.power, 0);
                     }, 0); 
                     passiveHash = state.totalHashrate;
                 }
@@ -850,14 +861,15 @@
             const rig = state.rigs[rigIndex];
             
             // Расчет текущей мощности и тепловыделения рига
-            const currentPower = rig.gpus.reduce((acc, gpu) => acc + gpu.power, 0);
-            const isOverheated = currentPower > rig.max_power;
+            const currentPower = (rig.gpus || []).reduce((acc, gpu) => acc + gpu.power, 0);
+            // 🛑 ВАЖНО: isOverheated теперь всегда false, т.к. мы запретили установку с перегрузкой
+            const isOverheated = currentPower > rig.max_power; 
             
             // Дополнительный множитель, если риг перегрет
             const overheatMultiplier = isOverheated ? RIG_OVERHEAT_MULTIPLIER : 1;
 
             // Проходим инвентарь рига с конца
-            for (let gpuIndex = rig.gpus.length - 1; gpuIndex >= 0; gpuIndex--) {
+            for (let gpuIndex = (rig.gpus || []).length - 1; gpuIndex >= 0; gpuIndex--) {
                 const gpu = rig.gpus[gpuIndex];
                 
                 // Модификатор мощности: более мощные карты (power > 500) имеют выше шанс сбоя
@@ -876,9 +888,7 @@
                     
                     // Уведомление
                     let message = `⚠️ СБОЙ ОБОРУДОВАНИЯ! ⚠️\nВидеокарта **${failedCardName}** в риге **${rig.name}** сгорела.`;
-                    if (isOverheated) {
-                        message += `\nПричина: **Перегрузка БП/Перегрев рига!**`;
-                    }
+                    
                     if (engineer) {
                         message += `\n(Инженер: Шанс сбоя был снижен на ${engineer.effect.value * 100}%)`;
                     }
@@ -954,7 +964,7 @@
 
         // Пересчет общего хешрейта
         let passiveHash = state.rigs.reduce((rigAcc, rig) => {
-            return rigAcc + rig.gpus.reduce((gpuAcc, gpu) => gpuAcc + gpu.power, 0);
+            return rigAcc + (rig.gpus || []).reduce((gpuAcc, gpu) => gpuAcc + gpu.power, 0);
         }, 0);
         state.totalHashrate = passiveHash; 
         document.getElementById('total-hashrate').textContent = state.totalHashrate;
@@ -1090,7 +1100,7 @@
         
         // Статус свободных слотов для всех ригов
         const totalSlots = state.rigs.reduce((acc, r) => acc + r.max_gpus, 0);
-        const usedSlots = state.rigs.reduce((acc, r) => acc + r.gpus.length, 0);
+        const usedSlots = state.rigs.reduce((acc, r) => acc + (r.gpus || []).length, 0);
         const freeGPUCount = state.free_gpus.length;
 
         // Если нет ригов, покупка GPU невозможна
@@ -1205,18 +1215,19 @@
         container.innerHTML = '';
         
         state.rigs.forEach((rig, rigIndex) => {
-            const currentPower = rig.gpus.reduce((acc, gpu) => acc + gpu.power, 0);
-            const isOverloaded = currentPower > rig.max_power;
+            const currentPower = (rig.gpus || []).reduce((acc, gpu) => acc + gpu.power, 0);
+            // 🛑 isOverloaded теперь всегда false благодаря жесткому запрету на установку 🛑
+            const isOverloaded = currentPower > rig.max_power; 
             const statusColor = isOverloaded ? 'var(--danger-color)' : 'var(--accent-color)';
             
             const item = document.createElement('div');
             item.className = 'rig-item';
             
-            let gpuListHTML = rig.gpus.length === 0 
+            let gpuListHTML = (rig.gpus || []).length === 0 
                 ? '<p style="color: #999; text-align: center; font-style: italic;">Слоты свободны</p>' 
                 : '';
 
-            rig.gpus.forEach((gpu, gpuIndex) => {
+            (rig.gpus || []).forEach((gpu, gpuIndex) => {
                 gpuListHTML += `
                     <div class="gpu-in-rig">
                         <span>${gpu.name} (+${gpu.power} H/s)</span>
@@ -1228,7 +1239,7 @@
             });
             
             // Кнопка добавления GPU из свободных
-            const canAddGPU = rig.gpus.length < rig.max_gpus && state.free_gpus.length > 0;
+            const canAddGPU = (rig.gpus || []).length < rig.max_gpus && state.free_gpus.length > 0;
             const addButtonHTML = canAddGPU ? `
                  <button class="add-gpu-to-rig-btn" onclick="openAddGPUModal(${rigIndex})">
                     Установить GPU (Склад: ${state.free_gpus.length})
@@ -1245,7 +1256,7 @@
                 </div>
                 <div class="rig-stats">
                     <span style="color:${statusColor};">Мощность: ${currentPower} / ${rig.max_power} H/s ${isOverloaded ? '🚨 (Перегруз!)' : ''}</span>
-                    <span>Слоты: ${rig.gpus.length} / ${rig.max_gpus}</span>
+                    <span>Слоты: ${(rig.gpus || []).length} / ${rig.max_gpus}</span>
                 </div>
                 <div style="margin-top: 10px;">
                     ${gpuListHTML}
@@ -1262,7 +1273,7 @@
         const rig = state.rigs[rigIndex];
         
         // Проверяем, есть ли в риге карты
-        if (rig.gpus.length > 0) {
+        if ((rig.gpus || []).length > 0) {
             window.alert("Сначала снимите все видеокарты с рига, чтобы его продать.");
             try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
             return;
@@ -1375,33 +1386,43 @@
         const modal = document.getElementById('install-gpu-modal');
         const gpuListContainer = document.getElementById('modal-gpu-list');
         
-        if (state.free_gpus.length === 0 || rig.gpus.length >= rig.max_gpus) {
-            window.alert('Нет свободных GPU на складе или в риге нет места.');
+        // 1. Проверка на базовые лимиты
+        if (state.free_gpus.length === 0) {
+            window.alert('Нет свободных GPU на складе.');
+            return;
+        }
+        if ((rig.gpus || []).length >= rig.max_gpus) {
+            window.alert('В этом риге больше нет свободных слотов.');
             return;
         }
 
-        // 1. Обновляем заголовки и статистику
-        const currentPower = rig.gpus.reduce((acc, g) => acc + g.power, 0);
+        // 2. Обновляем заголовки и статистику
+        const currentPower = (rig.gpus || []).reduce((acc, g) => acc + g.power, 0);
         document.getElementById('modal-rig-title').textContent = `Установка GPU в Риг #${rigIndex + 1}`;
         document.getElementById('modal-rig-stats').innerHTML = `
-            **${rig.name}** | Слотов свободно: ${rig.max_gpus - rig.gpus.length}
+            **${rig.name}** | Слотов свободно: ${rig.max_gpus - (rig.gpus || []).length}
             <br>Текущая мощность БП: ${currentPower} / ${rig.max_power} H/s
         `;
         
-        // 2. Генерируем список GPU
+        // 3. Генерируем список GPU
         gpuListContainer.innerHTML = '';
         
         state.free_gpus.forEach((gpu, index) => {
             const potentialPower = currentPower + gpu.power;
             const isOverloading = potentialPower > rig.max_power;
-            const isDisabled = rig.gpus.length >= rig.max_gpus;
             
-            let statusText = isOverloading ? '🚨 ПЕРЕГРУЗКА' : '✅ ОК';
-            let statusColor = isOverloading ? 'var(--danger-color)' : 'var(--accent-color)';
+            // 🛑 НОВОЕ УСЛОВИЕ: isDisabled теперь включает перегрузку 🛑
+            const isDisabled = (rig.gpus || []).length >= rig.max_gpus || isOverloading;
             
-            if (isDisabled) {
+            let statusText = '✅ ОК';
+            let statusColor = 'var(--accent-color)';
+            
+            if ((rig.gpus || []).length >= rig.max_gpus) {
                  statusText = 'Слотов нет';
                  statusColor = '#999';
+            } else if (isOverloading) {
+                statusText = '🚨 ПРЕВЫШЕНИЕ МОЩНОСТИ';
+                statusColor = 'var(--danger-color)';
             }
             
             const card = document.createElement('div');
@@ -1425,7 +1446,7 @@
             gpuListContainer.appendChild(card);
         });
 
-        // 3. Показываем модальное окно
+        // 4. Показываем модальное окно
         modal.style.display = 'flex';
         try { tg.HapticFeedback.impactOccurred('medium'); } catch(e) { /* ignore */ }
     }
@@ -1435,12 +1456,26 @@
         if (rigIndex === -1) return;
         
         const rig = state.rigs[rigIndex];
-        
-        if (rig.gpus.length >= rig.max_gpus) {
+        const gpuToInstall = state.free_gpus[freeGpuIndex]; 
+
+        const currentPower = (rig.gpus || []).reduce((acc, g) => acc + g.power, 0);
+        const potentialPower = currentPower + gpuToInstall.power;
+
+        if ((rig.gpus || []).length >= rig.max_gpus) {
             window.alert("В этом риге больше нет свободных слотов.");
             closeInstallGPUModal();
             return;
         }
+
+        // 🛑 НОВАЯ ПРОВЕРКА: ЗАПРЕТ НА ПРЕВЫШЕНИЕ МОЩНОСТИ 🛑
+        if (potentialPower > rig.max_power) {
+            window.alert(`Установка невозможна. Общая мощность (${potentialPower} H/s) превысит лимит блока питания (${rig.max_power} H/s).`);
+            // Перезапускаем модальное окно, чтобы обновить состояние кнопок
+            openAddGPUModal(rigIndex); 
+            try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
+            return;
+        }
+        // ----------------------------------------------------
 
         // Берем карту со склада
         const gpu = state.free_gpus.splice(freeGpuIndex, 1)[0];
@@ -1547,7 +1582,7 @@
     
     // СТАРТ
     initTabs(); 
-    initCoinSelector(); // Теперь эта функция существует
+    initCoinSelector(); 
     loadGame(); 
 
 </script>
