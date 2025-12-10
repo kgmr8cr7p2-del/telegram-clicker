@@ -223,7 +223,7 @@
             cursor: pointer;
         }
         .add-gpu-to-rig-btn {
-            background: var(--accent-color);
+            background: var(--btn-color);
             color: white;
             border: none;
             padding: 5px 10px;
@@ -267,6 +267,19 @@
             margin-bottom: 2px;
         }
 
+        /* Стиль для секции детальной добычи */
+        .mining-details {
+            background: #3a3a3c;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .mining-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -345,6 +358,12 @@
                 <span style="font-size:0.8em; color:var(--danger-color); margin-left:5px;" id="hourly-cost"></span>
                 <span style="font-size:0.8em; font-weight:bold; margin-left:10px;" id="hourly-net-profit"></span>
             </p>
+
+            <div class="mining-details">
+                <h4 style="margin:0 0 10px 0; color:#ddd;">Добыча в секунду (пассивно)</h4>
+                <div id="mining-details-list">
+                    </div>
+            </div>
             
             <div id="rig-inventory-list" class="rig-list">
                 <p style="color: #666; text-align: center;">Нет ригов</p>
@@ -375,6 +394,38 @@
     </div>
 </div>
 
+<div id="install-gpu-modal" style="
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none; /* Изначально скрыто */
+    justify-content: center; align-items: center;
+    z-index: 999;
+">
+    <div style="
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+    ">
+        <h3 id="modal-rig-title" style="margin-top: 0;">Установка GPU</h3>
+        <p id="modal-rig-stats" style="font-size: 0.9em; color: #ccc;"></p>
+        <div id="modal-gpu-list">
+            </div>
+        <button onclick="closeInstallGPUModal()" style="
+            background: var(--btn-color); color: white; border: none;
+            padding: 10px; border-radius: 8px; width: 100%; margin-top: 15px;
+            font-weight: bold; cursor: pointer;
+        ">
+            Закрыть
+        </button>
+    </div>
+</div>
+
+
 <script>
     // =======================================================
     // !!! ВАЖНО: ВСТАВЬТЕ СЮДА АДРЕС ВАШЕГО РАЗВЕРНУТОГО GOOGLE APPS SCRIPT !!!
@@ -404,16 +455,19 @@
 
     let currencies = JSON.parse(JSON.stringify(baseRates));
 
-    // --- Модели Ригов --- 
+    // --- Модели Ригов (ДОБАВЛЕНЫ НОВЫЕ) --- 
     const rigModels = [
         { id: 100, name: 'Базовый открытый стенд', price: 500, max_gpus: 4, max_power: 1000 },
         { id: 101, name: 'Стойка для 8 GPU', price: 2500, max_gpus: 8, max_power: 3500 },
-        { id: 102, name: 'Промышленный модуль', price: 10000, max_gpus: 12, max_power: 7000 },
-        { id: 103, name: 'Ферма-Контейнер', price: 50000, max_gpus: 20, max_power: 15000 }
+        { id: 102, name: 'Стеллаж с охлаждением', price: 6000, max_gpus: 10, max_power: 5000 }, // НОВЫЙ
+        { id: 103, name: 'Промышленный модуль', price: 10000, max_gpus: 12, max_power: 7000 },
+        { id: 104, name: 'Ферма-Контейнер', price: 50000, max_gpus: 20, max_power: 15000 },
+        { id: 105, name: 'Дата-центр Мини', price: 150000, max_gpus: 30, max_power: 30000 }, // НОВЫЙ
+        { id: 106, name: 'Гиперкуб ASIC', price: 500000, max_gpus: 50, max_power: 75000 } // НОВЫЙ
     ];
 
-    // --- 20 РАЗНЫХ ВИДЕОКАРТ (с параметром 'heat') ---
-    // Heat - условные единицы тепловыделения, влияющие на нагрузку на БП и риск.
+    // --- 20 РАЗНЫХ ВИДЕОКАРТ (с параметром 'power' и 'heat') ---
+    // Power - хешрейт (H/s); Heat - условные единицы тепловыделения, влияющие на нагрузку на БП и риск.
     const gpus = [
         { id: 1, name: 'GTX 1050 Ti', price: 150, power: 15, heat: 5 },
         { id: 2, name: 'GTX 1060', price: 300, power: 30, heat: 10 },
@@ -440,7 +494,7 @@
     // --- Персонал --- 
     const personnelModels = [
         // Инженер снижает базовый шанс сгорания на 50%
-        { id: 200, name: 'Инженер', salary: 500, effect: { type: 'fail_chance_reduction', value: 0.5 } } 
+        { id: 200, name: 'Инженер', salary: 0.13888, effect: { type: 'fail_chance_reduction', value: 0.5 } } // $500/час = $0.13888/сек
     ];
 
     let state = {
@@ -716,6 +770,7 @@
 
         try {
             document.getElementById('loader-message').textContent = "Загрузка данных пользователя...";
+            // Убедитесь, что SERVER_URL установлен правильно!
             const response = await fetch(`${SERVER_URL}?user_id=${userId}`);
             
             if (response.ok) {
@@ -742,7 +797,8 @@
             }
         } catch (e) {
             console.error("Ошибка загрузки:", e);
-            document.getElementById('loader-message').textContent = "Ошибка подключения. Проверьте сеть или URL.";
+            document.getElementById('loader-message').textContent = `Ошибка подключения: ${e.message}. Проверьте URL.`;
+            // Важно: даже если загрузка не удалась, начинаем игру с начальными данными
             initializeGame(loadedSuccessfully); 
             return;
         } 
@@ -841,6 +897,46 @@
 
 
     // --- UI и ЛОГИКА ---
+    
+    // Инициализация кнопок выбора монеты
+    function initCoinSelector() {
+        const selectorContainer = document.getElementById('coin-selector');
+        selectorContainer.innerHTML = ''; 
+
+        for (const key in currencies) {
+            const coin = currencies[key];
+            const button = document.createElement('button');
+            button.className = 'coin-btn';
+            button.textContent = `${coin.icon} ${key}`;
+            button.dataset.coin = key;
+
+            if (key === state.activeCoin) {
+                button.classList.add('active');
+            }
+
+            button.addEventListener('click', function() {
+                state.activeCoin = this.dataset.coin;
+                updateCoinSelectorUI(); 
+                updateUI(); 
+            });
+
+            selectorContainer.appendChild(button);
+        }
+    }
+
+    // Обновление активного состояния кнопок выбора монеты
+    function updateCoinSelectorUI() {
+        document.querySelectorAll('.coin-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeBtn = document.querySelector(`.coin-btn[data-coin="${state.activeCoin}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+        document.getElementById('coin-ticker').textContent = state.activeCoin;
+        document.getElementById('current-coin-icon').textContent = currencies[state.activeCoin].icon;
+    }
+
 
     function updateUI() {
         // 1. ОБЩИЕ СТАТИСТИКИ И БАЛАНС
@@ -888,10 +984,9 @@
         netProfitElement.style.color = netProfit >= 0 ? 'var(--accent-color)' : 'var(--danger-color)';
 
         // 3. ОБНОВЛЕНИЕ МАЙНИНГ СЕКЦИИ
+        updateCoinSelectorUI(); // Обновление кнопок
         const coin = currencies[state.activeCoin];
         document.getElementById('coin-balance').textContent = state.balances[state.activeCoin].toFixed(6);
-        document.getElementById('coin-ticker').textContent = state.activeCoin;
-        document.getElementById('current-coin-icon').textContent = coin.icon;
         document.getElementById('exchange-ticker').textContent = state.activeCoin;
         
         const value = state.balances[state.activeCoin] * coin.price;
@@ -905,7 +1000,44 @@
         renderRigInventory();
         renderFreeGPUInventory();
         renderPersonnelInventory();
+
+        // 5. НОВЫЙ БЛОК: ДЕТАЛИ ДОБЫЧИ В СЕКУНДУ
+        renderMiningDetails();
     }
+    
+    // НОВАЯ ФУНКЦИЯ: Отображение деталей добычи
+    function renderMiningDetails() {
+        const container = document.getElementById('mining-details-list');
+        container.innerHTML = '';
+        
+        if (state.totalHashrate === 0) {
+            container.innerHTML = '<p style="color: #999;">Ваш общий хешрейт 0 H/s. Купите GPU!</p>';
+            return;
+        }
+
+        // Мы используем общий хешрейт, но для расчета добычи в секунду
+        const totalHash = state.totalHashrate; 
+
+        for (const key in currencies) {
+            const coin = currencies[key];
+            
+            // Расчет: ОбщийХешрейт / Сложность = Добыча в секунду (в монетах)
+            const minedPerSecond = totalHash / coin.difficulty;
+            
+            // Расчет в USD в секунду
+            const usdPerSecond = minedPerSecond * coin.price;
+
+            const row = document.createElement('div');
+            row.className = 'mining-row';
+            row.innerHTML = `
+                <div style="font-weight: bold;">${coin.icon} ${key}</div>
+                <div>${minedPerSecond.toFixed(8)} / сек.</div>
+                <div style="color: var(--accent-color); font-weight: bold;">$${usdPerSecond.toFixed(6)} / сек.</div>
+            `;
+            container.appendChild(row);
+        }
+    }
+
 
     // --- ЛОГИКА МАГАЗИНА ---
 
@@ -915,13 +1047,16 @@
         rigModels.forEach(rig => {
             const card = document.createElement('div');
             card.className = 'rig-card';
+            
+            let powerColor = rig.max_power >= 10000 ? 'var(--warning-color)' : 'var(--accent-color)';
+
             card.innerHTML = `
                 <div class="rig-info">
                     <h3>${rig.name}</h3>
-                    <p>Слотов: ${rig.max_gpus} | Макс. мощность: ${rig.max_power} H/s</p>
+                    <p>Слотов: ${rig.max_gpus} | Макс. мощность: <span style="color:${powerColor};">${rig.max_power} H/s</span></p>
                 </div>
                 <div style="text-align:right">
-                    <div style="margin-bottom:5px; font-weight:bold">$${rig.price}</div>
+                    <div style="margin-bottom:5px; font-weight:bold">$${rig.price.toLocaleString('ru-RU')}</div>
                     <button class="buy-btn" onclick="buyRig(${rig.id})" ${state.usd < rig.price ? 'disabled' : ''}>Купить</button>
                 </div>
             `;
@@ -971,7 +1106,7 @@
                     <p>+${gpu.power} H/s | Тепло: ${gpu.heat}</p>
                 </div>
                 <div style="text-align:right">
-                    <div style="margin-bottom:5px; font-weight:bold">$${gpu.price}</div>
+                    <div style="margin-bottom:5px; font-weight:bold">$${gpu.price.toLocaleString('ru-RU')}</div>
                     <button class="buy-btn" id="buy-btn-${gpu.id}" onclick="buyGPU(${gpu.id})" 
                         ${state.usd < gpu.price || !canBuyGPU ? 'disabled' : ''}>
                         ${!canBuyGPU ? 'Нет ригов' : 'Купить на склад'}
@@ -1016,11 +1151,14 @@
                 description = `Снижает шанс сгорания GPU на ${p.effect.value * 100}%`;
             }
 
+            // Вывод зарплаты в час
+            const hourlySalary = (p.salary * 3600).toFixed(0);
+
             card.innerHTML = `
                 <div class="personnel-info">
                     <h3>${p.name}</h3>
                     <p>${description}</p>
-                    <p style="color:var(--danger-color);">Зарплата: $${p.salary.toFixed(2)}/сек. ( $${(p.salary * 3600).toFixed(0)}/час )</p>
+                    <p style="color:var(--danger-color);">Зарплата: $${hourlySalary}/час</p>
                 </div>
                 <div style="text-align:right">
                     <button class="buy-btn" onclick="hirePersonnel(${p.id})" ${isHired || state.usd < p.salary * 3600 ? 'disabled' : ''}>
@@ -1031,44 +1169,7 @@
             container.appendChild(card);
         });
     }
-	function initCoinSelector() {
-    const selectorContainer = document.getElementById('coin-selector');
-    selectorContainer.innerHTML = ''; // Очистка
 
-    for (const key in currencies) {
-        const coin = currencies[key];
-        const button = document.createElement('button');
-        button.className = 'coin-btn';
-        button.textContent = `${coin.icon} ${key}`;
-        button.dataset.coin = key;
-
-        if (key === state.activeCoin) {
-            button.classList.add('active');
-        }
-
-        button.addEventListener('click', function() {
-            state.activeCoin = this.dataset.coin;
-            // Обновляем UI, чтобы активировать кнопку и обновить баланс
-            updateCoinSelectorUI(); 
-            updateUI(); 
-        });
-
-        selectorContainer.appendChild(button);
-    }
-}
-	function updateCoinSelectorUI() {
-    // Деактивируем все кнопки
-    document.querySelectorAll('.coin-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    // Активируем текущую
-    const activeBtn = document.querySelector(`.coin-btn[data-coin="${state.activeCoin}"]`);
-    if (activeBtn) {
-        activeBtn.classList.add('active');
-    }
-    document.getElementById('coin-ticker').textContent = state.activeCoin;
-    document.getElementById('current-coin-icon').textContent = currencies[state.activeCoin].icon;
-}
     function hirePersonnel(id) {
         const model = personnelModels.find(p => p.id === id);
         const isHired = state.personnel.some(h => h.id === id);
@@ -1105,7 +1206,6 @@
         
         state.rigs.forEach((rig, rigIndex) => {
             const currentPower = rig.gpus.reduce((acc, gpu) => acc + gpu.power, 0);
-            const currentHeat = rig.gpus.reduce((acc, gpu) => acc + gpu.heat, 0);
             const isOverloaded = currentPower > rig.max_power;
             const statusColor = isOverloaded ? 'var(--danger-color)' : 'var(--accent-color)';
             
@@ -1121,7 +1221,7 @@
                     <div class="gpu-in-rig">
                         <span>${gpu.name} (+${gpu.power} H/s)</span>
                         <button class="sell-gpu-in-rig-btn" onclick="removeGPUFromRig(${rigIndex}, ${gpuIndex})">
-                            Снять
+                            Снять на склад
                         </button>
                     </div>
                 `;
@@ -1242,12 +1342,13 @@
             if (p.effect.type === 'fail_chance_reduction') {
                 description = `Снижает шанс сгорания GPU на ${p.effect.value * 100}%`;
             }
+             const hourlySalary = (p.salary * 3600).toFixed(0);
 
             card.innerHTML = `
                 <div class="personnel-info">
                     <h3>${p.name} (Нанят)</h3>
                     <p>${description}</p>
-                    <p style="color:var(--danger-color);">Зарплата: $${(p.salary * 3600).toFixed(0)}/час</p>
+                    <p style="color:var(--danger-color);">Зарплата: $${hourlySalary}/час</p>
                 </div>
                 <div style="text-align:right">
                     <button class="fire-personnel-btn" onclick="firePersonnel(${p.id})">Уволить</button>
@@ -1258,62 +1359,86 @@
     }
 
 
-    // --- МОДАЛЬНОЕ ОКНО ДЛЯ УСТАНОВКИ GPU ---
+    // --- ЛОГИКА МОДАЛЬНОГО ОКНА ДЛЯ УСТАНОВКИ GPU ---
 
     let currentRigIndexForInstall = -1;
+
+    function closeInstallGPUModal() {
+        document.getElementById('install-gpu-modal').style.display = 'none';
+        currentRigIndexForInstall = -1;
+        updateUI(); // Обновляем UI, если были изменения
+    }
 
     function openAddGPUModal(rigIndex) {
         currentRigIndexForInstall = rigIndex;
         const rig = state.rigs[rigIndex];
+        const modal = document.getElementById('install-gpu-modal');
+        const gpuListContainer = document.getElementById('modal-gpu-list');
         
         if (state.free_gpus.length === 0 || rig.gpus.length >= rig.max_gpus) {
             window.alert('Нет свободных GPU на складе или в риге нет места.');
             return;
         }
 
-        let optionsHTML = '';
-        state.free_gpus.forEach((gpu, index) => {
-            const potentialPower = rig.gpus.reduce((acc, g) => acc + g.power, 0) + gpu.power;
-            const isOverloading = potentialPower > rig.max_power;
-            const statusText = isOverloading ? ' (!!! ПЕРЕГРУЗКА БП !!!)' : '';
-            const statusColor = isOverloading ? 'var(--danger-color)' : 'var(--accent-color)';
-            
-            optionsHTML += `
-                <div style="background:var(--bg-color); padding:8px; border-radius:6px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>${gpu.name} (+${gpu.power} H/s)</span>
-                    <button style="background:var(--btn-color); color:white; border:none; padding:5px 10px; border-radius:4px; font-size:0.8em; cursor:pointer;" 
-                        onclick="installGPU(${index})">
-                        Установить <span style="color:${statusColor}; font-weight:bold">${statusText}</span>
-                    </button>
-                </div>
-            `;
-        });
-        
+        // 1. Обновляем заголовки и статистику
         const currentPower = rig.gpus.reduce((acc, g) => acc + g.power, 0);
-
-        const modalMessage = `
-            <h3>Установка GPU в Риг #${rigIndex + 1} (${rig.name})</h3>
-            <p>Слотов свободно: ${rig.max_gpus - rig.gpus.length}</p>
-            <p>Текущая мощность БП: ${currentPower} / ${rig.max_power} H/s</p>
-            <hr style="border-color:#4a4a4c;">
-            ${optionsHTML}
+        document.getElementById('modal-rig-title').textContent = `Установка GPU в Риг #${rigIndex + 1}`;
+        document.getElementById('modal-rig-stats').innerHTML = `
+            **${rig.name}** | Слотов свободно: ${rig.max_gpus - rig.gpus.length}
+            <br>Текущая мощность БП: ${currentPower} / ${rig.max_power} H/s
         `;
         
-        // Используем alert/prompt, чтобы не вводить модальные окна в DOM
-        // В реальном проекте TWA здесь нужна кастомная модалка
-        window.alert(modalMessage.trim().replace(/<[^>]*>?/gm, '')); 
-        // Принудительно рендерим, чтобы игрок увидел изменения, даже если не сможет выбрать карту через alert
-
-    }
-    
-    // Внимание: Этот метод вызывается через onclick из alert/prompt. 
-    // В рабочем TWA проекте это нужно заменить на нормальную модалку.
-    function installGPU(freeGpuIndex) {
-        if (currentRigIndexForInstall === -1) return;
+        // 2. Генерируем список GPU
+        gpuListContainer.innerHTML = '';
         
-        const rig = state.rigs[currentRigIndexForInstall];
+        state.free_gpus.forEach((gpu, index) => {
+            const potentialPower = currentPower + gpu.power;
+            const isOverloading = potentialPower > rig.max_power;
+            const isDisabled = rig.gpus.length >= rig.max_gpus;
+            
+            let statusText = isOverloading ? '🚨 ПЕРЕГРУЗКА' : '✅ ОК';
+            let statusColor = isOverloading ? 'var(--danger-color)' : 'var(--accent-color)';
+            
+            if (isDisabled) {
+                 statusText = 'Слотов нет';
+                 statusColor = '#999';
+            }
+            
+            const card = document.createElement('div');
+            card.className = 'gpu-in-rig'; // Используем стиль карточки GPU
+            card.style.opacity = isDisabled ? '0.6' : '1';
+            card.style.marginBottom = '10px';
+            card.style.border = `2px solid ${statusColor}`;
+
+            card.innerHTML = `
+                <div>
+                    <strong>${gpu.name}</strong> (+${gpu.power} H/s)
+                    <p style="margin:0; font-size:0.8em; color:${statusColor}">${statusText}</p>
+                </div>
+                <button class="buy-btn" 
+                    onclick="installGPU(${index})" 
+                    ${isDisabled ? 'disabled' : ''} 
+                    style="background-color: ${isDisabled ? '#666' : 'var(--accent-color)'};">
+                    Установить
+                </button>
+            `;
+            gpuListContainer.appendChild(card);
+        });
+
+        // 3. Показываем модальное окно
+        modal.style.display = 'flex';
+        try { tg.HapticFeedback.impactOccurred('medium'); } catch(e) { /* ignore */ }
+    }
+
+    function installGPU(freeGpuIndex) {
+        const rigIndex = currentRigIndexForInstall;
+        if (rigIndex === -1) return;
+        
+        const rig = state.rigs[rigIndex];
+        
         if (rig.gpus.length >= rig.max_gpus) {
             window.alert("В этом риге больше нет свободных слотов.");
+            closeInstallGPUModal();
             return;
         }
 
@@ -1324,8 +1449,10 @@
         rig.gpus.push(gpu);
 
         try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
-        currentRigIndexForInstall = -1; // Сброс
-        updateUI();
+        
+        // Перезапускаем модальное окно, чтобы обновить список доступных GPU и статистику рига
+        openAddGPUModal(rigIndex); 
+        updateUI(); // Обновляем основной экран (хешрейт, инвентарь)
         saveGame();
     }
 
@@ -1420,7 +1547,7 @@
     
     // СТАРТ
     initTabs(); 
-    initCoinSelector();
+    initCoinSelector(); // Теперь эта функция существует
     loadGame(); 
 
 </script>
