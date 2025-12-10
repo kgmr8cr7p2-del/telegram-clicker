@@ -34,7 +34,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: var(--bg-color); /* Фон */
+            background-color: var(--bg-color); 
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -273,10 +273,14 @@
         updateUI();
     }
 
-    // --- ОФФЛАЙН МАЙНИНГ С УВЕДОМЛЕНИЕМ ---
+    // --- ОФФЛАЙН МАЙНИНГ С БЛОКИРУЮЩИМ УВЕДОМЛЕНИЕМ ---
 
-    function calculateOfflineGain(lastTime) {
-        if (state.totalHashrate === 0 || lastTime === 0) return;
+    function calculateOfflineGain(lastTime, onComplete) {
+        // Условие 1: Нет хешрейта или нет времени входа
+        if (state.totalHashrate === 0 || lastTime === 0) {
+            onComplete(); 
+            return;
+        }
 
         const currentTime = Date.now();
         const timeDiffSeconds = Math.floor((currentTime - lastTime) / 1000);
@@ -284,7 +288,11 @@
         const capSeconds = OFFLINE_CAP_HOURS * 3600; 
         const actualTimeMined = Math.min(timeDiffSeconds, capSeconds);
 
-        if (actualTimeMined <= 0) return; 
+        // Условие 2: Нет времени отсутствия (менее 1 секунды)
+        if (actualTimeMined <= 0) {
+            onComplete(); 
+            return; 
+        }
 
         const coinKey = state.activeCoin;
         const coin = baseRates[coinKey]; 
@@ -293,16 +301,46 @@
         
         state.balances[coinKey] += minedAmount;
         const minedTotalUSD = minedAmount * coin.price;
+        
+        // Условие 3: Заработок слишком мал (для исключения микро-уведомлений)
+        if (minedAmount * coin.price < 0.001) { 
+            onComplete();
+            return;
+        }
 
-        // Уведомление: показываем дробное число часов для точности
         const hours = (actualTimeMined / 3600).toFixed(2);
-        tg.showAlert(`✅ Оффлайн доход за ${hours} ч. (макс. ${OFFLINE_CAP_HOURS}) на сумму: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})`);
+        const message = `✅ Оффлайн доход за ${hours} ч. (макс. ${OFFLINE_CAP_HOURS}) на сумму: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})`;
+
+        // Используем showAlert, который блокирует интерфейс до нажатия "ОК"
+        tg.showAlert(message, onComplete);
     }
 
-    // --- СЕТЕВЫЕ ФУНКЦИИ (ИСПРАВЛЕНО ДЛЯ СКРЫТИЯ ПРЕЛОАДЕРА И ВРЕМЕНИ) ---
+    // --- НОВАЯ ФУНКЦИЯ: Инициализация игры после загрузки/уведомления ---
+    function initializeGame(loadedSuccessfully) {
+        updateUI(); 
+        
+        // СКРЫТИЕ ПРЕЛОАДЕРА
+        document.getElementById('loader-screen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loader-screen').style.display = 'none';
+        }, 300);
+        
+        // Запуск игровых циклов
+        setInterval(saveGame, 5000);
+        setInterval(updateRates, 60000); 
+        
+        // Если это не успешная загрузка (новый игрок/ошибка), ставим текущее время
+        if (!loadedSuccessfully) {
+             state.last_login_time = Date.now();
+        }
+    }
+
+    // --- СЕТЕВЫЕ ФУНКЦИИ ---
 
     async function loadGame() {
         let loadedSuccessfully = false;
+        let offlineTime = 0;
+
         try {
             const response = await fetch(`${SERVER_URL}?user_id=${userId}`);
             
@@ -315,7 +353,7 @@
                     state.max_slots = parseInt(data.max_slots) || 3; 
                     
                     if (data.last_login_time && data.last_login_time !== 0) {
-                        calculateOfflineGain(data.last_login_time);
+                        offlineTime = data.last_login_time;
                     }
                     loadedSuccessfully = true;
                 }
@@ -323,22 +361,18 @@
         } catch (e) {
             console.error("Ошибка загрузки:", e);
             document.getElementById('loader-message').textContent = "Ошибка подключения. Проверьте сеть или URL.";
-        } finally {
-            updateUI(); 
-            
-            // СКРЫТИЕ ПРЕЛОАДЕРА
-            document.getElementById('loader-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('loader-screen').style.display = 'none';
-            }, 300);
-            
-            // Запуск игровых циклов
-            setInterval(saveGame, 5000);
-            setInterval(updateRates, 60000); 
-            
-            if (!loadedSuccessfully) {
-                 state.last_login_time = Date.now();
-            }
+            // В случае критической ошибки инициализируем игру без загруженных данных
+            initializeGame(loadedSuccessfully); 
+            return;
+        } 
+        
+        // БЛОКИРУЕМ ЗАПУСК ИГРЫ ДО НАЖАТИЯ "ОК" НА УВЕДОМЛЕНИИ
+        if (loadedSuccessfully && offlineTime > 0) {
+            // Если есть старое время, пытаемся начислить доход. initializeGame запустится после закрытия showAlert.
+            calculateOfflineGain(offlineTime, () => initializeGame(loadedSuccessfully));
+        } else {
+            // Если нет старого времени (новый игрок), запускаем игру сразу.
+            initializeGame(loadedSuccessfully);
         }
     }
 
