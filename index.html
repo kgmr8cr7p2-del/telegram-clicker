@@ -220,7 +220,7 @@
     // =======================================================
     // !!! ВАЖНО: ВСТАВЬТЕ СЮДА АДРЕС ВАШЕГО РАЗВЕРНУТОГО GOOGLE APPS SCRIPT !!!
     // =======================================================
-    const SERVER_URL = "https://script.google.com/macros/s/AKfycbyrEkaD1xXWt_BkibpLguRrBNdxSk6jCsNTcm-n37uyadRaqhWuNE8OP8D9CYOmTITL/exec"; 
+    const SERVER_URL = "https://script.google.com/macros/s/AKfycbxVxINXrbodUUw0x1PJpfS0OSGP57o1JYwyf467J_KKtCJ72WgjBy_FjjuUXbZWhvXy/exec"; 
 
     const tg = window.Telegram.WebApp;
     tg.expand();
@@ -276,7 +276,7 @@
     // --- ОФФЛАЙН МАЙНИНГ С БЛОКИРУЮЩИМ УВЕДОМЛЕНИЕМ ---
 
     function calculateOfflineGain(lastTime, onComplete) {
-        // Условие 1: Нет хешрейта или нет времени входа
+        // Условие 1: Нет хешрейта или нет времени входа (это уже проверено в loadGame, но пусть будет)
         if (state.totalHashrate === 0 || lastTime === 0) {
             onComplete(); 
             return;
@@ -288,7 +288,7 @@
         const capSeconds = OFFLINE_CAP_HOURS * 3600; 
         const actualTimeMined = Math.min(timeDiffSeconds, capSeconds);
 
-        // Условие 2: Нет времени отсутствия (менее 1 секунды)
+        // Условие 2: Нет времени отсутствия
         if (actualTimeMined <= 0) {
             onComplete(); 
             return; 
@@ -302,7 +302,7 @@
         state.balances[coinKey] += minedAmount;
         const minedTotalUSD = minedAmount * coin.price;
         
-        // Условие 3: Заработок слишком мал (для исключения микро-уведомлений)
+        // Условие 3: Заработок слишком мал
         if (minedAmount * coin.price < 0.001) { 
             onComplete();
             return;
@@ -329,13 +329,12 @@
         setInterval(saveGame, 5000);
         setInterval(updateRates, 60000); 
         
-        // Если это не успешная загрузка (новый игрок/ошибка), ставим текущее время
         if (!loadedSuccessfully) {
              state.last_login_time = Date.now();
         }
     }
 
-    // --- СЕТЕВЫЕ ФУНКЦИИ ---
+    // --- СЕТЕВЫЕ ФУНКЦИИ (С ИСПРАВЛЕННЫМ РАСЧЕТОМ ХЕШРЕЙТА) ---
 
     async function loadGame() {
         let loadedSuccessfully = false;
@@ -356,22 +355,24 @@
                         offlineTime = data.last_login_time;
                     }
                     loadedSuccessfully = true;
+                    
+                    // --- ИСПРАВЛЕНИЕ: Рассчитываем хешрейт немедленно после загрузки данных ---
+                    state.totalHashrate = state.inventory.reduce((acc, item) => acc + item.power, 0); 
                 }
             }
         } catch (e) {
             console.error("Ошибка загрузки:", e);
             document.getElementById('loader-message').textContent = "Ошибка подключения. Проверьте сеть или URL.";
-            // В случае критической ошибки инициализируем игру без загруженных данных
             initializeGame(loadedSuccessfully); 
             return;
         } 
         
         // БЛОКИРУЕМ ЗАПУСК ИГРЫ ДО НАЖАТИЯ "ОК" НА УВЕДОМЛЕНИИ
-        if (loadedSuccessfully && offlineTime > 0) {
-            // Если есть старое время, пытаемся начислить доход. initializeGame запустится после закрытия showAlert.
+        if (loadedSuccessfully && state.totalHashrate > 0 && offlineTime > 0) {
+            // Если доход возможен, вызываем расчет с initializeGame в качестве колбэка
             calculateOfflineGain(offlineTime, () => initializeGame(loadedSuccessfully));
         } else {
-            // Если нет старого времени (новый игрок), запускаем игру сразу.
+            // Иначе, запускаем игру сразу
             initializeGame(loadedSuccessfully);
         }
     }
@@ -405,7 +406,7 @@
         document.getElementById('usd-balance').textContent = state.usd.toFixed(2);
         
         let passiveHash = state.inventory.reduce((acc, item) => acc + item.power, 0);
-        state.totalHashrate = passiveHash;
+        state.totalHashrate = passiveHash; // Обновляем хешрейт, который уже рассчитан в loadGame, но это нужно для повторных вызовов
         document.getElementById('total-hashrate').textContent = state.totalHashrate;
 
         const coin = currencies[state.activeCoin];
