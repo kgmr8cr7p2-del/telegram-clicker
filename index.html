@@ -64,6 +64,8 @@
             color: #8e8e93;
             font-size: 1em;
             font-weight: 500;
+            margin-bottom: 20px;
+            line-height: 1.5;
         }
         /* --- Конец стилей для Прелоадера --- */
 
@@ -226,7 +228,6 @@
     const SERVER_URL = "https://script.google.com/macros/s/AKfycbxVxINXrbodUUw0x1PJpfS0OSGP57o1JYwyf467J_KKtCJ72WgjBy_FjjuUXbZWhvXy/exec"; 
 
     const tg = window.Telegram.WebApp;
-    tg.expand();
 
     const userId = tg.initDataUnsafe?.user?.id || 999;
 
@@ -276,7 +277,7 @@
         updateUI();
     }
 
-    // --- ОФФЛАЙН МАЙНИНГ (ИСПРАВЛЕНО: ИСПОЛЬЗУЕМ MainButton) ---
+    // --- ОФФЛАЙН МАЙНИНГ (ИСПОЛЬЗУЕМ window.alert) ---
 
     function calculateOfflineGain(lastTime, onComplete, totalHashrateAtExit) {
         if (totalHashrateAtExit === 0 || lastTime === 0) {
@@ -312,31 +313,31 @@
         
         const hours = (actualTimeMined / 3600).toFixed(2);
         
-        // --- БЛОКИРУЕМ ЗАПУСК ИГРЫ ИСПОЛЬЗУЯ MainButton ---
+        const message = `
+        Оффлайн доход начислен!
         
-        // Устанавливаем и показываем MainButton
-        tg.MainButton.setText(`ПОЛУЧИТЬ ДОХОД ($${minedTotalUSD.toFixed(2)})`);
-        tg.MainButton.show();
-        tg.MainButton.enable();
+        Период: ${hours} ч. (макс. ${OFFLINE_CAP_HOURS})
+        Начислено: $${minedTotalUSD.toFixed(2)} (${minedAmount.toFixed(6)} ${coinKey})
+
+        Нажмите "ОК", чтобы начать игру.
+        `;
         
-        // Обновляем сообщение прелоадера, чтобы показать детали
+        // Скрываем лоадер и показываем сообщение оффлайн-дохода
+        document.querySelector('.loader').style.display = 'none';
         document.getElementById('loader-message').innerHTML = `
             💰 **Оффлайн доход!**<br>
-            За ${hours} ч. начислено: <span style="color:var(--accent-color); font-weight:bold">$${minedTotalUSD.toFixed(2)}</span><br>
-            Нажмите кнопку внизу, чтобы начать игру.
+            Начислено: <span style="color:var(--accent-color); font-weight:bold">$${minedTotalUSD.toFixed(2)}</span><br>
+            (Ожидание подтверждения "ОК"...)
         `;
 
-        // 5. Ждем, пока пользователь нажмет на MainButton
-        const handleButtonClick = () => {
-            tg.MainButton.offClick(handleButtonClick);
-            tg.MainButton.hide();
-            onComplete(); // Запускаем игру
-        };
-
-        tg.MainButton.onClick(handleButtonClick);
+        // 1. Показываем стандартное блокирующее окно
+        window.alert(message.trim()); // Блокирует выполнение до нажатия "ОК"
+        
+        // 2. После нажатия "ОК", вызывается onComplete и игра запускается
+        onComplete();
     }
 
-    // --- НОВАЯ ФУНКЦИЯ: Инициализация игры после загрузки/уведомления ---
+    // --- Инициализация игры после загрузки/уведомления ---
     function initializeGame(loadedSuccessfully) {
         updateUI(); 
         
@@ -355,7 +356,7 @@
         }
     }
 
-    // --- СЕТЕВЫЕ ФУНКЦИИ (С ИСПРАВЛЕННЫМ РАСЧЕТОМ ХЕШРЕЙТА) ---
+    // --- СЕТЕВЫЕ ФУНКЦИИ ---
 
     async function loadGame() {
         let loadedSuccessfully = false;
@@ -378,7 +379,7 @@
                     }
                     loadedSuccessfully = true;
                     
-                    // --- КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Рассчитываем хешрейт немедленно ---
+                    // Рассчитываем хешрейт немедленно
                     passiveHash = state.inventory.reduce((acc, item) => acc + item.power, 0); 
                     state.totalHashrate = passiveHash; 
                 }
@@ -390,12 +391,10 @@
             return;
         } 
         
-        // БЛОКИРУЕМ ЗАПУСК ИГРЫ ДО НАЖАТИЯ НА MainButton
+        // БЛОКИРУЕМ ЗАПУСК ИГРЫ
         if (loadedSuccessfully && state.totalHashrate > 0 && offlineTime > 0) {
-            // Передаем хешрейт в функцию, чтобы она могла работать автономно
             calculateOfflineGain(offlineTime, () => initializeGame(loadedSuccessfully), passiveHash);
         } else {
-            // Иначе, запускаем игру сразу
             initializeGame(loadedSuccessfully);
         }
     }
@@ -480,11 +479,11 @@
         if (state.usd >= cost) {
             state.usd -= cost;
             state.max_slots += 1;
-            tg.HapticFeedback.notificationOccurred('success');
+            try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
             updateUI();
             saveGame();
         } else {
-            tg.HapticFeedback.notificationOccurred('error');
+            try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
         }
     }
 
@@ -550,15 +549,14 @@
         if (state.usd >= gpu.price && state.inventory.length < state.max_slots) {
             state.usd -= gpu.price;
             state.inventory.push(gpu);
-            tg.HapticFeedback.notificationOccurred('success');
+            try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
             updateUI();
             saveGame(); 
         } else if (state.inventory.length >= state.max_slots) {
-             // Используем стандартный alert, так как showAlert может быть не поддержан
              window.alert("Сначала купите дополнительный слот для GPU!");
-             tg.HapticFeedback.notificationOccurred('warning');
+             try { tg.HapticFeedback.notificationOccurred('warning'); } catch(e) { /* ignore */ }
         } else {
-            tg.HapticFeedback.notificationOccurred('error');
+            try { tg.HapticFeedback.notificationOccurred('error'); } catch(e) { /* ignore */ }
         }
     }
 
@@ -596,7 +594,8 @@
         const amount = (100 / coin.difficulty); 
         state.balances[state.activeCoin] += amount;
         
-        tg.HapticFeedback.impactOccurred('light');
+        try { tg.HapticFeedback.impactOccurred('light'); } catch(e) { /* ignore */ }
+        
         const btn = document.getElementById('mine-btn');
         btn.style.transform = 'scale(0.95)';
         setTimeout(() => btn.style.transform = 'scale(1)', 100);
@@ -612,7 +611,8 @@
         state.usd += amount * coin.price;
         state.balances[state.activeCoin] = 0;
         
-        tg.HapticFeedback.notificationOccurred('success');
+        try { tg.HapticFeedback.notificationOccurred('success'); } catch(e) { /* ignore */ }
+        
         updateUI();
         saveGame();
     });
